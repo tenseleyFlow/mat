@@ -1762,6 +1762,279 @@ static const char *const fish_kw[] = {
     "else", "end",    "for",   "function", "if",     "in",      "not",
     "or",   "return", "set",   "status",   "switch", "test",    "while",
 };
+static const char *const d_kw[] = {
+    "abstract",     "alias",     "asm",       "assert",    "body",
+    "break",        "case",      "cast",      "catch",     "class",
+    "const",        "continue",  "debug",     "default",   "delegate",
+    "delete",       "do",        "else",      "enum",      "export",
+    "extern",       "final",     "finally",   "for",       "foreach",
+    "function",     "goto",      "if",        "immutable", "import",
+    "in",           "interface", "invariant", "is",        "lazy",
+    "mixin",        "module",    "new",       "nothrow",   "out",
+    "override",     "package",   "pragma",    "private",   "protected",
+    "public",       "pure",      "ref",       "return",    "scope",
+    "shared",       "static",    "struct",    "super",     "switch",
+    "synchronized", "template",  "this",      "throw",     "try",
+    "typeid",       "typeof",    "union",     "unittest",  "version",
+    "void",         "while",     "with",
+};
+static const char *const d_ty[] = {
+    "bool",   "byte",   "cdouble", "cfloat", "char",  "creal",  "dchar",
+    "double", "float",  "idouble", "ifloat", "int",   "ireal",  "long",
+    "real",   "short",  "ubyte",   "uint",   "ulong", "ushort", "wchar",
+    "string", "size_t", "null",    "true",   "false",
+};
+static const char *const fsharp_kw[] = {
+    "abstract", "and",     "as",       "assert",    "base",      "begin",
+    "class",    "default", "delegate", "do",        "done",      "downcast",
+    "downto",   "elif",    "else",     "end",       "exception", "extern",
+    "finally",  "for",     "fun",      "function",  "global",    "if",
+    "in",       "inherit", "inline",   "interface", "internal",  "lazy",
+    "let",      "match",   "member",   "module",    "mutable",   "namespace",
+    "new",      "not",     "null",     "of",        "open",      "or",
+    "override", "private", "public",   "rec",       "return",    "select",
+    "static",   "struct",  "then",     "to",        "try",       "type",
+    "upcast",   "use",     "val",      "void",      "when",      "while",
+    "with",     "yield",
+};
+static const char *const fsharp_ty[] = {
+    "bool",    "byte",   "char",   "decimal", "double", "float",
+    "float32", "int",    "int16",  "int32",   "int64",  "nativeint",
+    "sbyte",   "single", "string", "uint16",  "uint32", "uint64",
+    "unit",    "true",   "false",  "None",    "Some",
+};
+static const char *const glsl_kw[] = {
+    "attribute",  "break",  "case",      "const",     "continue", "default",
+    "discard",    "do",     "else",      "flat",      "for",      "highp",
+    "if",         "in",     "inout",     "invariant", "layout",   "lowp",
+    "mediump",    "out",    "precision", "return",    "smooth",   "struct",
+    "subroutine", "switch", "uniform",   "varying",   "while",
+};
+static const char *const glsl_ty[] = {
+    "bool",        "bvec2", "bvec3", "bvec4", "double",    "dvec2",
+    "dvec3",       "dvec4", "float", "int",   "ivec2",     "ivec3",
+    "ivec4",       "mat2",  "mat3",  "mat4",  "sampler2D", "sampler3D",
+    "samplerCube", "uint",  "uvec2", "uvec3", "uvec4",     "vec2",
+    "vec3",        "vec4",  "void",  "true",  "false",
+};
+static const char *const coffee_kw[] = {
+    "and",    "break",      "by",    "case",    "catch",   "class",  "continue",
+    "delete", "do",         "else",  "extends", "finally", "for",    "if",
+    "in",     "instanceof", "is",    "isnt",    "loop",    "new",    "no",
+    "not",    "of",         "or",    "return",  "super",   "switch", "then",
+    "this",   "throw",      "try",   "typeof",  "unless",  "until",  "when",
+    "while",  "yes",        "yield",
+};
+static const char *const coffee_ty[] = {
+    "true", "false", "null", "undefined", "NaN", "Infinity",
+};
+static const char *const crystal_kw[] = {
+    "abstract",  "alias",
+    "as",        "asm",
+    "begin",     "break",
+    "case",      "class",
+    "def",       "do",
+    "else",      "elsif",
+    "end",       "ensure",
+    "enum",      "extend",
+    "for",       "fun",
+    "if",        "in",
+    "include",   "instance_sizeof",
+    "is_a?",     "lib",
+    "macro",     "module",
+    "next",      "nil?",
+    "of",        "out",
+    "pointerof", "private",
+    "protected", "puts",
+    "raise",     "require",
+    "rescue",    "return",
+    "select",    "sizeof",
+    "struct",    "super",
+    "then",      "type",
+    "typeof",    "uninitialized",
+    "union",     "unless",
+    "until",     "when",
+    "while",     "with",
+    "yield",
+};
+static const char *const crystal_ty[] = {
+    "Bool",   "Char", "Float32", "Float64", "Int8",  "Int16",  "Int32",
+    "Int64",  "Nil",  "String",  "Symbol",  "UInt8", "UInt16", "UInt32",
+    "UInt64", "Void", "true",    "false",   "nil",   "self",
+};
+static const char *const elm_kw[] = {
+    "alias", "as",     "case", "else", "exposing", "if",   "import", "in",
+    "let",   "module", "of",   "port", "then",     "type", "where",
+};
+static const char *const elm_ty[] = {
+    "Bool",  "Char",   "Float", "Int",   "List", "Maybe",
+    "Never", "String", "True",  "False", "Just", "Nothing",
+};
+static const char *const solidity_kw[] = {
+    "abstract", "break",    "case",    "catch",    "constant",  "constructor",
+    "continue", "contract", "default", "delete",   "do",        "else",
+    "emit",     "enum",     "event",   "external", "fallback",  "for",
+    "function", "if",       "import",  "indexed",  "interface", "internal",
+    "is",       "library",  "mapping", "memory",   "modifier",  "new",
+    "override", "payable",  "pragma",  "private",  "public",    "pure",
+    "receive",  "require",  "return",  "returns",  "revert",    "storage",
+    "struct",   "super",    "this",    "throw",    "try",       "using",
+    "view",     "virtual",  "while",
+};
+static const char *const solidity_ty[] = {
+    "address", "bool",   "bytes",   "int",     "int8", "int16", "int32",
+    "int64",   "int128", "int256",  "string",  "uint", "uint8", "uint16",
+    "uint32",  "uint64", "uint128", "uint256", "true", "false",
+};
+static const char *const ada_kw[] = {
+    "abort",   "abs",          "abstract",  "accept",     "access",
+    "aliased", "all",          "and",       "array",      "at",
+    "begin",   "body",         "case",      "constant",   "declare",
+    "delay",   "delta",        "digits",    "do",         "else",
+    "elsif",   "end",          "entry",     "exception",  "exit",
+    "for",     "function",     "generic",   "goto",       "if",
+    "in",      "interface",    "is",        "limited",    "loop",
+    "mod",     "new",          "not",       "null",       "of",
+    "or",      "others",       "out",       "overriding", "package",
+    "pragma",  "private",      "procedure", "protected",  "raise",
+    "range",   "record",       "rem",       "renames",    "requeue",
+    "return",  "reverse",      "select",    "separate",   "some",
+    "subtype", "synchronized", "tagged",    "task",       "terminate",
+    "then",    "type",         "until",     "use",        "when",
+    "while",   "with",         "xor",
+};
+static const char *const ada_ty[] = {
+    "Boolean", "Character", "Duration", "Float", "Integer",
+    "Natural", "Positive",  "String",   "True",  "False",
+};
+static const char *const pascal_kw[] = {
+    "and",
+    "array",
+    "begin",
+    "case",
+    "const",
+    "constructor",
+    "destructor",
+    "div",
+    "do",
+    "downto",
+    "else",
+    "end",
+    "except",
+    "finally",
+    "for",
+    "function",
+    "goto",
+    "if",
+    "implementation",
+    "in",
+    "inherited",
+    "interface",
+    "is",
+    "mod",
+    "not",
+    "object",
+    "of",
+    "on",
+    "operator",
+    "or",
+    "packed",
+    "procedure",
+    "program",
+    "property",
+    "raise",
+    "record",
+    "repeat",
+    "set",
+    "shl",
+    "shr",
+    "then",
+    "to",
+    "try",
+    "type",
+    "unit",
+    "until",
+    "uses",
+    "var",
+    "while",
+    "with",
+    "xor",
+};
+static const char *const pascal_ty[] = {
+    "boolean", "byte",     "cardinal", "char",    "comp",     "currency",
+    "double",  "extended", "int64",    "integer", "longint",  "longword",
+    "pointer", "real",     "shortint", "single",  "smallint", "string",
+    "word",    "true",     "false",    "nil",
+};
+static const char *const matlab_kw[] = {
+    "break",  "case",   "catch",     "classdef", "continue",
+    "else",   "elseif", "end",       "for",      "function",
+    "global", "if",     "otherwise", "parfor",   "persistent",
+    "return", "spmd",   "switch",    "try",      "while",
+};
+static const char *const matlab_ty[] = {
+    "true", "false", "inf", "Inf", "nan", "NaN", "pi",
+};
+static const char *const protobuf_kw[] = {
+    "enum",     "extend",   "extensions", "import",  "message",  "oneof",
+    "option",   "optional", "package",    "public",  "repeated", "required",
+    "reserved", "returns",  "rpc",        "service", "stream",   "syntax",
+    "to",       "weak",     "map",
+};
+static const char *const protobuf_ty[] = {
+    "bool",   "bytes",  "double",   "fixed32",  "fixed64", "float",
+    "int32",  "int64",  "sfixed32", "sfixed64", "sint32",  "sint64",
+    "string", "uint32", "uint64",   "true",     "false",
+};
+static const char *const terraform_kw[] = {
+    "data",      "dynamic",  "for_each", "lifecycle",   "locals",
+    "module",    "output",   "provider", "provisioner", "resource",
+    "terraform", "variable", "for",      "if",          "in",
+    "each",      "self",     "count",    "depends_on",
+};
+static const char *const terraform_ty[] = {
+    "bool",   "list",  "map", "number", "object", "set",
+    "string", "tuple", "any", "true",   "false",  "null",
+};
+static const char *const nix_kw[] = {
+    "assert", "else", "if",   "in",     "inherit",  "let",
+    "rec",    "then", "with", "import", "builtins",
+};
+static const char *const nix_ty[] = {
+    "true",
+    "false",
+    "null",
+};
+static const char *const tcl_kw[] = {
+    "after",    "append", "break",   "case",    "catch",     "continue",
+    "else",     "elseif", "error",   "eval",    "exec",      "exit",
+    "expr",     "for",    "foreach", "format",  "global",    "if",
+    "incr",     "info",   "join",    "lappend", "lindex",    "list",
+    "llength",  "lrange", "lsearch", "lsort",   "namespace", "open",
+    "package",  "proc",   "puts",    "read",    "regexp",    "rename",
+    "return",   "set",    "source",  "split",   "string",    "switch",
+    "then",     "time",   "trace",   "unset",   "uplevel",   "upvar",
+    "variable", "while",
+};
+static const char *const lisp_kw[] = {
+    "and",          "begin",   "case", "cond",       "define", "defmacro",
+    "defun",        "do",      "else", "if",         "lambda", "let",
+    "let*",         "letrec",  "or",   "quasiquote", "quote",  "set!",
+    "syntax-rules", "unquote", "when", "unless",
+};
+static const char *const lisp_ty[] = {
+    "nil",
+    "t",
+    "#t",
+    "#f",
+};
+static const char *const batch_kw[] = {
+    "call",  "cls",      "cmd",      "color",      "copy",  "del",  "dir",
+    "echo",  "else",     "endlocal", "errorlevel", "exist", "exit", "for",
+    "goto",  "if",       "md",       "mkdir",      "move",  "not",  "path",
+    "pause", "popd",     "pushd",    "rd",         "rem",   "ren",  "rmdir",
+    "set",   "setlocal", "shift",    "start",      "title", "type",
+};
 
 #define WS(arr)                                                                \
     (struct wordset)                                                           \
@@ -2206,6 +2479,252 @@ static int lex_latex(struct mat_hl *h, const unsigned char *d, size_t len,
     return n;
 }
 
+/* ---- Pascal ({ } block comments, // line comments) ---- */
+
+static int lex_pascal(struct mat_hl *h, const unsigned char *d, size_t len,
+                      struct mat_span *out, int cap)
+{
+    int n = 0;
+    size_t i = 0;
+    if (h->state == HL_BLOCK_COMMENT) {
+        size_t s = 0;
+        while (i < len) {
+            if (d[i] == '}') {
+                i++;
+                h->state = HL_NORMAL;
+                break;
+            }
+            i++;
+        }
+        if (h->state == HL_BLOCK_COMMENT)
+            i = len;
+        n = emit(out, cap, n, s, i, MT_COMMENT);
+        if (h->state == HL_BLOCK_COMMENT)
+            return n;
+    }
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '/' && i + 1 < len && d[i + 1] == '/') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '{') {
+            h->state = HL_BLOCK_COMMENT;
+            i++;
+            while (i < len) {
+                if (d[i] == '}') {
+                    i++;
+                    h->state = HL_NORMAL;
+                    break;
+                }
+                i++;
+            }
+            if (h->state == HL_BLOCK_COMMENT)
+                i = len;
+            n = emit(out, cap, n, s, i - s, MT_COMMENT);
+        } else if (c == '\'') {
+            i++;
+            while (i < len) {
+                if (d[i] == '\'' && i + 1 < len && d[i + 1] == '\'') {
+                    i += 2;
+                    continue;
+                }
+                if (d[i] == '\'') {
+                    i++;
+                    break;
+                }
+                i++;
+            }
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (is_digit(c) || (c == '$' && i + 1 < len)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '.'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if (ws_has_ci(&h->keywords, (const char *)d + s, wl))
+                t = MT_KEYWORD;
+            else if (ws_has_ci(&h->types, (const char *)d + s, wl))
+                t = MT_TYPE;
+            else if (i < len && d[i] == '(')
+                t = MT_FUNCTION;
+            n = emit(out, cap, n, s, wl, t);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- MATLAB (% comments) ---- */
+
+static int lex_matlab(struct mat_hl *h, const unsigned char *d, size_t len,
+                      struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '%') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '\'') {
+            i++;
+            while (i < len && d[i] != '\'')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (c == '"') {
+            i++;
+            while (i < len && d[i] != '"')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (is_digit(c) ||
+                   (c == '.' && i + 1 < len && is_digit(d[i + 1]))) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '.' || d[i] == '+' ||
+                               d[i] == '-'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if (ws_has(&h->keywords, (const char *)d + s, wl))
+                t = MT_KEYWORD;
+            else if (ws_has(&h->types, (const char *)d + s, wl))
+                t = MT_TYPE;
+            else if (i < len && d[i] == '(')
+                t = MT_FUNCTION;
+            n = emit(out, cap, n, s, wl, t);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Assembly (; or # comments) ---- */
+
+static int lex_asm(struct mat_hl *h, const unsigned char *d, size_t len,
+                   struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == ';' || c == '#') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '"' || c == '\'') {
+            unsigned char q = c;
+            i++;
+            while (i < len && d[i] != q)
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (c == '.' && i + 1 < len && is_word(d[i + 1])) {
+            i++;
+            while (i < len && is_alnum(d[i]))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_PREPROC);
+        } else if (is_digit(c) || (c == '0' && i + 1 < len &&
+                                   (d[i + 1] == 'x' || d[i + 1] == 'b'))) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '.'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if (i < len && d[i] == ':')
+                t = MT_FUNCTION;
+            n = emit(out, cap, n, s, wl, t);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Batch File (REM and :: comments, %var%) ---- */
+
+static int lex_batch(struct mat_hl *h, const unsigned char *d, size_t len,
+                     struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    if (len >= 3 && (ci_match("rem", (const char *)d, 3)) &&
+        (len == 3 || d[3] == ' ' || d[3] == '\t')) {
+        n = emit(out, cap, n, 0, len, MT_COMMENT);
+        return n;
+    }
+    if (len >= 2 && d[0] == ':' && d[1] == ':') {
+        n = emit(out, cap, n, 0, len, MT_COMMENT);
+        return n;
+    }
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '%') {
+            i++;
+            if (i < len && d[i] == '%')
+                i++;
+            while (i < len && d[i] != '%' && d[i] != ' ')
+                i++;
+            if (i < len && d[i] == '%')
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_PREPROC);
+        } else if (c == '"') {
+            i++;
+            while (i < len && d[i] != '"')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if (ws_has_ci(&h->keywords, (const char *)d + s, wl))
+                t = MT_KEYWORD;
+            n = emit(out, cap, n, s, wl, t);
+        } else if (c == ':' && i + 1 < len && is_word(d[i + 1])) {
+            i++;
+            while (i < len && is_alnum(d[i]))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_FUNCTION);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
 /* ---- dispatch ---- */
 
 struct mat_hl *mat_hl_open(const char *syntax)
@@ -2360,10 +2879,87 @@ struct mat_hl *mat_hl_open(const char *syntax)
     } else if (strcmp(syntax, "Fish") == 0) {
         lex = lex_shell;
         kw = WS(fish_kw);
-    } else if (strcmp(syntax, "Objective-C") == 0) {
+    } else if (strcmp(syntax, "Objective-C") == 0 ||
+               strcmp(syntax, "Objective-C++") == 0) {
         lex = lex_cfamily;
         kw = WS(c_kw);
         ty = WS(c_ty);
+    } else if (strcmp(syntax, "D") == 0) {
+        lex = lex_cfamily;
+        kw = WS(d_kw);
+        ty = WS(d_ty);
+    } else if (strcmp(syntax, "F#") == 0) {
+        lex = lex_haskell;
+        kw = WS(fsharp_kw);
+        ty = WS(fsharp_ty);
+    } else if (strcmp(syntax, "GLSL") == 0) {
+        lex = lex_cfamily;
+        kw = WS(glsl_kw);
+        ty = WS(glsl_ty);
+    } else if (strcmp(syntax, "CoffeeScript") == 0) {
+        lex = lex_python;
+        kw = WS(coffee_kw);
+        ty = WS(coffee_ty);
+    } else if (strcmp(syntax, "Crystal") == 0) {
+        lex = lex_ruby;
+        kw = WS(crystal_kw);
+        ty = WS(crystal_ty);
+    } else if (strcmp(syntax, "Elm") == 0) {
+        lex = lex_haskell;
+        kw = WS(elm_kw);
+        ty = WS(elm_ty);
+    } else if (strcmp(syntax, "Solidity") == 0) {
+        lex = lex_cfamily;
+        kw = WS(solidity_kw);
+        ty = WS(solidity_ty);
+    } else if (strcmp(syntax, "Ada") == 0) {
+        lex = lex_haskell;
+        kw = WS(ada_kw);
+        ty = WS(ada_ty);
+    } else if (strcmp(syntax, "Pascal") == 0) {
+        lex = lex_pascal;
+        kw = WS(pascal_kw);
+        ty = WS(pascal_ty);
+    } else if (strcmp(syntax, "MATLAB") == 0) {
+        lex = lex_matlab;
+        kw = WS(matlab_kw);
+        ty = WS(matlab_ty);
+    } else if (strcmp(syntax, "Protobuf") == 0) {
+        lex = lex_cfamily;
+        kw = WS(protobuf_kw);
+        ty = WS(protobuf_ty);
+    } else if (strcmp(syntax, "Terraform") == 0) {
+        lex = lex_cfamily;
+        kw = WS(terraform_kw);
+        ty = WS(terraform_ty);
+    } else if (strcmp(syntax, "Nix") == 0) {
+        lex = lex_python;
+        kw = WS(nix_kw);
+        ty = WS(nix_ty);
+    } else if (strcmp(syntax, "Tcl") == 0) {
+        lex = lex_shell;
+        kw = WS(tcl_kw);
+    } else if (strcmp(syntax, "Lisp") == 0 || strcmp(syntax, "Racket") == 0) {
+        lex = lex_clojure;
+        kw = WS(lisp_kw);
+        ty = WS(lisp_ty);
+    } else if (strcmp(syntax, "Assembly") == 0) {
+        lex = lex_asm;
+    } else if (strcmp(syntax, "Batch File") == 0) {
+        lex = lex_batch;
+        kw = WS(batch_kw);
+    } else if (strcmp(syntax, "XML") == 0) {
+        lex = lex_html;
+    } else if (strcmp(syntax, "Graphviz") == 0) {
+        lex = lex_cfamily;
+    } else if (strcmp(syntax, "PureScript") == 0) {
+        lex = lex_haskell;
+        kw = WS(haskell_kw);
+        ty = WS(haskell_ty);
+    } else if (strcmp(syntax, "SML") == 0) {
+        lex = lex_haskell;
+        kw = WS(ocaml_kw);
+        ty = WS(ocaml_ty);
     }
     if (lex == NULL)
         return NULL;
@@ -2384,16 +2980,20 @@ void mat_hl_close(struct mat_hl *h)
 void mat_hl_list_languages(void)
 {
     static const char *const langs[] = {
-        "AWK",        "Bash",     "C",        "C#",         "C++",
-        "Clojure",    "CSS",      "Dart",     "Diff",       "Dockerfile",
-        "Elixir",     "Erlang",   "Fish",     "Fortran",    "Go",
-        "Groovy",     "Haskell",  "HTML",     "INI",        "Java",
-        "JavaScript", "JSON",     "Julia",    "Kotlin",     "LaTeX",
-        "Lua",        "Makefile", "Markdown", "Nim",        "Objective-C",
-        "OCaml",      "Perl",     "PHP",      "PowerShell", "Python",
-        "R",          "Ruby",     "Rust",     "Scala",      "SCSS",
-        "SQL",        "Swift",    "TOML",     "TypeScript", "YAML",
-        "Zig",        "Zsh",
+        "Ada",        "Assembly", "AWK",         "Bash",     "Batch File",
+        "C",          "C#",       "C++",         "Clojure",  "CoffeeScript",
+        "Crystal",    "CSS",      "D",           "Dart",     "Diff",
+        "Dockerfile", "Elixir",   "Elm",         "Erlang",   "F#",
+        "Fish",       "Fortran",  "GLSL",        "Go",       "Graphviz",
+        "Groovy",     "Haskell",  "HTML",        "INI",      "Java",
+        "JavaScript", "JSON",     "Julia",       "Kotlin",   "LaTeX",
+        "Lisp",       "Lua",      "Makefile",    "Markdown", "MATLAB",
+        "Nim",        "Nix",      "Objective-C", "OCaml",    "Pascal",
+        "Perl",       "PHP",      "PowerShell",  "Protobuf", "PureScript",
+        "Python",     "R",        "Racket",      "Ruby",     "Rust",
+        "Scala",      "SCSS",     "SML",         "Solidity", "SQL",
+        "Swift",      "Tcl",      "Terraform",   "TOML",     "TypeScript",
+        "XML",        "YAML",     "Zig",         "Zsh",
     };
     for (size_t i = 0; i < sizeof langs / sizeof langs[0]; i++)
         printf("%s\n", langs[i]);
