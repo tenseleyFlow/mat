@@ -46,7 +46,6 @@ enum mat_style {
     MAT_S_HEADER_SIZE = 1u << 3, /* "Size: <n> B" */
     MAT_S_RULE = 1u << 4,        /* horizontal rule between files */
     MAT_S_SNIP = 1u << 5,        /* separator between disjoint ranges */
-    MAT_S_CHANGES = 1u << 6,     /* git change markers in the gutter */
 };
 #define MAT_STYLE_FULL                                                         \
     (MAT_S_NUMBERS | MAT_S_GRID | MAT_S_HEADER | MAT_S_HEADER_SIZE |           \
@@ -60,7 +59,7 @@ struct config {
     size_t nfiles;
 
     unsigned xform;     /* OR of enum mat_xform; 0 => fast path eligible */
-    bool unbuffered;    /* -u */
+    bool unbuffered;    /* -u (accepted for POSIX compat; always unbuffered) */
     bool stdout_is_tty; /* isatty(STDOUT_FILENO), cached once */
 
     /* Decorations (Sprint 03). mat is plain cat unless decorations are

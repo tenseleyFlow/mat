@@ -102,6 +102,12 @@ int mat_pipe_write(int fd, const void *buf, size_t n)
         const char *p = (const char *)buf;
         while (n > 0) {
             struct iovec v = {(void *)p, n};
+            /* Without SPLICE_F_GIFT the kernel copies from our buffer into the
+             * pipe, so the caller may reuse the buffer immediately. Using
+             * SPLICE_F_GIFT would transfer page ownership (true zero-copy) but
+             * the cooked path reuses its output buffer via memmove, so gift
+             * mode is not safe here. The copy is still cheaper than write()
+             * because the kernel avoids the user/kernel boundary copy. */
             ssize_t w = vmsplice(fd, &v, 1, 0);
             if (w < 0) {
                 if (errno == EINTR)
