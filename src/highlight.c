@@ -2992,6 +2992,502 @@ static int lex_bibtex(struct mat_hl *h, const unsigned char *d, size_t len,
     return n;
 }
 
+/* ---- Git files (# comments, pick/reword/fixup commands for rebase) ---- */
+
+static int lex_gitcommit(struct mat_hl *h, const unsigned char *d, size_t len,
+                         struct mat_span *out, int cap)
+{
+    (void)h;
+    if (len > 0 && d[0] == '#')
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    return emit(out, cap, 0, 0, len, MT_TEXT);
+}
+
+static const char *const git_rebase_kw[] = {
+    "pick",  "reword", "edit",  "squash", "fixup", "exec",
+    "break", "drop",   "label", "reset",  "merge",
+};
+
+static int lex_gitrebase(struct mat_hl *h, const unsigned char *d, size_t len,
+                         struct mat_span *out, int cap)
+{
+    (void)h;
+    if (len > 0 && d[0] == '#')
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    int n = 0;
+    size_t i = 0;
+    if (is_word(d[0])) {
+        while (i < len && is_word(d[i]))
+            i++;
+        size_t wl = i;
+        enum mat_tok t = MT_TEXT;
+        for (size_t k = 0; k < sizeof git_rebase_kw / sizeof git_rebase_kw[0];
+             k++)
+            if (strlen(git_rebase_kw[k]) == wl &&
+                memcmp(d, git_rebase_kw[k], wl) == 0)
+                t = MT_KEYWORD;
+        n = emit(out, cap, n, 0, wl, t);
+        while (i < len && d[i] == ' ')
+            i++;
+        if (i < len) {
+            size_t hs = i;
+            while (i < len && is_alnum(d[i]))
+                i++;
+            if (i > hs)
+                n = emit(out, cap, n, hs, i - hs, MT_CONSTANT);
+        }
+        if (i < len)
+            n = emit(out, cap, n, i, len - i, MT_TEXT);
+    } else {
+        n = emit(out, cap, n, 0, len, MT_TEXT);
+    }
+    return n;
+}
+
+/* ---- SSH/system config (# comments, Keyword Value) ---- */
+
+static int lex_sshconfig(struct mat_hl *h, const unsigned char *d, size_t len,
+                         struct mat_span *out, int cap)
+{
+    (void)h;
+    if (len > 0 && (d[0] == '#' || d[0] == ';'))
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    int n = 0;
+    size_t i = 0;
+    while (i < len && !is_word(d[i]) && d[i] != '#')
+        i++;
+    if (i < len && is_word(d[i])) {
+        size_t s = i;
+        while (i < len && is_word(d[i]))
+            i++;
+        n = emit(out, cap, n, s, i - s, MT_KEYWORD);
+    }
+    while (i < len && (d[i] == ' ' || d[i] == '\t' || d[i] == '='))
+        i++;
+    if (i < len)
+        n = emit(out, cap, n, i, len - i, MT_STRING);
+    return n;
+}
+
+/* ---- /etc files: colon-delimited (passwd, group), whitespace (fstab,
+ *      hosts), crontab ---- */
+
+static int lex_colonfile(struct mat_hl *h, const unsigned char *d, size_t len,
+                         struct mat_span *out, int cap)
+{
+    (void)h;
+    if (len > 0 && d[0] == '#')
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    int n = 0, field = 0;
+    size_t s = 0;
+    for (size_t i = 0; i <= len; i++) {
+        if (i == len || d[i] == ':') {
+            enum mat_tok t = (field == 0) ? MT_KEYWORD : MT_TEXT;
+            if (i > s)
+                n = emit(out, cap, n, s, i - s, t);
+            if (i < len)
+                n = emit(out, cap, n, i, 1, MT_OPERATOR);
+            s = i + 1;
+            field++;
+        }
+    }
+    return n;
+}
+
+/* ---- Strace output: syscall(args) = result ---- */
+
+static int lex_strace(struct mat_hl *h, const unsigned char *d, size_t len,
+                      struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+        i++;
+    if (i > 0 && i < len && d[i] == '(')
+        n = emit(out, cap, n, 0, i, MT_FUNCTION);
+    else if (i > 0)
+        n = emit(out, cap, n, 0, i, MT_TEXT);
+    while (i < len) {
+        size_t s = i;
+        if (d[i] == '"') {
+            i++;
+            while (i < len) {
+                if (d[i] == '\\' && i + 1 < len) {
+                    i += 2;
+                    continue;
+                }
+                if (d[i] == '"') {
+                    i++;
+                    break;
+                }
+                i++;
+            }
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (d[i] == '=' && i + 1 < len && d[i + 1] == ' ') {
+            n = emit(out, cap, n, i, 1, MT_OPERATOR);
+            i++;
+        } else if (is_digit(d[i]) ||
+                   (d[i] == '-' && i + 1 < len && is_digit(d[i + 1])) ||
+                   (d[i] == '0' && i + 1 < len && d[i + 1] == 'x')) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '.'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Log/syslog (timestamp + level coloring) ---- */
+
+static int lex_log(struct mat_hl *h, const unsigned char *d, size_t len,
+                   struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len &&
+           (is_digit(d[i]) || d[i] == '-' || d[i] == ':' || d[i] == '.' ||
+            d[i] == 'T' || d[i] == 'Z' || d[i] == '+'))
+        i++;
+    if (i > 4)
+        n = emit(out, cap, n, 0, i, MT_NUMBER);
+    while (i < len) {
+        size_t s = i;
+        if (is_word(d[i])) {
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if ((wl == 5 && ci_match("ERROR", (const char *)d + s, 5)) ||
+                (wl == 5 && ci_match("FATAL", (const char *)d + s, 5)) ||
+                (wl == 4 && ci_match("FAIL", (const char *)d + s, 4)) ||
+                (wl == 8 && ci_match("CRITICAL", (const char *)d + s, 8)))
+                t = MT_KEYWORD;
+            else if ((wl == 4 && ci_match("WARN", (const char *)d + s, 4)) ||
+                     (wl == 7 && ci_match("WARNING", (const char *)d + s, 7)))
+                t = MT_TYPE;
+            else if ((wl == 4 && ci_match("INFO", (const char *)d + s, 4)))
+                t = MT_FUNCTION;
+            else if ((wl == 5 && ci_match("DEBUG", (const char *)d + s, 5)) ||
+                     (wl == 5 && ci_match("TRACE", (const char *)d + s, 5)))
+                t = MT_COMMENT;
+            n = emit(out, cap, n, s, wl, t);
+        } else if (d[i] == '"') {
+            i++;
+            while (i < len && d[i] != '"')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Todo.txt (x completed, (A) priority, +project, @context) ---- */
+
+static int lex_todotxt(struct mat_hl *h, const unsigned char *d, size_t len,
+                       struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    if (len >= 2 && d[0] == 'x' && d[1] == ' ')
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    size_t i = 0;
+    if (len >= 3 && d[0] == '(' && d[2] == ')') {
+        n = emit(out, cap, n, 0, 3, MT_KEYWORD);
+        i = 3;
+    }
+    while (i < len) {
+        size_t s = i;
+        if (d[i] == '+' || d[i] == '@') {
+            i++;
+            while (i < len && !is_digit(d[i]) && d[i] != ' ' && d[i] != '\t')
+                i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_' || d[i] == '-'))
+                i++;
+            n = emit(out, cap, n, s, i - s,
+                     d[s] == '+' ? MT_FUNCTION : MT_PREPROC);
+        } else if (is_digit(d[i]) && (i == 0 || d[i - 1] == ' ') &&
+                   i + 10 <= len && d[i + 4] == '-') {
+            while (i < len && (is_digit(d[i]) || d[i] == '-'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- VimHelp (*tags*, |links|, > code) ---- */
+
+static int lex_vimhelp(struct mat_hl *h, const unsigned char *d, size_t len,
+                       struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    if (len > 0 && d[0] == '>') {
+        n = emit(out, cap, n, 0, len, MT_STRING);
+        return n;
+    }
+    while (i < len) {
+        size_t s = i;
+        if (d[i] == '*') {
+            i++;
+            while (i < len && d[i] != '*' && d[i] != ' ')
+                i++;
+            if (i < len && d[i] == '*')
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_KEYWORD);
+        } else if (d[i] == '|') {
+            i++;
+            while (i < len && d[i] != '|' && d[i] != ' ')
+                i++;
+            if (i < len && d[i] == '|')
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_FUNCTION);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Verilog/SystemVerilog (C-family with HDL keywords) ---- */
+
+static const char *const verilog_kw[] = {
+    "always",      "and",         "assign",    "automatic",    "begin",
+    "buf",         "case",        "casex",     "casez",        "default",
+    "defparam",    "disable",     "else",      "end",          "endcase",
+    "endfunction", "endgenerate", "endmodule", "endprimitive", "endspecify",
+    "endtable",    "endtask",     "event",     "for",          "forever",
+    "fork",        "function",    "generate",  "genvar",       "if",
+    "initial",     "inout",       "input",     "join",         "localparam",
+    "macromodule", "module",      "nand",      "negedge",      "nor",
+    "not",         "or",          "output",    "parameter",    "posedge",
+    "primitive",   "reg",         "repeat",    "specify",      "table",
+    "task",        "while",       "wire",      "xnor",         "xor",
+};
+static const char *const verilog_ty[] = {
+    "integer", "real",  "realtime", "time", "supply0", "supply1", "tri",
+    "triand",  "trior", "tri0",     "tri1", "wand",    "wor",
+};
+static const char *const sv_kw[] = {
+    "always",      "always_comb", "always_ff",    "always_latch", "and",
+    "assert",      "assign",      "automatic",    "begin",        "break",
+    "case",        "class",       "clocking",     "constraint",   "continue",
+    "covergroup",  "coverpoint",  "cross",        "default",      "do",
+    "else",        "end",         "endcase",      "endclass",     "endclocking",
+    "endfunction", "endgenerate", "endinterface", "endmodule",    "endpackage",
+    "endproperty", "endsequence", "endtask",      "enum",         "extends",
+    "extern",      "final",       "for",          "foreach",      "forever",
+    "fork",        "function",    "generate",     "if",           "import",
+    "initial",     "input",       "interface",    "join",         "local",
+    "localparam",  "module",      "new",          "output",       "package",
+    "parameter",   "posedge",     "negedge",      "priority",     "program",
+    "property",    "protected",   "pure",         "rand",         "ref",
+    "repeat",      "return",      "sequence",     "static",       "struct",
+    "super",       "task",        "this",         "typedef",      "union",
+    "unique",      "var",         "virtual",      "void",         "while",
+    "wire",        "with",
+};
+static const char *const sv_ty[] = {
+    "bit",      "byte", "int",      "integer",   "logic",  "longint", "real",
+    "realtime", "reg",  "shortint", "shortreal", "string", "time",    "chandle",
+};
+
+/* ---- Crontab (timing fields + command) ---- */
+
+static int lex_crontab(struct mat_hl *h, const unsigned char *d, size_t len,
+                       struct mat_span *out, int cap)
+{
+    (void)h;
+    if (len > 0 && d[0] == '#')
+        return emit(out, cap, 0, 0, len, MT_COMMENT);
+    int n = 0;
+    size_t i = 0;
+    int field = 0;
+    while (i < len && field < 5) {
+        while (i < len && (d[i] == ' ' || d[i] == '\t'))
+            i++;
+        size_t s = i;
+        while (i < len && d[i] != ' ' && d[i] != '\t')
+            i++;
+        if (i > s)
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        field++;
+    }
+    while (i < len && (d[i] == ' ' || d[i] == '\t'))
+        i++;
+    if (i < len)
+        n = emit(out, cap, n, i, len - i, MT_TEXT);
+    return n;
+}
+
+/* ---- HTTP Request/Response (METHOD URL, Header: value) ---- */
+
+static int lex_http(struct mat_hl *h, const unsigned char *d, size_t len,
+                    struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    if (len >= 4 && (memcmp(d, "GET ", 4) == 0 || memcmp(d, "PUT ", 4) == 0 ||
+                     memcmp(d, "POST", 4) == 0 || memcmp(d, "HEAD", 4) == 0 ||
+                     memcmp(d, "DELE", 4) == 0 || memcmp(d, "PATC", 4) == 0 ||
+                     memcmp(d, "OPTI", 4) == 0 || memcmp(d, "HTTP", 4) == 0)) {
+        while (i < len && d[i] != ' ' && d[i] != '\t')
+            i++;
+        n = emit(out, cap, n, 0, i, MT_KEYWORD);
+        if (i < len)
+            n = emit(out, cap, n, i, len - i, MT_TEXT);
+        return n;
+    }
+    while (i < len && d[i] != ':' && d[i] != ' ')
+        i++;
+    if (i < len && d[i] == ':') {
+        n = emit(out, cap, n, 0, i, MT_TYPE);
+        n = emit(out, cap, n, i, 1, MT_OPERATOR);
+        if (i + 1 < len)
+            n = emit(out, cap, n, i + 1, len - i - 1, MT_STRING);
+        return n;
+    }
+    return emit(out, cap, 0, 0, len, MT_TEXT);
+}
+
+/* ---- Ninja build (# comments, rule/build keywords) ---- */
+
+static const char *const ninja_kw[] = {
+    "build", "default", "include", "pool", "rule", "subninja",
+};
+
+/* ---- NSIS (; or # comments, !directives, Section) ---- */
+
+static const char *const nsis_kw[] = {
+    "Section",
+    "SectionEnd",
+    "Function",
+    "FunctionEnd",
+    "Goto",
+    "Call",
+    "Quit",
+    "Return",
+    "MessageBox",
+    "DetailPrint",
+    "SetOutPath",
+    "File",
+    "CreateDirectory",
+    "Delete",
+    "RMDir",
+    "ExecWait",
+    "Exec",
+    "StrCpy",
+    "StrCmp",
+    "IntCmp",
+    "IfErrors",
+    "ClearErrors",
+    "Var",
+};
+
+/* ---- JQ (# comments, .field, pipes) ---- */
+
+static int lex_jq(struct mat_hl *h, const unsigned char *d, size_t len,
+                  struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '#') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '"') {
+            i++;
+            while (i < len) {
+                if (d[i] == '\\' && i + 1 < len) {
+                    i += 2;
+                    continue;
+                }
+                if (d[i] == '"') {
+                    i++;
+                    break;
+                }
+                i++;
+            }
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (c == '.') {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_FUNCTION);
+        } else if (c == '|') {
+            n = emit(out, cap, n, s, 1, MT_OPERATOR);
+            i++;
+        } else if (is_digit(c)) {
+            i++;
+            while (i < len && (is_digit(d[i]) || d[i] == '.'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if ((wl == 2 && memcmp(d + s, "if", 2) == 0) ||
+                (wl == 4 && memcmp(d + s, "then", 4) == 0) ||
+                (wl == 4 && memcmp(d + s, "else", 4) == 0) ||
+                (wl == 3 && memcmp(d + s, "end", 3) == 0) ||
+                (wl == 3 && memcmp(d + s, "def", 3) == 0) ||
+                (wl == 2 && memcmp(d + s, "as", 2) == 0) ||
+                (wl == 3 && memcmp(d + s, "try", 3) == 0) ||
+                (wl == 5 && memcmp(d + s, "catch", 5) == 0) ||
+                (wl == 6 && memcmp(d + s, "reduce", 6) == 0) ||
+                (wl == 7 && memcmp(d + s, "foreach", 7) == 0) ||
+                (wl == 6 && memcmp(d + s, "import", 6) == 0))
+                t = MT_KEYWORD;
+            else if ((wl == 4 && memcmp(d + s, "null", 4) == 0) ||
+                     (wl == 4 && memcmp(d + s, "true", 4) == 0) ||
+                     (wl == 5 && memcmp(d + s, "false", 5) == 0))
+                t = MT_CONSTANT;
+            n = emit(out, cap, n, s, wl, t);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Literate Haskell (> prefixed code lines) ---- */
+
+static int lex_lhaskell(struct mat_hl *h, const unsigned char *d, size_t len,
+                        struct mat_span *out, int cap)
+{
+    if (len >= 2 && d[0] == '>' && d[1] == ' ') {
+        int n = emit(out, cap, 0, 0, 2, MT_OPERATOR);
+        struct mat_span sub[256];
+        int sn = lex_haskell(h, d + 2, len - 2, sub, 256);
+        for (int i = 0; i < sn && n < cap; i++) {
+            out[n] = sub[i];
+            out[n].start += 2;
+            n++;
+        }
+        return n;
+    }
+    return emit(out, cap, 0, 0, len, MT_COMMENT);
+}
+
 /* ---- dispatch ---- */
 
 struct mat_hl *mat_hl_open(const char *syntax)
@@ -3302,6 +3798,153 @@ struct mat_hl *mat_hl_open(const char *syntax)
                strcmp(syntax, "orgmode") == 0) {
         lex = lex_markdown;
     }
+    /* Group 1: aliases of languages we already handle. */
+    else if (strcmp(syntax, "Assembly (x86_64)") == 0 ||
+             strcmp(syntax, "ARM Assembly") == 0) {
+        lex = lex_asm;
+    } else if (strcmp(syntax, "Bourne Again Shell (bash)") == 0) {
+        lex = lex_shell;
+        kw = WS(sh_kw);
+    } else if (strcmp(syntax, "AsciiDoc (Asciidoctor)") == 0) {
+        lex = lex_markdown;
+    } else if (strcmp(syntax, "Graphviz (DOT)") == 0) {
+        lex = lex_cfamily;
+    } else if (strcmp(syntax, "Groff/troff") == 0) {
+        lex = lex_groff;
+    } else if (strcmp(syntax, "Vue Component") == 0) {
+        lex = lex_html;
+    } else if (strcmp(syntax, "Protocol Buffer (TEXT)") == 0) {
+        lex = lex_cfamily;
+        kw = WS(protobuf_kw);
+        ty = WS(protobuf_ty);
+    } else if (strcmp(syntax, "JavaScript (Babel)") == 0 ||
+               strcmp(syntax, "JavaScript (Rails)") == 0) {
+        lex = lex_cfamily;
+        kw = WS(js_kw);
+        ty = WS(js_ty);
+    } else if (strcmp(syntax, "Ruby on Rails") == 0 ||
+               strcmp(syntax, "Ruby Haml") == 0 ||
+               strcmp(syntax, "Ruby Slim") == 0) {
+        lex = lex_ruby;
+        kw = WS(ruby_kw);
+        ty = WS(ruby_ty);
+    } else if (strcmp(syntax, "SQL (Rails)") == 0) {
+        lex = lex_sql;
+        kw = WS(sql_kw);
+        ty = WS(sql_ty);
+    } else if (strcmp(syntax, "TeX") == 0) {
+        lex = lex_latex;
+    }
+    /* Group 3: Git-related files. */
+    else if (strcmp(syntax, "Git Commit") == 0 ||
+             strcmp(syntax, "Git Attributes") == 0 ||
+             strcmp(syntax, "Git Ignore") == 0 ||
+             strcmp(syntax, "Git Mailmap") == 0 ||
+             strcmp(syntax, "Git Link") == 0 ||
+             strcmp(syntax, "Git Log") == 0) {
+        lex = lex_gitcommit;
+    } else if (strcmp(syntax, "Git Config") == 0) {
+        lex = lex_ini;
+    } else if (strcmp(syntax, "Git Rebase Todo") == 0) {
+        lex = lex_gitrebase;
+    }
+    /* Group 4: System config files. */
+    else if (strcmp(syntax, "SSH Config") == 0 ||
+             strcmp(syntax, "SSHD Config") == 0 ||
+             strcmp(syntax, "Authorized Keys") == 0 ||
+             strcmp(syntax, "Known Hosts") == 0 ||
+             strcmp(syntax, "hosts") == 0 || strcmp(syntax, "resolv") == 0) {
+        lex = lex_sshconfig;
+    } else if (strcmp(syntax, "fstab") == 0) {
+        lex = lex_sshconfig;
+    } else if (strcmp(syntax, "passwd") == 0 || strcmp(syntax, "group") == 0) {
+        lex = lex_colonfile;
+    } else if (strcmp(syntax, "Crontab") == 0) {
+        lex = lex_crontab;
+    } else if (strcmp(syntax, "CpuInfo") == 0 ||
+               strcmp(syntax, "MemInfo") == 0) {
+        lex = lex_sshconfig;
+    }
+    /* Group 5: Niche languages/formats. */
+    else if (strcmp(syntax, "Verilog") == 0) {
+        lex = lex_cfamily;
+        kw = WS(verilog_kw);
+        ty = WS(verilog_ty);
+    } else if (strcmp(syntax, "SystemVerilog") == 0) {
+        lex = lex_cfamily;
+        kw = WS(sv_kw);
+        ty = WS(sv_ty);
+    } else if (strcmp(syntax, "Strace") == 0) {
+        lex = lex_strace;
+    } else if (strcmp(syntax, "log") == 0 || strcmp(syntax, "syslog") == 0) {
+        lex = lex_log;
+    } else if (strcmp(syntax, "Todo.txt") == 0) {
+        lex = lex_todotxt;
+    } else if (strcmp(syntax, "VimHelp") == 0) {
+        lex = lex_vimhelp;
+    } else if (strcmp(syntax, "HTTP Request and Response") == 0) {
+        lex = lex_http;
+    } else if (strcmp(syntax, "Ninja") == 0) {
+        lex = lex_python;
+        kw = WS(ninja_kw);
+    } else if (strcmp(syntax, "NSIS") == 0) {
+        lex = lex_perish;
+        kw = WS(nsis_kw);
+    } else if (strcmp(syntax, "JQ") == 0) {
+        lex = lex_jq;
+    } else if (strcmp(syntax, "Literate Haskell") == 0) {
+        lex = lex_lhaskell;
+        kw = WS(haskell_kw);
+        ty = WS(haskell_ty);
+    } else if (strcmp(syntax, "LiveScript") == 0) {
+        lex = lex_python;
+        kw = WS(coffee_kw);
+        ty = WS(coffee_ty);
+    } else if (strcmp(syntax, "Cabal") == 0) {
+        lex = lex_sshconfig;
+    } else if (strcmp(syntax, "CMakeCache") == 0 ||
+               strcmp(syntax, "CMake C Header") == 0 ||
+               strcmp(syntax, "CMake C++ Header") == 0) {
+        lex = lex_python;
+        kw = WS(cmake_kw);
+    } else if (strcmp(syntax, "CFML") == 0) {
+        lex = lex_html;
+    } else if (strcmp(syntax, "OCamllex") == 0 ||
+               strcmp(syntax, "OCamlyacc") == 0) {
+        lex = lex_haskell;
+        kw = WS(ocaml_kw);
+        ty = WS(ocaml_ty);
+    } else if (strcmp(syntax, "Rd (R Documentation)") == 0) {
+        lex = lex_latex;
+    } else if (strcmp(syntax, "Robot Framework") == 0) {
+        lex = lex_python;
+    } else if (strcmp(syntax, "Salt State (SLS)") == 0) {
+        lex = lex_yaml;
+    } else if (strcmp(syntax, "Textile") == 0) {
+        lex = lex_markdown;
+    } else if (strcmp(syntax, "Email") == 0) {
+        lex = lex_http;
+    } else if (strcmp(syntax, "Comma Separated Values") == 0 ||
+               strcmp(syntax, "CSV") == 0) {
+        lex = lex_colonfile;
+    } else if (strcmp(syntax, "varlink") == 0) {
+        lex = lex_cfamily;
+    } else if (strcmp(syntax, "Regular Expression") == 0) {
+        lex = lex_cfamily;
+    }
+    /* Group 2: HTML template variants. */
+    else if (strcmp(syntax, "HTML (ASP)") == 0 ||
+             strcmp(syntax, "HTML (EEx)") == 0 ||
+             strcmp(syntax, "HTML (Erlang)") == 0 ||
+             strcmp(syntax, "HTML (Jinja2)") == 0 ||
+             strcmp(syntax, "HTML (Rails)") == 0 ||
+             strcmp(syntax, "HTML (Tcl)") == 0 ||
+             strcmp(syntax, "HTML (Twig)") == 0 ||
+             strcmp(syntax, "Java Server Page (JSP)") == 0 ||
+             strcmp(syntax, "ASP") == 0 ||
+             strcmp(syntax, "NAnt Build File") == 0) {
+        lex = lex_html;
+    }
     if (lex == NULL)
         return NULL;
     struct mat_hl *h = calloc(1, sizeof *h);
@@ -3416,6 +4059,9 @@ void mat_hl_list_languages(void)
         "TypeScript",
         "TypeScriptReact",
         "VimL",
+        "Verilog",
+        "VimHelp",
+        "VimL",
         "Vue",
         "Vyper",
         "WGSL",
@@ -3423,6 +4069,32 @@ void mat_hl_list_languages(void)
         "YAML",
         "Zig",
         "Zsh",
+        "Cabal",
+        "CFML",
+        "CMakeCache",
+        "Crontab",
+        "CSV",
+        "Email",
+        "Git Commit",
+        "Git Config",
+        "Git Rebase Todo",
+        "HTTP",
+        "JQ",
+        "Literate Haskell",
+        "LiveScript",
+        "log",
+        "Ninja",
+        "NSIS",
+        "OCamllex",
+        "Rd",
+        "Robot Framework",
+        "Salt State",
+        "SSH Config",
+        "Strace",
+        "SystemVerilog",
+        "Textile",
+        "Todo.txt",
+        "varlink",
     };
     for (size_t i = 0; i < sizeof langs / sizeof langs[0]; i++)
         printf("%s\n", langs[i]);
