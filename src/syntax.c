@@ -74,6 +74,14 @@ static const struct kv by_ext[] = {
     {"patch", "Diff"},
     {"csv", "CSV"},
     {"txt", "Plain Text"},
+    {"f", "Fortran"},
+    {"f90", "Fortran"},
+    {"f95", "Fortran"},
+    {"f03", "Fortran"},
+    {"f08", "Fortran"},
+    {"f18", "Fortran"},
+    {"for", "Fortran"},
+    {"fpp", "Fortran"},
 };
 
 /* Shebang interpreter basename → syntax. */
