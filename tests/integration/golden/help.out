@@ -12,5 +12,14 @@ Concatenate FILE(s) to standard output. With no FILE, or when FILE is
   -E            display $ at end of each line
   -T            display TAB as ^I
   -u            (ignored; output is always unbuffered on the fast path)
+
+Decorations (opt-in; piped output stays plain like cat):
+  -p, --pretty         show the full frame (header, grid, numbers)
+      --style=LIST     numbers,grid,header,header-filesize,rule,snip
+                       presets plain,default,full (e.g. full,-grid)
+      --decorations=WHEN  auto|never|always
+      --color=WHEN        auto|never|always
+      --terminal-width=N  columns for the frame
+
       --help    display this help and exit
       --version output version information and exit
