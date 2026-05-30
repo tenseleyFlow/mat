@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format-19
+      - name: Install clang-format (pinned for reproducible formatting)
+        run: pipx install clang-format==19.1.7
       - name: Check formatting
-        run: clang-format-19 --dry-run -Werror src/*.c src/*.h tests/unit/*.c
+        run: clang-format --dry-run -Werror src/*.c src/*.h tests/unit/*.c
 
   build:
     strategy:
