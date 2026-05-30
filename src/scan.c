@@ -102,6 +102,17 @@ mat_scan_nonprint_avx2(const unsigned char *p, const unsigned char *end)
 #define MAT_NEON 1
 #include <arm_neon.h>
 
+/* Narrow 16 match bytes to a bitmask via vshrn + vget_lane, then ctz to find
+ * the first set bit. Avoids the scalar byte-scan on a match. */
+static inline int neon_first_set(uint8x16_t mask)
+{
+    uint8x8_t narrow = vshrn_n_u16(vreinterpretq_u16_u8(mask), 4);
+    uint64_t bits = vget_lane_u64(vreinterpret_u64_u8(narrow), 0);
+    if (bits == 0)
+        return -1;
+    return __builtin_ctzll(bits) / 4;
+}
+
 const unsigned char *mat_scan_newline_neon(const unsigned char *p,
                                            const unsigned char *end)
 {
@@ -109,9 +120,9 @@ const unsigned char *mat_scan_newline_neon(const unsigned char *p,
     for (; p + 16 <= end; p += 16) {
         uint8x16_t eq = vceqq_u8(vld1q_u8(p), nl);
         if (vmaxvq_u8(eq)) {
-            for (int i = 0; i < 16; i++)
-                if (p[i] == '\n')
-                    return p + i;
+            int idx = neon_first_set(eq);
+            if (idx >= 0)
+                return p + idx;
         }
     }
     return mat_scan_newline_scalar(p, end);
@@ -125,9 +136,10 @@ const unsigned char *mat_scan_nonprint_neon(const unsigned char *p,
     for (; p + 16 <= end; p += 16) {
         uint8x16_t s = vqsubq_u8(vsubq_u8(vld1q_u8(p), bias), thr);
         if (vmaxvq_u8(s)) {
-            for (int i = 0; i < 16; i++)
-                if ((unsigned char)(p[i] - 32) > 94)
-                    return p + i;
+            /* s is nonzero at nonprint positions; treat as a match mask */
+            int idx = neon_first_set(s);
+            if (idx >= 0)
+                return p + idx;
         }
     }
     return mat_scan_nonprint_scalar(p, end);
