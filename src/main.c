@@ -16,6 +16,7 @@
 #include "highlight.h"
 #include "input.h"
 #include "interactive.h"
+#include "parallel.h"
 #include "matpager.h"
 #include "rangeprint.h"
 #include "scan.h"
@@ -186,7 +187,8 @@ int main(int argc, char **argv)
 
     if (deco_on) {
         mat_scan_init();
-        mat_interactive_run(&cfg);
+        if (!mat_parallel_run(&cfg))
+            mat_interactive_run(&cfg);
     } else if (cfg.xform != 0) {
         mat_scan_init(); /* select SIMD byte scanners for this CPU */
         mat_cooked_run(&cfg);

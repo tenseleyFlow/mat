@@ -27,7 +27,7 @@ for t in tests/unit/test_*.c; do
     name=$(basename "$t" .c)
     bin="tests/build/$name"
     # shellcheck disable=SC2086
-    if $CC $TCFLAGS -o "$bin" "$t" "$UNITY/unity.c" $SRC_NOMAIN $PAIGE_SRC; then
+    if $CC $TCFLAGS -lpthread -o "$bin" "$t" "$UNITY/unity.c" $SRC_NOMAIN $PAIGE_SRC; then
         "$bin" || fail=1
     else
         echo "compile $name FAILED"; fail=1
