@@ -2625,6 +2625,12 @@ static const char *const batch_kw[] = {
     "pause", "popd",     "pushd",    "rd",         "rem",   "ren",  "rmdir",
     "set",   "setlocal", "shift",    "start",      "title", "type",
 };
+static const char *const dockerfile_kw[] = {
+    "add",        "arg",        "as",      "cmd",     "copy",
+    "entrypoint", "env",        "expose",  "from",    "healthcheck",
+    "label",      "maintainer", "onbuild", "run",     "shell",
+    "stopsignal", "user",       "volume",  "workdir",
+};
 static const char *const graphql_kw[] = {
     "directive", "enum",      "extend",       "fragment", "implements",
     "input",     "interface", "mutation",     "on",       "query",
@@ -3083,7 +3089,6 @@ static int lex_r(struct mat_hl *h, const unsigned char *d, size_t len,
 static int lex_dockerfile(struct mat_hl *h, const unsigned char *d, size_t len,
                           struct mat_span *out, int cap)
 {
-    (void)h;
     int n = 0;
     size_t i = 0;
     while (i < len) {
@@ -3119,25 +3124,7 @@ static int lex_dockerfile(struct mat_hl *h, const unsigned char *d, size_t len,
                 i++;
             size_t wl = i - s;
             enum mat_tok t = MT_TEXT;
-            if (ci_match("FROM", (const char *)d + s, wl) ||
-                ci_match("RUN", (const char *)d + s, wl) ||
-                ci_match("CMD", (const char *)d + s, wl) ||
-                ci_match("COPY", (const char *)d + s, wl) ||
-                ci_match("ADD", (const char *)d + s, wl) ||
-                ci_match("ENV", (const char *)d + s, wl) ||
-                ci_match("EXPOSE", (const char *)d + s, wl) ||
-                ci_match("ENTRYPOINT", (const char *)d + s, wl) ||
-                ci_match("WORKDIR", (const char *)d + s, wl) ||
-                ci_match("ARG", (const char *)d + s, wl) ||
-                ci_match("LABEL", (const char *)d + s, wl) ||
-                ci_match("VOLUME", (const char *)d + s, wl) ||
-                ci_match("USER", (const char *)d + s, wl) ||
-                ci_match("HEALTHCHECK", (const char *)d + s, wl) ||
-                ci_match("SHELL", (const char *)d + s, wl) ||
-                ci_match("STOPSIGNAL", (const char *)d + s, wl) ||
-                ci_match("ONBUILD", (const char *)d + s, wl) ||
-                ci_match("MAINTAINER", (const char *)d + s, wl) ||
-                ci_match("AS", (const char *)d + s, wl))
+            if (ws_has_ci(&h->keywords, (const char *)d + s, wl))
                 t = MT_KEYWORD;
             n = emit(out, cap, n, s, wl, t);
         } else {
@@ -3612,11 +3599,8 @@ static int lex_gitrebase(struct mat_hl *h, const unsigned char *d, size_t len,
             i++;
         size_t wl = i;
         enum mat_tok t = MT_TEXT;
-        for (size_t k = 0; k < sizeof git_rebase_kw / sizeof git_rebase_kw[0];
-             k++)
-            if (strlen(git_rebase_kw[k]) == wl &&
-                memcmp(d, git_rebase_kw[k], wl) == 0)
-                t = MT_KEYWORD;
+        if (ws_has(&h->keywords, (const char *)d, wl))
+            t = MT_KEYWORD;
         n = emit(out, cap, n, 0, wl, t);
         while (i < len && d[i] == ' ')
             i++;
@@ -4205,6 +4189,7 @@ struct mat_hl *mat_hl_open(const char *syntax)
         ty = WS(julia_ty);
     } else if (strcmp(syntax, "Dockerfile") == 0) {
         lex = lex_dockerfile;
+        kw = WS(dockerfile_kw);
     } else if (strcmp(syntax, "INI") == 0) {
         lex = lex_ini;
     } else if (strcmp(syntax, "LaTeX") == 0) {
@@ -4423,6 +4408,7 @@ struct mat_hl *mat_hl_open(const char *syntax)
         lex = lex_ini;
     } else if (strcmp(syntax, "Git Rebase Todo") == 0) {
         lex = lex_gitrebase;
+        kw = WS(git_rebase_kw);
     }
     /* Group 4: System config files. */
     else if (strcmp(syntax, "SSH Config") == 0 ||
