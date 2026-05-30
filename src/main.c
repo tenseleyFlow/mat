@@ -12,6 +12,7 @@
 #include "cooked.h"
 #include "err.h"
 #include "fastpath.h"
+#include "interactive.h"
 #include "scan.h"
 
 #include <stdlib.h>
@@ -56,9 +57,22 @@ int main(int argc, char **argv)
 
     cfg.stdout_is_tty = isatty(STDOUT_FILENO) == 1;
 
-    /* The split: transforms take the cooked path, otherwise the zero-copy
-     * fast path. (TTY decorations arrive in Sprint 03.) */
-    if (cfg.xform != 0) {
+    /* Decorations are opt-in: render the frame only when explicitly requested
+     * (--decorations=always / --pretty, or --style on a TTY). Otherwise mat is
+     * plain cat: cooked path for transforms, zero-copy fast path for raw. */
+    bool deco_on;
+    if (cfg.decorations == MAT_WHEN_ALWAYS)
+        deco_on = true;
+    else if (cfg.decorations == MAT_WHEN_NEVER)
+        deco_on = false;
+    else
+        deco_on = cfg.style_given && cfg.stdout_is_tty;
+
+    if (deco_on) {
+        cfg.style = cfg.style_given ? cfg.style : MAT_STYLE_DEFAULT;
+        mat_scan_init();
+        mat_interactive_run(&cfg);
+    } else if (cfg.xform != 0) {
         mat_scan_init(); /* select SIMD byte scanners for this CPU */
         mat_cooked_run(&cfg);
     } else {
