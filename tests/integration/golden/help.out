@@ -15,6 +15,7 @@ Concatenate FILE(s) to standard output. With no FILE, or when FILE is
 
 Decorations (opt-in; piped output stays plain like cat):
   -p, --pretty         show the full frame (header, grid, numbers)
+  -S, --chop-long-lines  do not wrap (same as --wrap=never)
       --style=LIST     numbers,grid,header,header-filesize,rule,snip
                        presets plain,default,full (e.g. full,-grid)
       --decorations=WHEN  auto|never|always
@@ -22,6 +23,13 @@ Decorations (opt-in; piped output stays plain like cat):
       --wrap=MODE         auto|never|character|word
       --tabs=N            expand tabs to N columns (0 = off)
       --terminal-width=N  columns for the frame
+
+Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
+$MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
+      --no-config              ignore config files
+      --config-file            print the config file path
+      --config-dir             print the config directory
+      --generate-config-file   print a config template
 
       --help    display this help and exit
       --version output version information and exit

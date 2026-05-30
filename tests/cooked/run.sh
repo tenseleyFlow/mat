@@ -9,6 +9,7 @@
 #
 # Regenerate goldens with: sh tests/cooked/run.sh --update
 set -u
+export MAT_NO_CONFIG=1  # hermetic: ignore any developer config
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 MAT=${MAT:-$ROOT/mat}

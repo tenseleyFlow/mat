@@ -1,6 +1,7 @@
 #!/bin/sh
 # run.sh — Sprint 00 test orchestrator: unit (Unity) + integration + parity.
 set -u
+export MAT_NO_CONFIG=1  # hermetic: ignore any developer config
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT" || exit 1
@@ -39,6 +40,9 @@ MAT="$MAT" sh tests/cooked/run.sh || fail=1
 
 echo "== decoration goldens =="
 MAT="$MAT" sh tests/decorations/run.sh || fail=1
+
+echo "== config precedence =="
+MAT="$MAT" sh tests/config/run.sh || fail=1
 
 echo "== parity =="
 MAT="$MAT" sh tests/diff/parity.sh || fail=1

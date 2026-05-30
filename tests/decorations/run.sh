@@ -6,6 +6,7 @@
 # hand against bat 0.25 at authoring time; the goldens then assert mat's own
 # output. Regenerate with: sh tests/decorations/run.sh --update
 set -u
+export MAT_NO_CONFIG=1  # hermetic: ignore any developer config
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 MAT=${MAT:-$ROOT/mat}

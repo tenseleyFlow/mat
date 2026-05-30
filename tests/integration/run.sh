@@ -2,6 +2,7 @@
 # run.sh — golden-file integration tests for output that has no `cat` analogue
 # (help, version, usage errors). Run with --update to regenerate goldens.
 set -u
+export MAT_NO_CONFIG=1  # hermetic: ignore any developer config
 
 MAT=${MAT:-./mat}
 G=tests/integration/golden

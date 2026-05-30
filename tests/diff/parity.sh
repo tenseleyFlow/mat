@@ -4,6 +4,7 @@
 # Sprint 00 covers the no-transform matrix. As cooked-path flags land
 # (Sprint 02) add them to the FLAGS loop. Compares stdout AND exit status.
 set -u
+export MAT_NO_CONFIG=1  # hermetic: ignore any developer config
 
 MAT=${MAT:-./mat}
 fail=0
