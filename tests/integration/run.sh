@@ -24,10 +24,8 @@ esac
 ln -sf "$abs" "$scratch/mat"
 MAT="$scratch/mat"
 
-run() { # name -- command...
-    name=$1; shift
-    "$@" > "$scratch/$name.out" 2>"$scratch/$name.err"
-    echo $? > "$scratch/$name.rc"
+check() { # name -- compares captured out/err/rc against goldens
+    name=$1
     cfail=0
     for ext in out err rc; do
         af="$scratch/$name.$ext"; gf="$G/$name.$ext"
@@ -38,6 +36,22 @@ run() { # name -- command...
         fi
     done
     [ "$update" -eq 0 ] && [ "$cfail" -eq 0 ] && echo "ok   - $name"
+}
+
+run() { # name -- command...
+    name=$1; shift
+    "$@" > "$scratch/$name.out" 2>"$scratch/$name.err"
+    echo $? > "$scratch/$name.rc"
+    check "$name"
+}
+
+# Like run, but feeds a file on stdin so decorated output shows a stable
+# "File: STDIN" header instead of the random scratch path.
+run_stdin() { # name infile -- command...
+    name=$1; in=$2; shift 2
+    "$@" < "$in" > "$scratch/$name.out" 2>"$scratch/$name.err"
+    echo $? > "$scratch/$name.rc"
+    check "$name"
 }
 
 run version  "$MAT" --version
@@ -56,6 +70,12 @@ run range_ctx    "$MAT" -r 10::1  "$scratch/lines.txt"
 run range_multi  "$MAT" -r 2:3 -r 8:9 "$scratch/lines.txt"
 run range_single "$MAT" -r 7      "$scratch/lines.txt"
 run range_badarg "$MAT" -r nope   "$scratch/lines.txt"
+
+# Decorated output (--pretty forces the frame even when piped). Fed on stdin so
+# the header is a stable "File: STDIN" rather than the random scratch path.
+run_stdin pretty_plain "$scratch/lines.txt" "$MAT" --pretty --color=never
+run_stdin range_pretty "$scratch/lines.txt" "$MAT" --pretty --color=never -r 3:5
+run_stdin range_snip   "$scratch/lines.txt" "$MAT" --pretty --color=never -r 2:3 -r 8:9
 
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

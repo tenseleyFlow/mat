@@ -11,7 +11,9 @@
 
 #include "config.h"
 
-/* Print the lines selected by cfg->ranges across all inputs to stdout. */
-void mat_rangeprint_run(const struct config *cfg);
+/* Print the lines selected by cfg->ranges across all inputs to stdout. When
+ * `decorated`, wrap them in the bat-style frame (gutter, grid, header, snip
+ * separators between disjoint ranges); otherwise emit raw line bytes. */
+void mat_rangeprint_run(const struct config *cfg, bool decorated);
 
 #endif /* MAT_RANGEPRINT_H */

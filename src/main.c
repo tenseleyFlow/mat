@@ -111,11 +111,11 @@ int main(int argc, char **argv)
         cfg.style = cfg.style_given ? cfg.style : MAT_STYLE_DEFAULT;
 
     /* Line ranges (-r) select which lines print, so they take a line-aware path
-     * regardless of decorations. Plain output for now (decoration of ranged
-     * output is layered on separately); does not page. */
+     * regardless of decorations: decorated output gets the frame, plain output
+     * the raw bytes. Does not page. */
     if (cfg.ranges.n > 0) {
         mat_scan_init();
-        mat_rangeprint_run(&cfg);
+        mat_rangeprint_run(&cfg, deco_on);
         free(files_out);
         return mat_status();
     }

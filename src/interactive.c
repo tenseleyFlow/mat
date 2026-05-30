@@ -1,5 +1,6 @@
 #include "interactive.h"
 #include "err.h"
+#include "frame.h"
 #include "input.h"
 #include "iobuf.h"
 #include "render.h"
@@ -64,10 +65,10 @@ static void ip_str(struct ip *p, const char *s)
     ip_write(p, s, strlen(s));
 }
 
-static void ip_repeat(struct ip *p, const char *s, size_t slen, int count)
+/* sink for render.c / frame.c: emit bytes into the output buffer. */
+static void ip_sink(void *ctx, const char *bytes, size_t len)
 {
-    for (int i = 0; i < count; i++)
-        ip_write(p, s, slen);
+    ip_write((struct ip *)ctx, bytes, len);
 }
 
 /* sink for render.c: emit one visual segment followed by a newline. */
@@ -80,36 +81,12 @@ static void stream_sink(void *ctx, const char *bytes, size_t len)
 
 static void hrule(struct ip *p, const char *junction)
 {
-    if (p->color)
-        ip_str(p, COL_GUTTER);
-    if (p->panel_width > 0) {
-        ip_repeat(p, BX_H, 3, p->panel_width);
-        ip_str(p, junction);
-        int rest = p->term_width - p->panel_width - 1;
-        if (rest > 0)
-            ip_repeat(p, BX_H, 3, rest);
-    } else {
-        ip_repeat(p, BX_H, 3, p->term_width);
-    }
-    if (p->color)
-        ip_str(p, COL_RESET);
-    ip_str(p, "\n");
+    mat_frame_hrule(&p->rc, p->term_width, junction, ip_sink, p);
 }
 
 static void header_line(struct ip *p, const char *label, const char *value)
 {
-    if (p->panel_width > 0) {
-        if (p->color)
-            ip_str(p, COL_GUTTER);
-        ip_repeat(p, " ", 1, p->panel_width);
-        if (p->grid)
-            ip_str(p, BX_V " ");
-        if (p->color)
-            ip_str(p, COL_RESET);
-    }
-    ip_str(p, label);
-    ip_str(p, value);
-    ip_str(p, "\n");
+    mat_frame_header_line(&p->rc, label, value, ip_sink, p);
 }
 
 static void fmt_size(unsigned long long b, char *out, size_t n)

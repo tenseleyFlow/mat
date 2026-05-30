@@ -114,7 +114,9 @@ int mat_page(const struct config *cfg, bool decorated)
     if (ret != 1) {
         char title[1040];
         snprintf(title, sizeof title, "File: %s", is_stdin ? "STDIN" : name);
-        paige_doc doc = {&c, render_cb, title};
+        /* Designated init so added paige_doc fields stay zeroed (and quiet
+         * under -Wmissing-field-initializers as the paige API grows). */
+        paige_doc doc = {.ctx = &c, .render_line = render_cb, .title = title};
         paige_opts opts = {0}; /* we already handled the fits case */
         int r = paige_run(&doc, &opts);
         if (r < 0)
