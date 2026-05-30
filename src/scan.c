@@ -102,15 +102,18 @@ mat_scan_nonprint_avx2(const unsigned char *p, const unsigned char *end)
 #define MAT_NEON 1
 #include <arm_neon.h>
 
-/* Narrow 16 match bytes to a bitmask via vshrn + vget_lane, then ctz to find
- * the first set bit. Avoids the scalar byte-scan on a match. */
-static inline int neon_first_set(uint8x16_t mask)
+/* Find the index of the first nonzero byte in a NEON comparison mask (each
+ * byte is 0xFF on match, 0x00 otherwise). Reinterpret as two u64s and use
+ * ctzll to find the first set bit, then divide by 8 for the byte index. */
+static inline int neon_first_match(uint8x16_t mask)
 {
-    uint8x8_t narrow = vshrn_n_u16(vreinterpretq_u16_u8(mask), 4);
-    uint64_t bits = vget_lane_u64(vreinterpret_u64_u8(narrow), 0);
-    if (bits == 0)
-        return -1;
-    return __builtin_ctzll(bits) / 4;
+    uint64_t lo = vgetq_lane_u64(vreinterpretq_u64_u8(mask), 0);
+    if (lo)
+        return __builtin_ctzll(lo) / 8;
+    uint64_t hi = vgetq_lane_u64(vreinterpretq_u64_u8(mask), 1);
+    if (hi)
+        return 8 + __builtin_ctzll(hi) / 8;
+    return -1;
 }
 
 const unsigned char *mat_scan_newline_neon(const unsigned char *p,
@@ -120,7 +123,7 @@ const unsigned char *mat_scan_newline_neon(const unsigned char *p,
     for (; p + 16 <= end; p += 16) {
         uint8x16_t eq = vceqq_u8(vld1q_u8(p), nl);
         if (vmaxvq_u8(eq)) {
-            int idx = neon_first_set(eq);
+            int idx = neon_first_match(eq);
             if (idx >= 0)
                 return p + idx;
         }
@@ -133,11 +136,13 @@ const unsigned char *mat_scan_nonprint_neon(const unsigned char *p,
 {
     const uint8x16_t bias = vdupq_n_u8(32);
     const uint8x16_t thr = vdupq_n_u8(94);
+    const uint8x16_t zero = vdupq_n_u8(0);
     for (; p + 16 <= end; p += 16) {
         uint8x16_t s = vqsubq_u8(vsubq_u8(vld1q_u8(p), bias), thr);
         if (vmaxvq_u8(s)) {
-            /* s is nonzero at nonprint positions; treat as a match mask */
-            int idx = neon_first_set(s);
+            /* Convert any nonzero byte to 0xFF for neon_first_match */
+            uint8x16_t mask = vcgtq_u8(s, zero);
+            int idx = neon_first_match(mask);
             if (idx >= 0)
                 return p + idx;
         }
