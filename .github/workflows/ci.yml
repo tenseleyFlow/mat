@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [trunk, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-19
+      - name: Check formatting
+        run: clang-format-19 --dry-run -Werror src/*.c src/*.h tests/unit/*.c
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, cc: gcc }
+          - { os: ubuntu-latest, cc: clang }
+          - { os: macos-latest, cc: clang }
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: ./configure
+      - name: Build
+        run: make
+      - name: Test
+        run: make test
+
+  freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            ./configure
+            make
+            make test
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: ./configure
+      - name: Build with ASan/UBSan
+        run: make asan
+      - name: Parity under sanitizers
+        run: MAT="$PWD/mat-asan" sh tests/diff/parity.sh
+      - name: Integration under sanitizers
+        run: MAT="$PWD/mat-asan" sh tests/integration/run.sh
+
+  bench:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install hyperfine + bat
+        run: sudo apt-get update && sudo apt-get install -y hyperfine bat
+      - name: Benchmark vs cat/bat
+        run: sh bench/run.sh
+
+  all-jobs:
+    if: always()
+    needs: [lint, build, freebsd, sanitizers]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all required jobs passed
+        run: |
+          result='${{ join(needs.*.result, ' ') }}'
+          echo "results: $result"
+          for r in $result; do
+            [ "$r" = "success" ] || { echo "a required job failed"; exit 1; }
+          done
+          echo "all required jobs passed"
