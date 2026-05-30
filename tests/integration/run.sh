@@ -140,5 +140,76 @@ run_stdin detect_map "$scratch/detect.in" "$MAT" \
 printf '#!/usr/bin/env python3\n' > "$scratch/shebang.in"
 run_stdin detect_shebang "$scratch/shebang.in" "$MAT" --detect-syntax
 
+# Parallel output: multi-file decorated output must be stable (same output on
+# repeated runs) and contain each file's content in input order.
+printf 'int x;\n' > "$scratch/p1.c"
+printf 'int y;\n' > "$scratch/p2.c"
+printf 'int z;\n' > "$scratch/p3.c"
+"$MAT" --pretty --color=never "$scratch/p1.c" "$scratch/p2.c" "$scratch/p3.c" \
+    > "$scratch/par_run1.out" 2>/dev/null
+"$MAT" --pretty --color=never "$scratch/p1.c" "$scratch/p2.c" "$scratch/p3.c" \
+    > "$scratch/par_run2.out" 2>/dev/null
+par_ok=1
+if ! cmp -s "$scratch/par_run1.out" "$scratch/par_run2.out"; then
+    echo "FAIL - parallel_stable (two runs differ)"; par_ok=0; fail=1
+fi
+if ! grep -q "int x;" "$scratch/par_run1.out" || \
+   ! grep -q "int y;" "$scratch/par_run1.out" || \
+   ! grep -q "int z;" "$scratch/par_run1.out"; then
+    echo "FAIL - parallel_content (missing file content)"; par_ok=0; fail=1
+fi
+# Verify ordering: x before y before z
+xline=$(grep -n "int x;" "$scratch/par_run1.out" | head -1 | cut -d: -f1)
+yline=$(grep -n "int y;" "$scratch/par_run1.out" | head -1 | cut -d: -f1)
+zline=$(grep -n "int z;" "$scratch/par_run1.out" | head -1 | cut -d: -f1)
+if [ "$xline" -lt "$yline" ] && [ "$yline" -lt "$zline" ]; then
+    : # order correct
+else
+    echo "FAIL - parallel_order (files not in input order)"; par_ok=0; fail=1
+fi
+[ "$par_ok" -eq 1 ] && echo "ok   - parallel"
+
+# Streaming ring edge cases (piped = non-seekable).
+echo -n "" | "$MAT" -r -3: > "$scratch/ring_empty.out" 2>/dev/null
+if [ ! -s "$scratch/ring_empty.out" ]; then
+    echo "ok   - ring_empty"
+else
+    echo "FAIL - ring_empty"; fail=1
+fi
+
+echo "one" | "$MAT" -r -1: > "$scratch/ring_single.out" 2>/dev/null
+if [ "$(cat "$scratch/ring_single.out")" = "one" ]; then
+    echo "ok   - ring_single"
+else
+    echo "FAIL - ring_single"; fail=1
+fi
+
+printf 'a\nb\n' | "$MAT" -r -5: > "$scratch/ring_short.out" 2>/dev/null
+expected=$(printf 'a\nb\n')
+if [ "$(cat "$scratch/ring_short.out")" = "$expected" ]; then
+    echo "ok   - ring_short"
+else
+    echo "FAIL - ring_short"; fail=1
+fi
+
+awk 'BEGIN{for(i=1;i<=100;i++)print i}' | "$MAT" -r -3: \
+    > "$scratch/ring_wrap.out" 2>/dev/null
+expected=$(printf '98\n99\n100\n')
+if [ "$(cat "$scratch/ring_wrap.out")" = "$expected" ]; then
+    echo "ok   - ring_wrap"
+else
+    echo "FAIL - ring_wrap"; fail=1
+fi
+
+# Mixed absolute + last-N on a stream.
+awk 'BEGIN{for(i=1;i<=10;i++)print i}' | "$MAT" -r 1:2 -r -1: \
+    > "$scratch/ring_mixed.out" 2>/dev/null
+expected=$(printf '1\n2\n10\n')
+if [ "$(cat "$scratch/ring_mixed.out")" = "$expected" ]; then
+    echo "ok   - ring_mixed"
+else
+    echo "FAIL - ring_mixed"; fail=1
+fi
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
