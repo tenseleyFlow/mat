@@ -24,10 +24,9 @@
  */
 
 /* Per-method outcome. */
-#define R_DONE 1     /* this file is fully handled; go to the next file */
-#define R_FALLBACK 0 /* method not applicable / unsupported; try next method   \
-                      */
-#define R_ABORT (-1) /* fatal stdout write error; stop the whole run */
+#define R_DONE 1     /* file fully handled; go to the next file */
+#define R_FALLBACK 0 /* not applicable here; try the next method */
+#define R_ABORT (-1) /* fatal stdout write error; stop the run */
 
 /* copy_file_range moves up to ~1 GiB per call (GiB-aligned, << SSIZE_MAX). */
 #define MAT_CFR_MAX ((size_t)1 << 30)
