@@ -12,12 +12,12 @@ LDFLAGS =
 HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
        src/iobuf.h src/input.h src/fastpath.h src/cli.h \
        src/counter.h src/expand.h src/cooked.h src/scan.h \
-       src/term.h src/style.h src/interactive.h
+       src/term.h src/style.h src/interactive.h src/width.h
 
 OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
        build/cooked.o build/scan.o build/term.o build/style.o \
-       build/interactive.o
+       build/interactive.o build/width.o
 
 all: mat
 
@@ -76,6 +76,10 @@ build/interactive.o: src/interactive.c $(HDRS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/interactive.c -o build/interactive.o
 
+build/width.o: src/width.c $(HDRS)
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/width.c -o build/width.o
+
 test: mat
 	sh tests/run.sh
 
@@ -92,7 +96,7 @@ asan:
 	$(CC) $(CFLAGS) -fsanitize=address,undefined -g -Isrc -o mat-asan \
 	    src/main.c src/cli.c src/err.c src/iobuf.c src/input.c src/fastpath.c \
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
-	    src/style.c src/interactive.c
+	    src/style.c src/interactive.c src/width.c
 
 install: mat
 	mkdir -p $(PREFIX)/bin

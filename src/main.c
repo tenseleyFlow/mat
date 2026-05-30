@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 
     struct config cfg;
     memset(&cfg, 0, sizeof cfg);
+    cfg.tab_width = -1; /* -1 = use the decorated-mode default (4) */
 
     const char **files_out =
         malloc(sizeof(*files_out) * (size_t)(argc > 0 ? argc : 1));

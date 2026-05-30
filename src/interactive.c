@@ -4,6 +4,7 @@
 #include "iobuf.h"
 #include "scan.h"
 #include "term.h"
+#include "width.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -29,11 +30,16 @@ struct ip {
     bool numbers, grid, header, header_size, rule;
     bool color;
     int term_width;
-    int panel_width; /* line-number field + trailing space, or 0 */
+    int panel_width;   /* line-number field + trailing space, or 0 */
+    int content_width; /* columns available for content after the gutter */
+    int tab_width;     /* 0 = no tab expansion */
+    enum mat_wrap wrap;
     char *buf;
     size_t pos;
     char *pend; /* partial line carried across reads */
     size_t pend_cap, pend_len;
+    char *wbuf; /* tab-expanded line, reused */
+    size_t wbuf_cap, wbuf_len;
     bool failed; /* sticky fatal write error */
 };
 
@@ -96,16 +102,22 @@ static void hrule(struct ip *p, const char *junction)
     ip_str(p, "\n");
 }
 
-/* The gutter prefix for a content line (number + grid separator). */
-static void gutter(struct ip *p, unsigned long n)
+/* The gutter prefix for a content line. On continuation (wrapped) lines the
+ * number is blanked but the column width is preserved so the grid stays
+ * aligned. */
+static void gutter(struct ip *p, unsigned long n, bool continuation)
 {
     if (p->color)
         ip_str(p, COL_GUTTER);
     if (p->numbers) {
-        char num[32];
-        int len = snprintf(num, sizeof num, "%4lu ", n);
-        if (len > 0)
-            ip_write(p, num, (size_t)len);
+        if (continuation) {
+            ip_repeat(p, " ", 1, p->panel_width);
+        } else {
+            char num[32];
+            int len = snprintf(num, sizeof num, "%4lu ", n);
+            if (len > 0)
+                ip_write(p, num, (size_t)len);
+        }
     }
     if (p->grid && p->panel_width > 0)
         ip_str(p, BX_V " ");
@@ -178,11 +190,118 @@ static void pend_append(struct ip *p, const unsigned char *d, size_t n)
     p->pend_len += n;
 }
 
+static void wbuf_append(struct ip *p, const char *d, size_t n)
+{
+    if (p->wbuf_len + n > p->wbuf_cap) {
+        size_t cap = p->wbuf_cap ? p->wbuf_cap * 2 : 8192;
+        while (cap < p->wbuf_len + n)
+            cap *= 2;
+        char *nb = realloc(p->wbuf, cap);
+        if (nb == NULL) {
+            mat_warnx("out of memory");
+            p->failed = true;
+            return;
+        }
+        p->wbuf = nb;
+        p->wbuf_cap = cap;
+    }
+    memcpy(p->wbuf + p->wbuf_len, d, n);
+    p->wbuf_len += n;
+}
+
+/* Expand tabs in [d,len) into p->wbuf, advancing through display columns so
+ * each tab lands on the next tab stop. */
+static void expand_tabs(struct ip *p, const unsigned char *d, size_t len)
+{
+    p->wbuf_len = 0;
+    if (p->tab_width <= 0) {
+        wbuf_append(p, (const char *)d, len);
+        return;
+    }
+    int col = 0;
+    size_t i = 0;
+    while (i < len && !p->failed) {
+        if (d[i] == '\t') {
+            int sp = p->tab_width - (col % p->tab_width);
+            for (int k = 0; k < sp; k++)
+                wbuf_append(p, " ", 1);
+            col += sp;
+            i++;
+        } else if (d[i] < 0x80) {
+            wbuf_append(p, (const char *)d + i, 1);
+            col += 1;
+            i++;
+        } else {
+            uint32_t cp;
+            size_t cl = mat_utf8_decode(d + i, d + len, &cp);
+            wbuf_append(p, (const char *)d + i, cl);
+            col += mat_wcwidth(cp);
+            i += cl;
+        }
+    }
+}
+
+static int run_width(const unsigned char *a, const unsigned char *b)
+{
+    int w = 0;
+    while (a < b) {
+        uint32_t cp;
+        size_t cl = mat_utf8_decode(a, b, &cp);
+        w += mat_wcwidth(cp);
+        a += cl;
+    }
+    return w;
+}
+
+/* Emit one logical line: expand tabs, then wrap into width-sized segments with
+ * a continuation gutter, matching bat's frame. */
 static void emit_line(struct ip *p, unsigned long n, const unsigned char *d,
                       size_t len)
 {
-    gutter(p, n);
-    ip_write(p, (const char *)d, len);
+    expand_tabs(p, d, len);
+    size_t wl = p->wbuf_len;
+
+    if (p->wrap == MAT_WRAP_NEVER || p->content_width <= 0) {
+        gutter(p, n, false);
+        ip_write(p, p->wbuf, wl);
+        ip_str(p, "\n");
+        return;
+    }
+
+    const unsigned char *w = (const unsigned char *)p->wbuf;
+    bool word = (p->wrap == MAT_WRAP_WORD);
+    size_t seg = 0, i = 0, last_ws = 0;
+    bool have_ws = false, first = true;
+    int col = 0;
+    while (i < wl) {
+        uint32_t cp;
+        size_t cl = mat_utf8_decode(w + i, w + wl, &cp);
+        int cw = mat_wcwidth(cp);
+        if (col + cw > p->content_width && i > seg) {
+            size_t brk = i, next = i;
+            if (word && have_ws && last_ws > seg) {
+                brk = last_ws;      /* break at the last space */
+                next = last_ws + 1; /* and drop it */
+            }
+            gutter(p, n, !first);
+            ip_write(p, p->wbuf + seg, brk - seg);
+            ip_str(p, "\n");
+            first = false;
+            seg = next;
+            col = run_width(w + next, w + i);
+            have_ws = false;
+        }
+        if (cp == ' ') {
+            last_ws = i;
+            have_ws = true;
+        }
+        col += cw;
+        i += cl;
+        if (p->failed)
+            return;
+    }
+    gutter(p, n, !first);
+    ip_write(p, p->wbuf + seg, wl - seg);
     ip_str(p, "\n");
 }
 
@@ -253,6 +372,14 @@ void mat_interactive_run(const struct config *cfg)
         p.panel_width = 0;
     }
 
+    p.wrap = cfg->wrap;
+    p.tab_width = cfg->tab_width < 0 ? 4 : cfg->tab_width;
+    /* Content columns after the gutter (numbers field + "│ " when gridded). */
+    int gutter_vis = p.numbers ? (p.panel_width + (p.grid ? 2 : 0)) : 0;
+    p.content_width = p.term_width - gutter_vis;
+    if (p.content_width < 1)
+        p.content_width = 1;
+
     p.buf = malloc(IP_BUFCAP);
     if (p.buf == NULL) {
         mat_warnx("out of memory");
@@ -288,4 +415,5 @@ void mat_interactive_run(const struct config *cfg)
     ip_flush(&p);
     free(p.buf);
     free(p.pend);
+    free(p.wbuf);
 }

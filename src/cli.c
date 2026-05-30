@@ -36,6 +36,8 @@ void mat_print_usage(void)
         "                       presets plain,default,full (e.g. full,-grid)\n"
         "      --decorations=WHEN  auto|never|always\n"
         "      --color=WHEN        auto|never|always\n"
+        "      --wrap=MODE         auto|never|character|word\n"
+        "      --tabs=N            expand tabs to N columns (0 = off)\n"
         "      --terminal-width=N  columns for the frame\n"
         "\n"
         "      --help    display this help and exit\n"
@@ -208,6 +210,39 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                         return -1;
                     }
                     cfg->term_width = (int)w;
+                    continue;
+                }
+                if ((r = match_val(a, "--wrap", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    if (strcmp(val, "auto") == 0)
+                        cfg->wrap = MAT_WRAP_AUTO;
+                    else if (strcmp(val, "never") == 0)
+                        cfg->wrap = MAT_WRAP_NEVER;
+                    else if (strcmp(val, "character") == 0)
+                        cfg->wrap = MAT_WRAP_CHARACTER;
+                    else if (strcmp(val, "word") == 0)
+                        cfg->wrap = MAT_WRAP_WORD;
+                    else {
+                        fprintf(stderr,
+                                "%s: --wrap expects auto|never|"
+                                "character|word\n",
+                                mat_progname);
+                        return -1;
+                    }
+                    continue;
+                }
+                if ((r = match_val(a, "--tabs", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    char *end;
+                    long t = strtol(val, &end, 10);
+                    if (*end != '\0' || t < 0 || t > 64) {
+                        fprintf(stderr, "%s: invalid --tabs '%s'\n",
+                                mat_progname, val);
+                        return -1;
+                    }
+                    cfg->tab_width = (int)t;
                     continue;
                 }
                 fprintf(stderr, "%s: unrecognized option '%s'\n", mat_progname,

@@ -24,6 +24,15 @@ enum mat_xform {
 /* When to colorize / decorate (bat-style tri-states). */
 enum mat_when { MAT_WHEN_AUTO, MAT_WHEN_NEVER, MAT_WHEN_ALWAYS };
 
+/* Long-line handling in the decoration frame. AUTO == CHARACTER (bat default).
+ */
+enum mat_wrap {
+    MAT_WRAP_AUTO,
+    MAT_WRAP_NEVER,
+    MAT_WRAP_CHARACTER,
+    MAT_WRAP_WORD,
+};
+
 /* --style components (the decoration frame). */
 enum mat_style {
     MAT_S_NUMBERS = 1u << 0,     /* line-number gutter */
@@ -52,9 +61,11 @@ struct config {
      * explicitly requested. */
     enum mat_when color;
     enum mat_when decorations;
-    unsigned style;   /* OR of enum mat_style */
-    bool style_given; /* --style was explicitly set */
-    int term_width;   /* explicit columns, or -1 to auto-detect */
+    unsigned style;     /* OR of enum mat_style */
+    bool style_given;   /* --style was explicitly set */
+    int term_width;     /* explicit columns, or <=0 to auto-detect */
+    enum mat_wrap wrap; /* long-line wrapping in the frame */
+    int tab_width;      /* -1 = default (4 in the frame), 0 = no expansion */
 
     /* Early-exit actions. */
     bool show_help;
