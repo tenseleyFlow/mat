@@ -1,6 +1,6 @@
 # Sprint 08 — Highlight-startup benchmark
 
-Host: `FreeBSD 5.15.0 x86_64`  CC: `cc`
+Host: `Linux 5.15.0 x86_64`  CC: `cc`
 
 ## Highlight: mat --pretty vs bat --style=full (23-line C file, --shell=none)
 | Command | Mean [µs] | Min [µs] | Max [µs] | Relative |

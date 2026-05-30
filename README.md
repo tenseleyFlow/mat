@@ -148,7 +148,7 @@ GNU `cat` (verified by 74 parity test cases on every commit).
 
 ## Languages
 
-mat includes hand-written lexers for 131 languages, covering all common
+mat includes hand-written lexers for 130 languages, covering all common
 programming languages, markup formats, config files, and shell scripting
 languages. Run `mat -L` for the full list. A few examples:
 
@@ -226,7 +226,7 @@ bulk throughput because it uses zero-copy kernel calls (`copy_file_range`,
 pager. mat provides the same features. The performance difference comes from the
 highlighting engine: bat loads and deserializes a set of TextMate grammar files
 (~8 ms on first use), while mat's hand-written lexers are compiled into the
-binary and require no loading step. mat covers 131 languages and 45 themes where
+binary and require no loading step. mat covers 130 languages and 45 themes where
 bat covers ~174 languages and ~25 themes. For languages mat does not cover, the
 file renders with the decoration frame but without syntax coloring.
 
