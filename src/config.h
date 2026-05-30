@@ -13,12 +13,12 @@
 
 /* Transform flags — any set bit forces the cooked path (Sprint 02). */
 enum mat_xform {
-    MAT_X_NUMBER       = 1u << 0, /* -n */
-    MAT_X_NUMBER_NB    = 1u << 1, /* -b */
-    MAT_X_SQUEEZE      = 1u << 2, /* -s */
-    MAT_X_SHOW_ENDS    = 1u << 3, /* -e / -E */
-    MAT_X_SHOW_TABS    = 1u << 4, /* -t / -T */
-    MAT_X_SHOW_NONPRINT= 1u << 5, /* -v */
+    MAT_X_NUMBER = 1u << 0,        /* -n */
+    MAT_X_NUMBER_NB = 1u << 1,     /* -b */
+    MAT_X_SQUEEZE = 1u << 2,       /* -s */
+    MAT_X_SHOW_ENDS = 1u << 3,     /* -e / -E */
+    MAT_X_SHOW_TABS = 1u << 4,     /* -t / -T */
+    MAT_X_SHOW_NONPRINT = 1u << 5, /* -v */
 };
 
 struct config {
@@ -26,9 +26,9 @@ struct config {
     const char *const *files;
     size_t nfiles;
 
-    unsigned xform;       /* OR of enum mat_xform; 0 => fast path eligible */
-    bool unbuffered;      /* -u */
-    bool stdout_is_tty;   /* isatty(STDOUT_FILENO), cached once */
+    unsigned xform;     /* OR of enum mat_xform; 0 => fast path eligible */
+    bool unbuffered;    /* -u */
+    bool stdout_is_tty; /* isatty(STDOUT_FILENO), cached once */
 
     /* Early-exit actions. */
     bool show_help;

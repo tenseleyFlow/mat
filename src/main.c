@@ -41,8 +41,16 @@ int main(int argc, char **argv)
         free(files_out);
         return 1;
     }
-    if (cfg.show_help) { mat_print_usage(); free(files_out); return 0; }
-    if (cfg.show_version) { mat_print_version(); free(files_out); return 0; }
+    if (cfg.show_help) {
+        mat_print_usage();
+        free(files_out);
+        return 0;
+    }
+    if (cfg.show_version) {
+        mat_print_version();
+        free(files_out);
+        return 0;
+    }
 
     cfg.stdout_is_tty = isatty(STDOUT_FILENO) == 1;
 
@@ -51,7 +59,8 @@ int main(int argc, char **argv)
         /* Cooked path — Sprint 02. */
         mat_warnx("transform options are not implemented yet (Sprint 02)");
     } else {
-        /* Fast path: plain concatenation. Decorations (TTY) arrive in Sprint 03. */
+        /* Fast path: plain concatenation. Decorations (TTY) arrive in Sprint
+         * 03. */
         mat_fastpath_run(&cfg);
     }
 

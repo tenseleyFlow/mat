@@ -10,7 +10,8 @@
 
 extern const char *mat_progname; /* set once in main from argv[0] */
 
-/* Records failure (sets the sticky error flag) and prints "mat: <ctx>: <strerror>". */
+/* Records failure (sets the sticky error flag) and prints "mat: <ctx>:
+ * <strerror>". */
 void mat_warn(const char *ctx);
 
 /* Like mat_warn but the message is literal (no errno). */

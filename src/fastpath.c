@@ -17,11 +17,11 @@ static int copy_fd(int fd, const char *name, char *buf, size_t bufsz)
         if (n < 0) {
             if (errno == EINTR)
                 continue;
-            mat_warn(name);     /* read error: recoverable, stop this file */
+            mat_warn(name); /* read error: recoverable, stop this file */
             return 0;
         }
         if (n == 0)
-            return 0;           /* EOF */
+            return 0; /* EOF */
         if (MAT_UNLIKELY(mat_full_write(STDOUT_FILENO, buf, (size_t)n) < 0)) {
             mat_warn("stdout"); /* write error: fatal */
             return -1;
@@ -32,7 +32,7 @@ static int copy_fd(int fd, const char *name, char *buf, size_t bufsz)
 void mat_fastpath_run(const struct config *cfg)
 {
     /* Normalize "no operands" to a single stdin pass. */
-    static const char *const stdin_only[] = { "-" };
+    static const char *const stdin_only[] = {"-"};
     const char *const *files = cfg->nfiles ? cfg->files : stdin_only;
     size_t nfiles = cfg->nfiles ? cfg->nfiles : 1;
 

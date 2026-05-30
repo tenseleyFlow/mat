@@ -9,9 +9,9 @@
  * diminishing returns: past ~1 MiB the per-syscall amortization is flat while
  * peak RSS for many-file runs keeps growing (audit 01 §1).
  */
-#define MAT_BUF_MIN  ((size_t)4096)
-#define MAT_BUF_CAP  ((size_t)(1u << 20))
-#define MAT_BUF_DEF  ((size_t)(128u << 10))
+#define MAT_BUF_MIN ((size_t)4096)
+#define MAT_BUF_CAP ((size_t)(1u << 20))
+#define MAT_BUF_DEF ((size_t)(128u << 10))
 
 static size_t page_size(void)
 {
@@ -21,8 +21,10 @@ static size_t page_size(void)
 
 static size_t clamp(size_t v, size_t lo, size_t hi)
 {
-    if (v < lo) return lo;
-    if (v > hi) return hi;
+    if (v < lo)
+        return lo;
+    if (v > hi)
+        return hi;
     return v;
 }
 
