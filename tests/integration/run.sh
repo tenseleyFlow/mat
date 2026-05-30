@@ -45,5 +45,17 @@ run help     "$MAT" --help
 run badopt   "$MAT" -Z
 run badlong  "$MAT" --nope
 
+# Line ranges (-r): no `cat` analogue, so assert exact selected line sets.
+awk 'BEGIN { for (i = 1; i <= 20; i++) print i }' > "$scratch/lines.txt"
+run range_nm     "$MAT" -r 3:5    "$scratch/lines.txt"
+run range_tom    "$MAT" -r :3     "$scratch/lines.txt"
+run range_ton    "$MAT" -r 18:    "$scratch/lines.txt"
+run range_lastn  "$MAT" -r -2:    "$scratch/lines.txt"
+run range_plus   "$MAT" -r 5:+2   "$scratch/lines.txt"
+run range_ctx    "$MAT" -r 10::1  "$scratch/lines.txt"
+run range_multi  "$MAT" -r 2:3 -r 8:9 "$scratch/lines.txt"
+run range_single "$MAT" -r 7      "$scratch/lines.txt"
+run range_badarg "$MAT" -r nope   "$scratch/lines.txt"
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

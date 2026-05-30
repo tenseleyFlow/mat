@@ -22,7 +22,7 @@ OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
        build/cooked.o build/scan.o build/term.o build/style.o \
        build/interactive.o build/width.o build/conf.o build/render.o build/matpager.o \
-       build/range.o build/linesrc.o $(PAIGE_OBJS)
+       build/range.o build/linesrc.o build/rangeprint.o $(PAIGE_OBJS)
 
 all: mat
 
@@ -105,6 +105,10 @@ build/linesrc.o: src/linesrc.c $(HDRS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/linesrc.c -o build/linesrc.o
 
+build/rangeprint.o: src/rangeprint.c $(HDRS)
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/rangeprint.c -o build/rangeprint.o
+
 build/paige_term.o: lib/paige/src/term.c lib/paige/src/term.h lib/paige/include/paige.h
 	@mkdir -p build
 	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/term.c -o build/paige_term.o
@@ -130,7 +134,7 @@ asan:
 	    src/main.c src/cli.c src/err.c src/iobuf.c src/input.c src/fastpath.c \
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
 	    src/style.c src/interactive.c src/width.c src/conf.c src/render.c src/matpager.c \
-	    src/range.c src/linesrc.c \
+	    src/range.c src/linesrc.c src/rangeprint.c \
 	    lib/paige/src/term.c lib/paige/src/pager.c
 
 install: mat

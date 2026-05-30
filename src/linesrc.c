@@ -53,7 +53,15 @@ bool mat_linesrc_line(struct mat_linesrc *s, size_t L, const unsigned char **d,
     if (s->eof_known && L >= s->total)
         return false;
     size_t start = s->off[L];
-    size_t end = (L + 1 < s->noff) ? s->off[L + 1] - 1 : s->size;
+    size_t end;
+    if (L + 1 < s->noff) {
+        end = s->off[L + 1] - 1; /* drop the separating newline */
+    } else {
+        /* last line: trim a trailing newline if the file ended with one */
+        end = s->size;
+        if (end > start && s->data[end - 1] == '\n')
+            end--;
+    }
     *d = (const unsigned char *)s->data + start;
     *len = end > start ? end - start : 0;
     return true;

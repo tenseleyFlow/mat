@@ -15,6 +15,7 @@
 #include "fastpath.h"
 #include "interactive.h"
 #include "matpager.h"
+#include "rangeprint.h"
 #include "scan.h"
 
 #include <stdio.h>
@@ -108,6 +109,16 @@ int main(int argc, char **argv)
 
     if (deco_on)
         cfg.style = cfg.style_given ? cfg.style : MAT_STYLE_DEFAULT;
+
+    /* Line ranges (-r) select which lines print, so they take a line-aware path
+     * regardless of decorations. Plain output for now (decoration of ranged
+     * output is layered on separately); does not page. */
+    if (cfg.ranges.n > 0) {
+        mat_scan_init();
+        mat_rangeprint_run(&cfg);
+        free(files_out);
+        return mat_status();
+    }
 
     /* Paging (bespoke, via lib/paige): only on a terminal, for a single input,
      * and only in decorated mode or when forced — plain `mat file` still dumps
