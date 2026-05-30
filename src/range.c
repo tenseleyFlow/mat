@@ -149,6 +149,34 @@ bool mat_rangeset_contains(const struct mat_rangeset *rs, long line, long total)
     return false;
 }
 
+bool mat_rangeset_abs_contains(const struct mat_rangeset *rs, long line)
+{
+    for (int i = 0; i < rs->n; i++) {
+        const struct mat_range *r = &rs->r[i];
+        if (r->lo_rel)
+            continue;
+        if (line >= r->lo && (r->hi_inf || line <= r->hi))
+            return true;
+    }
+    return false;
+}
+
+bool mat_rangeset_rel_contains(const struct mat_rangeset *rs, long line,
+                               long total)
+{
+    for (int i = 0; i < rs->n; i++) {
+        const struct mat_range *r = &rs->r[i];
+        if (!r->lo_rel)
+            continue;
+        long lo = total - r->lo + 1; /* last N lines */
+        if (lo < 1)
+            lo = 1;
+        if (line >= lo) /* relative ranges are always open to the end */
+            return true;
+    }
+    return false;
+}
+
 long mat_rangeset_max_line(const struct mat_rangeset *rs)
 {
     if (rs->n == 0)

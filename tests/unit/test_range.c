@@ -118,6 +118,25 @@ static void test_empty_selects_all(void)
     TEST_ASSERT_TRUE(mat_rangeset_max_line(&rs) == LONG_MAX);
 }
 
+static void test_abs_rel_split(void)
+{
+    /* mix an absolute range and a last-N range */
+    struct mat_rangeset rs;
+    mat_rangeset_init(&rs);
+    char err[64];
+    TEST_ASSERT_EQUAL_INT(0, mat_range_parse(&rs, "1:3", err, sizeof err));
+    TEST_ASSERT_EQUAL_INT(0, mat_range_parse(&rs, "-2:", err, sizeof err));
+
+    /* absolute side knows 1..3 without a total */
+    TEST_ASSERT_TRUE(mat_rangeset_abs_contains(&rs, 2));
+    TEST_ASSERT_FALSE(mat_rangeset_abs_contains(&rs, 9));
+    /* relative side needs the total: last 2 of 10 == 9,10 */
+    TEST_ASSERT_TRUE(mat_rangeset_rel_contains(&rs, 9, 10));
+    TEST_ASSERT_TRUE(mat_rangeset_rel_contains(&rs, 10, 10));
+    TEST_ASSERT_FALSE(mat_rangeset_rel_contains(&rs, 8, 10));
+    TEST_ASSERT_FALSE(mat_rangeset_rel_contains(&rs, 2, 10)); /* abs, not rel */
+}
+
 static void test_errors(void)
 {
     struct mat_rangeset rs;
@@ -143,6 +162,7 @@ int main(void)
     RUN_TEST(test_single_line);
     RUN_TEST(test_multi_accumulate);
     RUN_TEST(test_empty_selects_all);
+    RUN_TEST(test_abs_rel_split);
     RUN_TEST(test_errors);
     return UNITY_END();
 }

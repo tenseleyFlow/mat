@@ -6,13 +6,19 @@
 #include "linesrc.h"
 #include "range.h"
 #include "render.h"
+#include "scan.h"
 #include "term.h"
 
+#include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define RP_BUFCAP ((size_t)(128 * 1024))
+
+/* ---- buffered stdout ---- */
 
 struct out {
     char *buf;
@@ -49,58 +55,40 @@ static void out_put(struct out *o, const char *d, size_t n)
     o->pos += n;
 }
 
-/* frame.c / chrome sink: raw bytes. */
-static void out_sink(void *ctx, const char *b, size_t n)
+static void out_sink(void *ctx, const char *b, size_t n) /* frame chrome */
 {
     out_put((struct out *)ctx, b, n);
 }
 
-/* render.c sink: one visual segment then a newline. */
-static void seg_sink(void *ctx, const char *b, size_t n)
+static void seg_sink(void *ctx, const char *b,
+                     size_t n) /* one render segment */
 {
     struct out *o = ctx;
     out_put(o, b, n);
     out_put(o, "\n", 1);
 }
 
-/* Resolve the iteration bound and total once per file. A bounded selection
- * stops at its highest line; open-ended or last-N must read to EOF. */
-static long bound_and_total(const struct config *cfg, struct mat_linesrc *src,
-                            long *total)
-{
-    *total = 0;
-    if (cfg->ranges.needs_total)
-        *total = (long)mat_linesrc_total(src);
-    return mat_rangeset_max_line(&cfg->ranges);
-}
+/* ---- the line emitter (shared by the seekable and streaming paths) ---- */
 
-static void print_plain(const struct config *cfg, struct mat_linesrc *src,
-                        struct out *o)
-{
-    long total;
-    long maxl = bound_and_total(cfg, src, &total);
-    for (long L = 1; L <= maxl && !o->failed; L++) {
-        const unsigned char *d;
-        size_t len;
-        if (!mat_linesrc_line(src, (size_t)(L - 1), &d, &len))
-            break;
-        if (!mat_rangeset_contains(&cfg->ranges, L, total))
-            continue;
-        out_put(o, (const char *)d, len);
-        out_put(o, "\n", 1);
-    }
-}
+struct emit {
+    struct out *o;
+    bool decorated;
+    struct mat_render rc; /* set up when decorated */
+    int term_width;
+    const struct mat_rangeset *highlights;
+    long prev; /* last emitted line number, for snip detection */
+};
 
-/* A snip marker shown where the printed ranges are disjoint. */
-static void snip(struct mat_render *rc, int term_width, struct out *o)
+static void emit_setup(struct emit *e, const struct config *cfg, bool decorated,
+                       struct out *o)
 {
-    (void)term_width;
-    mat_frame_header_line(rc, "...", "", out_sink, o);
-}
+    memset(e, 0, sizeof *e);
+    e->o = o;
+    e->decorated = decorated;
+    e->highlights = &cfg->highlights;
+    if (!decorated)
+        return;
 
-static void print_decorated(const struct config *cfg, struct mat_linesrc *src,
-                            const char *name, bool is_stdin, struct out *o)
-{
     bool color;
     if (cfg->color == MAT_WHEN_ALWAYS)
         color = true;
@@ -109,57 +97,249 @@ static void print_decorated(const struct config *cfg, struct mat_linesrc *src,
     else
         color = cfg->stdout_is_tty && !mat_no_color();
 
-    int term_width = mat_term_width(cfg->term_width);
+    int tw = mat_term_width(cfg->term_width);
     bool numbers = (cfg->style & MAT_S_NUMBERS) != 0;
     bool grid = (cfg->style & MAT_S_GRID) != 0;
-    bool header = (cfg->style & MAT_S_HEADER) != 0;
     int panel = numbers ? 5 : 0;
-    if (panel > 0 && term_width < panel + 5) { /* too narrow for a gutter */
+    if (panel > 0 && tw < panel + 5) { /* too narrow for a gutter */
         numbers = false;
         grid = false;
     }
-
-    struct mat_render rc;
     unsigned rstyle = (numbers ? MAT_S_NUMBERS : 0u) | (grid ? MAT_S_GRID : 0u);
     int tab_width = cfg->tab_width < 0 ? 4 : cfg->tab_width;
-    mat_render_init(&rc, rstyle, cfg->wrap, tab_width, color);
+    mat_render_init(&e->rc, rstyle, cfg->wrap, tab_width, color);
+    e->term_width = tw;
+}
 
+static void emit_free(struct emit *e)
+{
+    if (e->decorated)
+        mat_render_free(&e->rc);
+}
+
+static void emit_header(struct emit *e, const struct config *cfg,
+                        const char *name, bool is_stdin)
+{
+    if (!e->decorated)
+        return;
+    bool header = (cfg->style & MAT_S_HEADER) != 0;
     if (header) {
-        if (grid)
-            mat_frame_hrule(&rc, term_width, BX_D, out_sink, o);
-        mat_frame_header_line(&rc, "File: ", is_stdin ? "STDIN" : name,
-                              out_sink, o);
-        if (grid)
-            mat_frame_hrule(&rc, term_width, BX_X, out_sink, o);
-    } else if (grid) {
-        mat_frame_hrule(&rc, term_width, BX_D, out_sink, o);
+        if (e->rc.grid)
+            mat_frame_hrule(&e->rc, e->term_width, BX_D, out_sink, e->o);
+        mat_frame_header_line(&e->rc, "File: ", is_stdin ? "STDIN" : name,
+                              out_sink, e->o);
+        if (e->rc.grid)
+            mat_frame_hrule(&e->rc, e->term_width, BX_X, out_sink, e->o);
+    } else if (e->rc.grid) {
+        mat_frame_hrule(&e->rc, e->term_width, BX_D, out_sink, e->o);
     }
+}
 
-    /* Need the total if either selection or highlighting is end-relative. */
+static void emit_footer(struct emit *e)
+{
+    if (e->decorated && e->rc.grid)
+        mat_frame_hrule(&e->rc, e->term_width, BX_U, out_sink, e->o);
+}
+
+/* Emit one selected line, inserting a snip marker where the printed ranges are
+ * disjoint (decorated output only). */
+static void emit_line(struct emit *e, long L, const unsigned char *d,
+                      size_t len, long total)
+{
+    if (e->decorated) {
+        if (e->prev != 0 && L > e->prev + 1)
+            mat_frame_header_line(&e->rc, "...", "", out_sink, e->o);
+        e->rc.highlight = e->highlights->n > 0 &&
+                          mat_rangeset_contains(e->highlights, L, total);
+        mat_render_line(&e->rc, (unsigned long)L, d, len, e->term_width,
+                        seg_sink, e->o);
+    } else {
+        out_put(e->o, (const char *)d, len);
+        out_put(e->o, "\n", 1);
+    }
+    e->prev = L;
+}
+
+/* ---- seekable path: random access over the mmap'd line index ---- */
+
+static void print_seekable(const struct config *cfg, struct mat_linesrc *src,
+                           struct emit *e)
+{
     long total = 0;
     if (cfg->ranges.needs_total || cfg->highlights.needs_total)
         total = (long)mat_linesrc_total(src);
     long maxl = mat_rangeset_max_line(&cfg->ranges);
-    long prev = 0;
-    for (long L = 1; L <= maxl && !o->failed; L++) {
+    for (long L = 1; L <= maxl && !e->o->failed; L++) {
         const unsigned char *d;
         size_t len;
         if (!mat_linesrc_line(src, (size_t)(L - 1), &d, &len))
             break;
         if (!mat_rangeset_contains(&cfg->ranges, L, total))
             continue;
-        if (prev != 0 && L > prev + 1)
-            snip(&rc, term_width, o);
-        rc.highlight = cfg->highlights.n > 0 &&
-                       mat_rangeset_contains(&cfg->highlights, L, total);
-        mat_render_line(&rc, (unsigned long)L, d, len, term_width, seg_sink, o);
-        prev = L;
+        emit_line(e, L, d, len, total);
+    }
+}
+
+/* ---- streaming path: a ring of the last N lines, no whole-file buffering ----
+ *
+ * For a non-seekable input we can't seek, so a last-N range can't be resolved
+ * until EOF. Absolute/open-ended ranges are emitted as their lines stream past;
+ * a ring of the largest "last N" holds just the tail, which is flushed
+ * (skipping anything already emitted) once the total line count is known. */
+
+struct rslot {
+    char *buf;
+    size_t cap, len;
+    long lineno;
+};
+
+struct ring {
+    struct rslot *slot;
+    int cap, count, head;
+};
+
+static void ring_init(struct ring *r, int cap)
+{
+    r->cap = cap;
+    r->count = 0;
+    r->head = 0;
+    r->slot = cap > 0 ? calloc((size_t)cap, sizeof *r->slot) : NULL;
+}
+
+static void ring_push(struct ring *r, long lineno, const unsigned char *d,
+                      size_t len)
+{
+    if (r->cap == 0 || r->slot == NULL)
+        return;
+    int idx;
+    if (r->count == r->cap) {
+        idx = r->head; /* overwrite the oldest */
+        r->head = (r->head + 1) % r->cap;
+    } else {
+        idx = (r->head + r->count) % r->cap;
+        r->count++;
+    }
+    struct rslot *s = &r->slot[idx];
+    if (s->cap < len) {
+        char *nb = realloc(s->buf, len ? len : 1);
+        if (nb == NULL)
+            return;
+        s->buf = nb;
+        s->cap = len;
+    }
+    memcpy(s->buf, d, len);
+    s->len = len;
+    s->lineno = lineno;
+}
+
+static void ring_free(struct ring *r)
+{
+    for (int i = 0; i < r->cap; i++)
+        free(r->slot[i].buf);
+    free(r->slot);
+}
+
+/* Grow-and-append a partial line carried across read boundaries. */
+static char *pend_append(char *pend, size_t *cap, size_t *plen,
+                         const unsigned char *d, size_t n)
+{
+    if (*plen + n > *cap) {
+        size_t nc = *cap ? *cap * 2 : 8192;
+        while (nc < *plen + n)
+            nc *= 2;
+        char *nb = realloc(pend, nc);
+        if (nb == NULL)
+            return pend; /* drop on OOM; len unchanged */
+        pend = nb;
+        *cap = nc;
+    }
+    memcpy(pend + *plen, d, n);
+    *plen += n;
+    return pend;
+}
+
+static void print_stream(const struct config *cfg, int fd, const char *name,
+                         struct emit *e)
+{
+    long max_line = mat_rangeset_max_line(&cfg->ranges);
+    bool bounded = max_line != LONG_MAX; /* no open-ended or last-N range */
+    struct ring ring;
+    ring_init(&ring, cfg->ranges.max_tail > 0 ? (int)cfg->ranges.max_tail : 0);
+
+    unsigned char rbuf[65536];
+    char *pend = NULL;
+    size_t pend_cap = 0, pend_len = 0;
+    long L = 0;
+    bool done = false;
+
+    while (!done && !e->o->failed) {
+        ssize_t n = read(fd, rbuf, sizeof rbuf);
+        if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            mat_warn(name);
+            break;
+        }
+        if (n == 0)
+            break;
+        const unsigned char *s = rbuf, *end = rbuf + n;
+        while (s < end) {
+            const unsigned char *q = mat_scan_newline(s, end);
+            if (q == end) { /* no newline yet: stash the remainder */
+                pend =
+                    pend_append(pend, &pend_cap, &pend_len, s, (size_t)(q - s));
+                break;
+            }
+            const unsigned char *line;
+            size_t len;
+            if (pend_len > 0) {
+                pend =
+                    pend_append(pend, &pend_cap, &pend_len, s, (size_t)(q - s));
+                line = (const unsigned char *)pend;
+                len = pend_len;
+                pend_len = 0;
+            } else {
+                line = s;
+                len = (size_t)(q - s);
+            }
+            s = q + 1;
+            L++;
+            if (bounded && L > max_line) {
+                done = true;
+                break;
+            }
+            if (mat_rangeset_abs_contains(&cfg->ranges, L))
+                emit_line(e, L, line, len, 0);
+            ring_push(&ring, L, line, len);
+        }
+    }
+    /* A final line with no trailing newline. */
+    if (!done && pend_len > 0 && !e->o->failed) {
+        L++;
+        if (!bounded || L <= max_line) {
+            if (mat_rangeset_abs_contains(&cfg->ranges, L))
+                emit_line(e, L, (const unsigned char *)pend, pend_len, 0);
+            ring_push(&ring, L, (const unsigned char *)pend, pend_len);
+        }
     }
 
-    if (grid)
-        mat_frame_hrule(&rc, term_width, BX_U, out_sink, o);
-    mat_render_free(&rc);
+    /* Flush the tail: last-N lines not already emitted by an absolute range. */
+    if (ring.count > 0 && !e->o->failed) {
+        long total = L;
+        for (int i = 0; i < ring.count && !e->o->failed; i++) {
+            struct rslot *sl = &ring.slot[(ring.head + i) % ring.cap];
+            if (mat_rangeset_rel_contains(&cfg->ranges, sl->lineno, total) &&
+                !mat_rangeset_abs_contains(&cfg->ranges, sl->lineno))
+                emit_line(e, sl->lineno, (const unsigned char *)sl->buf,
+                          sl->len, total);
+        }
+    }
+
+    ring_free(&ring);
+    free(pend);
 }
+
+/* ---- per-file dispatch ---- */
 
 static void print_file(const struct config *cfg, const char *file,
                        bool decorated, struct out *o)
@@ -168,17 +348,28 @@ static void print_file(const struct config *cfg, const char *file,
     int fd = mat_open_input(file, &is_stdin);
     if (fd < 0)
         return;
-    struct mat_linesrc src;
-    if (!mat_linesrc_open(&src, fd)) {
-        mat_warn(is_stdin ? "stdin" : file);
-        mat_close_input(fd, is_stdin, file);
-        return;
+
+    struct stat st;
+    bool seekable = fstat(fd, &st) == 0 && S_ISREG(st.st_mode);
+
+    struct emit e;
+    emit_setup(&e, cfg, decorated, o);
+    emit_header(&e, cfg, file, is_stdin);
+
+    if (seekable) {
+        struct mat_linesrc src;
+        if (mat_linesrc_open(&src, fd)) {
+            print_seekable(cfg, &src, &e);
+            mat_linesrc_free(&src);
+        } else {
+            mat_warn(is_stdin ? "stdin" : file);
+        }
+    } else {
+        print_stream(cfg, fd, is_stdin ? "stdin" : file, &e);
     }
-    if (decorated)
-        print_decorated(cfg, &src, file, is_stdin, o);
-    else
-        print_plain(cfg, &src, o);
-    mat_linesrc_free(&src);
+
+    emit_footer(&e);
+    emit_free(&e);
     mat_close_input(fd, is_stdin, file);
 }
 

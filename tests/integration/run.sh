@@ -54,6 +54,15 @@ run_stdin() { # name infile -- command...
     check "$name"
 }
 
+# Like run_stdin, but pipes the input so the fd is non-seekable, exercising the
+# streaming ring path (last-N without whole-file buffering) instead of mmap.
+run_pipe() { # name infile -- command...
+    name=$1; in=$2; shift 2
+    cat "$in" | "$@" > "$scratch/$name.out" 2>"$scratch/$name.err"
+    echo $? > "$scratch/$name.rc"
+    check "$name"
+}
+
 run version  "$MAT" --version
 run help     "$MAT" --help
 run badopt   "$MAT" -Z
@@ -85,6 +94,12 @@ printf 'a\n\n\n\n\nb\n\n\n\nc\n' > "$scratch/blanks.txt"
 run squeeze_def  "$MAT" -s "$scratch/blanks.txt"
 run squeeze_two  "$MAT" -s --squeeze-limit 2 "$scratch/blanks.txt"
 run squeeze_zero "$MAT" -s --squeeze-limit 0 "$scratch/blanks.txt"
+
+# Streaming ring path (piped = non-seekable): last-N and mixed ranges must
+# match the seekable result without buffering the whole stream.
+run_pipe range_lastn_pipe "$scratch/lines.txt" "$MAT" -r -3:
+run_pipe range_mix_pipe   "$scratch/lines.txt" "$MAT" -r 1:3 -r -2:
+run_pipe range_bound_pipe "$scratch/lines.txt" "$MAT" -r 2:4
 
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

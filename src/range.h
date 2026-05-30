@@ -56,6 +56,16 @@ bool mat_rangeset_contains(const struct mat_rangeset *rs, long line,
                            long total);
 
 /*
+ * Membership split by bound kind, for the streaming printer: `abs` covers the
+ * non-relative ranges (absolute or open-ended, decidable as each line streams
+ * by); `rel` covers the relative "last N" ranges (decidable only once total is
+ * known). A line is selected iff it is in one or the other.
+ */
+bool mat_rangeset_abs_contains(const struct mat_rangeset *rs, long line);
+bool mat_rangeset_rel_contains(const struct mat_rangeset *rs, long line,
+                               long total);
+
+/*
  * Highest absolute line the set can ever select, or LONG_MAX if it is
  * open-ended (N:, -N:) and must be read to EOF. An empty set is unbounded.
  * Lets a bounded selection stop reading early.
