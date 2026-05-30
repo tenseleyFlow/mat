@@ -205,6 +205,245 @@ static const char *const theme_tokyonight[MT_NTOKENS] = {
     [MT_CONSTANT] = "\x1b[38;5;215m",
 };
 
+/* Zenburn: classic low-contrast warm dark theme (Jani Nurminen, 2003).
+ * Hex refs: fg #DCDCCC, bg #3F3F3F, green #7F9F7F, yellow #F0DFAF. */
+static const char *const theme_zenburn[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;179m",  /* #F0DFAF warm yellow */
+    [MT_TYPE] = "\x1b[38;5;116m",     /* #8CD0D3 cyan */
+    [MT_STRING] = "\x1b[38;5;174m",   /* #CC9393 muted red */
+    [MT_NUMBER] = "\x1b[38;5;116m",   /* #8CD0D3 cyan */
+    [MT_COMMENT] = "\x1b[38;5;108m",  /* #7F9F7F green-grey */
+    [MT_FUNCTION] = "\x1b[38;5;223m", /* #EFEF8F light yellow */
+    [MT_OPERATOR] = "\x1b[38;5;179m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;179m",
+    [MT_CONSTANT] = "\x1b[38;5;116m",
+};
+
+/* Tomorrow Night: Chris Kempson's Base16-derived dark theme.
+ * Hex refs: red #CC6666, orange #DE935F, yellow #F0C674, green #B5BD68,
+ * cyan #8ABEB7, blue #81A2BE, purple #B294BB, comment #969896. */
+static const char *const theme_tomorrow_night[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;139m",  /* #B294BB purple */
+    [MT_TYPE] = "\x1b[38;5;179m",     /* #F0C674 yellow */
+    [MT_STRING] = "\x1b[38;5;143m",   /* #B5BD68 green */
+    [MT_NUMBER] = "\x1b[38;5;173m",   /* #DE935F orange */
+    [MT_COMMENT] = "\x1b[38;5;246m",  /* #969896 grey */
+    [MT_FUNCTION] = "\x1b[38;5;110m", /* #81A2BE blue */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #8ABEB7 cyan */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;167m",  /* #CC6666 red */
+    [MT_CONSTANT] = "\x1b[38;5;173m", /* #DE935F orange */
+};
+
+/* Tomorrow: Chris Kempson's Base16 light theme.
+ * Same accent colors, lighter bg/comment. */
+static const char *const theme_tomorrow[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;133m", /* #8959A8 purple */
+    [MT_TYPE] = "\x1b[38;5;136m",    /* #EAB700 yellow-brown */
+    [MT_STRING] = "\x1b[38;5;65m",   /* #718C00 green */
+    [MT_NUMBER] = "\x1b[38;5;166m",  /* #F5871F orange */
+    [MT_COMMENT] = "\x1b[38;5;247m", /* #8E908C grey */
+    [MT_FUNCTION] = "\x1b[38;5;67m", /* #4271AE blue */
+    [MT_OPERATOR] = "\x1b[38;5;30m", /* #3E999F cyan */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;131m", /* #C82829 red */
+    [MT_CONSTANT] = "\x1b[38;5;166m",
+};
+
+/* Material: Google Material Design dark (Mattia Astorino).
+ * Hex refs from material-theme. */
+static const char *const theme_material[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m",  /* #C792EA purple */
+    [MT_TYPE] = "\x1b[38;5;179m",     /* #FFCB6B yellow */
+    [MT_STRING] = "\x1b[38;5;150m",   /* #C3E88D green */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #F78C6C orange */
+    [MT_COMMENT] = "\x1b[38;5;102m",  /* #546E7A grey */
+    [MT_FUNCTION] = "\x1b[38;5;75m",  /* #82AAFF blue */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #89DDFF cyan */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;176m",
+    [MT_CONSTANT] = "\x1b[38;5;209m",
+};
+
+/* Palenight: Material variant with purple tints.
+ * Same accents as Material, slightly shifted. */
+static const char *const theme_palenight[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m",  /* #C792EA */
+    [MT_TYPE] = "\x1b[38;5;179m",     /* #FFCB6B */
+    [MT_STRING] = "\x1b[38;5;150m",   /* #C3E88D */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #F78C6C */
+    [MT_COMMENT] = "\x1b[38;5;60m",   /* #676E95 muted purple-grey */
+    [MT_FUNCTION] = "\x1b[38;5;75m",  /* #82AAFF */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #89DDFF */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;204m", /* #FF5370 red */
+    [MT_CONSTANT] = "\x1b[38;5;209m",
+};
+
+/* Synthwave 84: neon retro dark theme (Robb Owen).
+ * Hex refs: #FF7EDB pink, #36F9F6 cyan, #FF8B39 orange, #FEDE5D yellow. */
+static const char *const theme_synthwave[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;212m",  /* #FF7EDB neon pink */
+    [MT_TYPE] = "\x1b[38;5;81m",      /* #36F9F6 neon cyan */
+    [MT_STRING] = "\x1b[38;5;221m",   /* #FEDE5D neon yellow */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #FF8B39 orange */
+    [MT_COMMENT] = "\x1b[38;5;60m",   /* #848BBD muted */
+    [MT_FUNCTION] = "\x1b[38;5;119m", /* #72F1B8 neon green */
+    [MT_OPERATOR] = "\x1b[38;5;81m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;212m",
+    [MT_CONSTANT] = "\x1b[38;5;209m",
+};
+
+/* Kanagawa: wave-inspired dark theme (rebelot, for Neovim).
+ * Hex refs: #DCA561 autumn yellow, #7E9CD8 crystal blue, #98BB6C green,
+ * #727169 comment. */
+static const char *const theme_kanagawa[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;175m",  /* #957FB8 spring violet */
+    [MT_TYPE] = "\x1b[38;5;110m",     /* #7E9CD8 crystal blue */
+    [MT_STRING] = "\x1b[38;5;143m",   /* #98BB6C autumn green */
+    [MT_NUMBER] = "\x1b[38;5;176m",   /* #D27E99 sakura pink */
+    [MT_COMMENT] = "\x1b[38;5;102m",  /* #727169 fuji grey */
+    [MT_FUNCTION] = "\x1b[38;5;110m", /* #7E9CD8 crystal blue */
+    [MT_OPERATOR] = "\x1b[38;5;174m", /* #C0A36E surimi orange */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;174m",  /* #FFA066 */
+    [MT_CONSTANT] = "\x1b[38;5;173m", /* #DCA561 */
+};
+
+/* Rose Pine: muted low-contrast dark theme.
+ * Hex refs: #31748F pine, #C4A7E7 iris, #9CCFD8 foam, #E0DEF4 text. */
+static const char *const theme_rosepine[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;67m",   /* #31748F pine */
+    [MT_TYPE] = "\x1b[38;5;183m",     /* #C4A7E7 iris */
+    [MT_STRING] = "\x1b[38;5;222m",   /* #F6C177 gold */
+    [MT_NUMBER] = "\x1b[38;5;183m",   /* #C4A7E7 iris */
+    [MT_COMMENT] = "\x1b[38;5;103m",  /* #6E6A86 muted */
+    [MT_FUNCTION] = "\x1b[38;5;210m", /* #EBBCBA rose */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #9CCFD8 foam */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;67m",
+    [MT_CONSTANT] = "\x1b[38;5;183m",
+};
+
+/* Rose Pine Moon: mid-contrast variant.
+ * Same accents as Rose Pine but slightly brighter. */
+static const char *const theme_rosepine_moon[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;73m", /* #3E8FB0 pine */
+    [MT_TYPE] = "\x1b[38;5;183m",   /* #C4A7E7 iris */
+    [MT_STRING] = "\x1b[38;5;222m", /* #F6C177 gold */
+    [MT_NUMBER] = "\x1b[38;5;183m",
+    [MT_COMMENT] = "\x1b[38;5;103m",  /* #6E6A86 */
+    [MT_FUNCTION] = "\x1b[38;5;217m", /* #EA9A97 rose */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #9CCFD8 foam */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;73m",
+    [MT_CONSTANT] = "\x1b[38;5;183m",
+};
+
+/* Rose Pine Dawn: light variant.
+ * Hex refs: same accents on light bg. */
+static const char *const theme_rosepine_dawn[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;30m", /* #286983 pine */
+    [MT_TYPE] = "\x1b[38;5;97m",    /* #907AA9 iris */
+    [MT_STRING] = "\x1b[38;5;172m", /* #EA9D34 gold */
+    [MT_NUMBER] = "\x1b[38;5;97m",
+    [MT_COMMENT] = "\x1b[38;5;247m",  /* #9893A5 */
+    [MT_FUNCTION] = "\x1b[38;5;131m", /* #D7827E rose */
+    [MT_OPERATOR] = "\x1b[38;5;66m",  /* #56949F foam */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;30m",
+    [MT_CONSTANT] = "\x1b[38;5;97m",
+};
+
+/* Everforest Dark: sakata's nature-inspired dark theme.
+ * Hex refs: #A7C080 green, #D699B6 purple, #E67E80 red, #83C092 aqua. */
+static const char *const theme_everforest_dark[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;167m",  /* #E67E80 red */
+    [MT_TYPE] = "\x1b[38;5;179m",     /* #DBBC7F yellow */
+    [MT_STRING] = "\x1b[38;5;143m",   /* #A7C080 green */
+    [MT_NUMBER] = "\x1b[38;5;175m",   /* #D699B6 purple */
+    [MT_COMMENT] = "\x1b[38;5;102m",  /* #859289 grey */
+    [MT_FUNCTION] = "\x1b[38;5;108m", /* #83C092 aqua */
+    [MT_OPERATOR] = "\x1b[38;5;173m", /* #E69875 orange */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;167m",
+    [MT_CONSTANT] = "\x1b[38;5;175m",
+};
+
+/* Everforest Light: light variant. */
+static const char *const theme_everforest_light[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;131m",  /* #F85552 -> nearest 256 */
+    [MT_TYPE] = "\x1b[38;5;136m",     /* #DFA000 */
+    [MT_STRING] = "\x1b[38;5;65m",    /* #8DA101 */
+    [MT_NUMBER] = "\x1b[38;5;133m",   /* #DF69BA */
+    [MT_COMMENT] = "\x1b[38;5;247m",  /* #939F91 */
+    [MT_FUNCTION] = "\x1b[38;5;29m",  /* #35A77C */
+    [MT_OPERATOR] = "\x1b[38;5;130m", /* #F57D26 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;131m",
+    [MT_CONSTANT] = "\x1b[38;5;133m",
+};
+
+/* Ayu Dark: Ike Ku's modern dark theme (Sublime/VS Code).
+ * Hex refs: #FF8F40 orange, #E6B450 yellow, #AAD94C green, #39BAE6 blue. */
+static const char *const theme_ayu_dark[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;209m",  /* #FF8F40 orange */
+    [MT_TYPE] = "\x1b[38;5;75m",      /* #39BAE6 blue */
+    [MT_STRING] = "\x1b[38;5;149m",   /* #AAD94C green */
+    [MT_NUMBER] = "\x1b[38;5;176m",   /* #D2A6FF purple */
+    [MT_COMMENT] = "\x1b[38;5;242m",  /* #ACB6BF8C faded */
+    [MT_FUNCTION] = "\x1b[38;5;179m", /* #E6B450 yellow */
+    [MT_OPERATOR] = "\x1b[38;5;209m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;209m",
+    [MT_CONSTANT] = "\x1b[38;5;176m",
+};
+
+/* Ayu Mirage: muted dark variant. */
+static const char *const theme_ayu_mirage[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;209m",  /* #FFAD66 */
+    [MT_TYPE] = "\x1b[38;5;75m",      /* #5CCFE6 */
+    [MT_STRING] = "\x1b[38;5;149m",   /* #D5FF80 */
+    [MT_NUMBER] = "\x1b[38;5;176m",   /* #DFBFFF */
+    [MT_COMMENT] = "\x1b[38;5;60m",   /* #B8CFE680 faded */
+    [MT_FUNCTION] = "\x1b[38;5;179m", /* #FFD580 */
+    [MT_OPERATOR] = "\x1b[38;5;209m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;209m",
+    [MT_CONSTANT] = "\x1b[38;5;176m",
+};
+
+/* Ayu Light: light variant. */
+static const char *const theme_ayu_light[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;166m",  /* #FA8D3E */
+    [MT_TYPE] = "\x1b[38;5;32m",      /* #399EE6 */
+    [MT_STRING] = "\x1b[38;5;64m",    /* #86B300 */
+    [MT_NUMBER] = "\x1b[38;5;97m",    /* #A37ACC */
+    [MT_COMMENT] = "\x1b[38;5;247m",  /* #ABB0B6 */
+    [MT_FUNCTION] = "\x1b[38;5;136m", /* #F2AE49 */
+    [MT_OPERATOR] = "\x1b[38;5;166m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;166m",
+    [MT_CONSTANT] = "\x1b[38;5;97m",
+};
+
 static const char *const *active_theme = theme_dark;
 
 int mat_theme_set(const char *name)
@@ -235,6 +474,36 @@ int mat_theme_set(const char *name)
         active_theme = theme_github_light;
     else if (strcmp(name, "tokyonight") == 0)
         active_theme = theme_tokyonight;
+    else if (strcmp(name, "zenburn") == 0)
+        active_theme = theme_zenburn;
+    else if (strcmp(name, "tomorrow-night") == 0)
+        active_theme = theme_tomorrow_night;
+    else if (strcmp(name, "tomorrow") == 0)
+        active_theme = theme_tomorrow;
+    else if (strcmp(name, "material") == 0)
+        active_theme = theme_material;
+    else if (strcmp(name, "palenight") == 0)
+        active_theme = theme_palenight;
+    else if (strcmp(name, "synthwave") == 0)
+        active_theme = theme_synthwave;
+    else if (strcmp(name, "kanagawa") == 0)
+        active_theme = theme_kanagawa;
+    else if (strcmp(name, "rosepine") == 0)
+        active_theme = theme_rosepine;
+    else if (strcmp(name, "rosepine-moon") == 0)
+        active_theme = theme_rosepine_moon;
+    else if (strcmp(name, "rosepine-dawn") == 0)
+        active_theme = theme_rosepine_dawn;
+    else if (strcmp(name, "everforest-dark") == 0)
+        active_theme = theme_everforest_dark;
+    else if (strcmp(name, "everforest-light") == 0)
+        active_theme = theme_everforest_light;
+    else if (strcmp(name, "ayu-dark") == 0)
+        active_theme = theme_ayu_dark;
+    else if (strcmp(name, "ayu-mirage") == 0)
+        active_theme = theme_ayu_mirage;
+    else if (strcmp(name, "ayu-light") == 0)
+        active_theme = theme_ayu_light;
     else
         return -1;
     return 0;
@@ -249,9 +518,13 @@ const char *mat_theme_sgr(enum mat_tok tok)
 
 void mat_theme_list(void)
 {
-    printf("catppuccin\ndark\ndracula\ngithub-dark\ngithub-light\n"
-           "gruvbox\nlight\nmonokai\nnord\nonedark\n"
-           "solarized-dark\nsolarized-light\ntokyonight\n");
+    printf("ayu-dark\nayu-light\nayu-mirage\ncatppuccin\ndark\n"
+           "dracula\neverforest-dark\neverforest-light\ngithub-dark\n"
+           "github-light\ngruvbox\nkanagawa\nlight\nmaterial\n"
+           "monokai\nnord\nonedark\npalenight\nrosepine\n"
+           "rosepine-dawn\nrosepine-moon\nsolarized-dark\n"
+           "solarized-light\nsynthwave\ntokyonight\ntomorrow\n"
+           "tomorrow-night\nzenburn\n");
 }
 
 static int emit(struct mat_span *out, int cap, int n, size_t start, size_t len,
