@@ -101,13 +101,17 @@ cat   "$tmp/self_c" > "$tmp/self_c" 2>/dev/null; rc="$?"
 if cmp -s "$tmp/self_m" "$tmp/self_c" && [ "$rm" = "$rc" ]; then ok=$((ok + 1))
 else echo "FAIL - self overwrite '> f' (exit mat=$rm cat=$rc)"; fail=1; fi
 
-# self-append: mat f >> f  (SAME_INODE guard must refuse, like cat: exit 1, unchanged)
-say "self append >> f"
-cp "$tmp/multi" "$tmp/app_m"; cp "$tmp/multi" "$tmp/app_c"
+# self-append: mat f >> f  — mat's SAME_INODE guard must refuse (exit 1, file
+# unchanged). We do NOT compare against `cat f >> f`: GNU cat refuses, but BSD
+# cat has no such guard and loops forever appending to itself, so running it as
+# a reference would hang on macOS/FreeBSD. This asserts mat's own contract.
+say "self append >> f (mat refuses, no cat reference)"
+cp "$tmp/multi" "$tmp/app_m"
+before=$(wc -c < "$tmp/app_m")
 "$MAT" "$tmp/app_m" >> "$tmp/app_m" 2>/dev/null; rm="$?"
-cat   "$tmp/app_c" >> "$tmp/app_c" 2>/dev/null; rc="$?"
-if cmp -s "$tmp/app_m" "$tmp/app_c" && [ "$rm" = "$rc" ]; then ok=$((ok + 1))
-else echo "FAIL - self append '>> f' (exit mat=$rm cat=$rc)"; fail=1; fi
+after=$(wc -c < "$tmp/app_m")
+if [ "$rm" = "1" ] && [ "$before" = "$after" ]; then ok=$((ok + 1))
+else echo "FAIL - self append '>> f' (exit=$rm, size $before -> $after)"; fail=1; fi
 
 if [ "$fail" -eq 0 ]; then
     echo "parity: $ok/$ok cases byte-identical to cat"
