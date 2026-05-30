@@ -849,12 +849,22 @@ static int is_word(unsigned char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
+static int ws_cmp(const void *key, const void *elem)
+{
+    const char *k = (const char *)key;
+    const char *const *e = (const char *const *)elem;
+    return strcmp(k, *e);
+}
+
 static int ws_has(const struct wordset *ws, const char *w, size_t wl)
 {
-    for (int i = 0; i < ws->n; i++)
-        if (strlen(ws->words[i]) == wl && memcmp(ws->words[i], w, wl) == 0)
-            return 1;
-    return 0;
+    char buf[128];
+    if (wl >= sizeof buf)
+        return 0;
+    memcpy(buf, w, wl);
+    buf[wl] = '\0';
+    return bsearch(buf, ws->words, (size_t)ws->n, sizeof ws->words[0],
+                   ws_cmp) != NULL;
 }
 
 static int is_alnum(unsigned char c)
@@ -1195,10 +1205,18 @@ static int ci_match(const char *a, const char *b, size_t n)
 
 static int ws_has_ci(const struct wordset *ws, const char *w, size_t wl)
 {
-    for (int i = 0; i < ws->n; i++)
-        if (strlen(ws->words[i]) == wl && ci_match(ws->words[i], w, wl))
-            return 1;
-    return 0;
+    char buf[128];
+    if (wl >= sizeof buf)
+        return 0;
+    for (size_t i = 0; i < wl; i++) {
+        char c = w[i];
+        if (c >= 'A' && c <= 'Z')
+            c = (char)(c + 32);
+        buf[i] = c;
+    }
+    buf[wl] = '\0';
+    return bsearch(buf, ws->words, (size_t)ws->n, sizeof ws->words[0],
+                   ws_cmp) != NULL;
 }
 
 static int lex_fortran(struct mat_hl *h, const unsigned char *d, size_t len,
@@ -1922,18 +1940,19 @@ static int lex_diff(struct mat_hl *h, const unsigned char *d, size_t len,
 /* ---- keyword tables ---- */
 
 static const char *const c_kw[] = {
-    "auto",     "break",     "case",           "continue", "default",
-    "do",       "else",      "enum",           "extern",   "for",
-    "goto",     "if",        "inline",         "register", "restrict",
-    "return",   "sizeof",    "static",         "struct",   "switch",
-    "typedef",  "union",     "volatile",       "while",    "_Alignas",
-    "_Alignof", "_Noreturn", "_Static_assert",
+    "_Alignas", "_Alignof", "_Noreturn", "_Static_assert",
+    "auto",     "break",    "case",      "continue",
+    "default",  "do",       "else",      "enum",
+    "extern",   "for",      "goto",      "if",
+    "inline",   "register", "restrict",  "return",
+    "sizeof",   "static",   "struct",    "switch",
+    "typedef",  "union",    "volatile",  "while",
 };
 static const char *const c_ty[] = {
-    "void",     "char",     "short",    "int",     "long",    "float",
-    "double",   "signed",   "unsigned", "bool",    "size_t",  "ssize_t",
-    "int8_t",   "int16_t",  "int32_t",  "int64_t", "uint8_t", "uint16_t",
-    "uint32_t", "uint64_t", "FILE",     "NULL",
+    "FILE",     "NULL",    "bool",     "char",    "double",   "float",
+    "int",      "int16_t", "int32_t",  "int64_t", "int8_t",   "long",
+    "short",    "signed",  "size_t",   "ssize_t", "uint16_t", "uint32_t",
+    "uint64_t", "uint8_t", "unsigned", "void",
 };
 static const char *const py_kw[] = {
     "and",      "as",       "assert", "async", "await",  "break",  "class",
@@ -1943,27 +1962,27 @@ static const char *const py_kw[] = {
     "try",      "while",    "with",   "yield",
 };
 static const char *const py_ty[] = {
-    "True", "False", "None",  "int",  "float", "str",  "list",
-    "dict", "set",   "tuple", "bool", "bytes", "type", "self",
+    "False", "None", "True", "bool", "bytes", "dict",  "float",
+    "int",   "list", "self", "set",  "str",   "tuple", "type",
 };
 static const char *const sh_kw[] = {
-    "if",       "then",   "else",     "elif",    "fi",    "for",
-    "while",    "do",     "done",     "case",    "esac",  "in",
-    "function", "select", "until",    "return",  "break", "continue",
-    "local",    "export", "readonly", "declare",
+    "break",    "case", "continue", "declare", "do",       "done",
+    "elif",     "else", "esac",     "export",  "fi",       "for",
+    "function", "if",   "in",       "local",   "readonly", "return",
+    "select",   "then", "until",    "while",
 };
 static const char *const js_kw[] = {
-    "break",    "case",       "catch",  "class",    "const", "continue",
-    "debugger", "default",    "delete", "do",       "else",  "export",
-    "extends",  "finally",    "for",    "function", "if",    "import",
-    "in",       "instanceof", "let",    "new",      "of",    "return",
-    "super",    "switch",     "this",   "throw",    "try",   "typeof",
-    "var",      "void",       "while",  "with",     "yield", "async",
-    "await",
+    "async", "await",    "break",    "case",       "catch",  "class",
+    "const", "continue", "debugger", "default",    "delete", "do",
+    "else",  "export",   "extends",  "finally",    "for",    "function",
+    "if",    "import",   "in",       "instanceof", "let",    "new",
+    "of",    "return",   "super",    "switch",     "this",   "throw",
+    "try",   "typeof",   "var",      "void",       "while",  "with",
+    "yield",
 };
 static const char *const js_ty[] = {
-    "true",   "false",   "null",   "undefined", "NaN", "Infinity", "Number",
-    "String", "Boolean", "Object", "Array",     "Map", "Set",
+    "Array", "Boolean", "Infinity", "Map",  "NaN",  "Number",    "Object",
+    "Set",   "String",  "false",    "null", "true", "undefined",
 };
 static const char *const go_kw[] = {
     "break",  "case",        "chan", "const",   "continue", "default", "defer",
@@ -1972,68 +1991,66 @@ static const char *const go_kw[] = {
     "struct", "switch",      "type", "var",
 };
 static const char *const go_ty[] = {
-    "bool",    "byte",    "complex64", "complex128", "error",  "float32",
-    "float64", "int",     "int8",      "int16",      "int32",  "int64",
-    "rune",    "string",  "uint",      "uint8",      "uint16", "uint32",
-    "uint64",  "uintptr", "true",      "false",      "nil",    "iota",
+    "bool",    "byte",    "complex128", "complex64", "error",  "false",
+    "float32", "float64", "int",        "int16",     "int32",  "int64",
+    "int8",    "iota",    "nil",        "rune",      "string", "true",
+    "uint",    "uint16",  "uint32",     "uint64",    "uint8",  "uintptr",
 };
 static const char *const rs_kw[] = {
-    "as",     "async", "await", "break",  "const",  "continue", "crate",
-    "dyn",    "else",  "enum",  "extern", "fn",     "for",      "if",
-    "impl",   "in",    "let",   "loop",   "match",  "mod",      "move",
-    "mut",    "pub",   "ref",   "return", "self",   "Self",     "static",
-    "struct", "super", "trait", "type",   "unsafe", "use",      "where",
+    "Self",   "as",    "async", "await", "break",  "const", "continue",
+    "crate",  "dyn",   "else",  "enum",  "extern", "fn",    "for",
+    "if",     "impl",  "in",    "let",   "loop",   "match", "mod",
+    "move",   "mut",   "pub",   "ref",   "return", "self",  "static",
+    "struct", "super", "trait", "type",  "unsafe", "use",   "where",
     "while",  "yield",
 };
 static const char *const rs_ty[] = {
-    "bool",   "char", "f32",   "f64",    "i8",  "i16",  "i32",
-    "i64",    "i128", "isize", "str",    "u8",  "u16",  "u32",
-    "u64",    "u128", "usize", "String", "Vec", "Box",  "Option",
-    "Result", "Some", "None",  "Ok",     "Err", "true", "false",
+    "Box",    "Err",  "None", "Ok",   "Option", "Result", "Some",
+    "String", "Vec",  "bool", "char", "f32",    "f64",    "false",
+    "i128",   "i16",  "i32",  "i64",  "i8",     "isize",  "str",
+    "true",   "u128", "u16",  "u32",  "u64",    "u8",     "usize",
 };
 
 static const char *const fortran_kw[] = {
-    "program",   "end",      "subroutine", "function",   "module",
-    "use",       "implicit", "none",       "call",       "return",
-    "if",        "then",     "else",       "elseif",     "endif",
-    "do",        "while",    "enddo",      "select",     "case",
-    "where",     "forall",   "continue",   "stop",       "exit",
-    "cycle",     "goto",     "allocate",   "deallocate", "contains",
-    "interface", "type",     "class",      "associate",  "block",
-    "data",      "save",     "common",     "intent",     "in",
-    "out",       "inout",    "optional",   "recursive",  "pure",
-    "elemental", "abstract",
+    "abstract",   "allocate", "associate", "block",    "call",     "case",
+    "class",      "common",   "contains",  "continue", "cycle",    "data",
+    "deallocate", "do",       "elemental", "else",     "elseif",   "end",
+    "enddo",      "endif",    "exit",      "forall",   "function", "goto",
+    "if",         "implicit", "in",        "inout",    "intent",   "interface",
+    "module",     "none",     "optional",  "out",      "program",  "pure",
+    "recursive",  "return",   "save",      "select",   "stop",     "subroutine",
+    "then",       "type",     "use",       "where",    "while",
 };
 static const char *const fortran_ty[] = {
-    "integer",   "real",    "double",    "precision", "complex",
-    "character", "logical", "dimension", "parameter", "allocatable",
-    "pointer",   "target",  "kind",
+    "allocatable", "character", "complex", "dimension", "double",
+    "integer",     "kind",      "logical", "parameter", "pointer",
+    "precision",   "real",      "target",
 };
 static const char *const sql_kw[] = {
-    "select",  "from",    "where",      "and",        "or",       "not",
-    "insert",  "into",    "values",     "update",     "set",      "delete",
-    "create",  "drop",    "alter",      "table",      "index",    "view",
-    "join",    "inner",   "outer",      "left",       "right",    "on",
-    "group",   "by",      "order",      "having",     "limit",    "offset",
-    "union",   "all",     "distinct",   "as",         "exists",   "in",
-    "between", "like",    "is",         "case",       "when",     "then",
-    "else",    "end",     "begin",      "commit",     "rollback", "primary",
-    "key",     "foreign", "references", "constraint", "default",  "with",
+    "all",      "alter",    "and",    "as",         "begin",      "between",
+    "by",       "case",     "commit", "constraint", "create",     "default",
+    "delete",   "distinct", "drop",   "else",       "end",        "exists",
+    "foreign",  "from",     "group",  "having",     "in",         "index",
+    "inner",    "insert",   "into",   "is",         "join",       "key",
+    "left",     "like",     "limit",  "not",        "offset",     "on",
+    "or",       "order",    "outer",  "primary",    "references", "right",
+    "rollback", "select",   "set",    "table",      "then",       "union",
+    "update",   "values",   "view",   "when",       "where",      "with",
 };
 static const char *const sql_ty[] = {
-    "int",     "integer", "bigint", "smallint",  "varchar", "char",
-    "text",    "boolean", "date",   "timestamp", "float",   "double",
-    "decimal", "numeric", "blob",   "serial",    "uuid",
+    "bigint",   "blob",  "boolean",   "char",    "date",    "decimal",
+    "double",   "float", "int",       "integer", "numeric", "serial",
+    "smallint", "text",  "timestamp", "uuid",    "varchar",
 };
 static const char *const ruby_kw[] = {
-    "def",     "end",    "class",  "module", "if",     "unless", "elsif",
-    "else",    "case",   "when",   "while",  "until",  "for",    "do",
-    "begin",   "rescue", "ensure", "raise",  "return", "yield",  "require",
-    "include", "extend", "puts",   "print",  "lambda", "proc",
+    "begin",  "case",   "class",  "def",  "do",    "else",    "elsif",
+    "end",    "ensure", "extend", "for",  "if",    "include", "lambda",
+    "module", "print",  "proc",   "puts", "raise", "require", "rescue",
+    "return", "unless", "until",  "when", "while", "yield",
 };
 static const char *const ruby_ty[] = {
-    "true",  "false", "nil",  "self",   "String", "Integer",
-    "Float", "Array", "Hash", "Symbol", "Proc",   "Class",
+    "Array",  "Class",  "Float", "Hash", "Integer", "Proc",
+    "String", "Symbol", "false", "nil",  "self",    "true",
 };
 static const char *const lua_kw[] = {
     "and",      "break",  "do",   "else",  "elseif", "end", "for",
@@ -2041,26 +2058,26 @@ static const char *const lua_kw[] = {
     "repeat",   "return", "then", "until", "while",
 };
 static const char *const lua_ty[] = {
-    "true",
     "false",
     "nil",
+    "true",
 };
 static const char *const cs_kw[] = {
-    "abstract",  "as",        "base",     "bool",     "break",    "case",
-    "catch",     "class",     "const",    "continue", "default",  "delegate",
-    "do",        "else",      "enum",     "event",    "explicit", "extern",
-    "finally",   "for",       "foreach",  "goto",     "if",       "implicit",
-    "in",        "interface", "internal", "is",       "lock",     "namespace",
-    "new",       "operator",  "out",      "override", "params",   "private",
-    "protected", "public",    "readonly", "ref",      "return",   "sealed",
-    "static",    "struct",    "switch",   "this",     "throw",    "try",
-    "typeof",    "using",     "var",      "virtual",  "void",     "volatile",
-    "while",     "yield",     "async",    "await",
+    "abstract", "as",        "async",     "await",     "base",     "bool",
+    "break",    "case",      "catch",     "class",     "const",    "continue",
+    "default",  "delegate",  "do",        "else",      "enum",     "event",
+    "explicit", "extern",    "finally",   "for",       "foreach",  "goto",
+    "if",       "implicit",  "in",        "interface", "internal", "is",
+    "lock",     "namespace", "new",       "operator",  "out",      "override",
+    "params",   "private",   "protected", "public",    "readonly", "ref",
+    "return",   "sealed",    "static",    "struct",    "switch",   "this",
+    "throw",    "try",       "typeof",    "using",     "var",      "virtual",
+    "void",     "volatile",  "while",     "yield",
 };
 static const char *const cs_ty[] = {
-    "int",   "long",   "short",  "byte",  "float",  "double", "decimal",
-    "char",  "string", "object", "bool",  "uint",   "ulong",  "ushort",
-    "sbyte", "null",   "true",   "false", "String", "Int32",
+    "Int32", "String", "bool", "byte", "char",  "decimal", "double",
+    "false", "float",  "int",  "long", "null",  "object",  "sbyte",
+    "short", "string", "true", "uint", "ulong", "ushort",
 };
 static const char *const kt_kw[] = {
     "abstract", "as",          "break",    "by",        "class",    "companion",
@@ -2139,10 +2156,10 @@ static const char *const swift_kw[] = {
     "while",
 };
 static const char *const swift_ty[] = {
-    "Any",    "Bool",   "Character", "Double", "Float",  "Int",
-    "Int8",   "Int16",  "Int32",     "Int64",  "Never",  "Optional",
-    "Self",   "String", "UInt",      "UInt8",  "UInt16", "UInt32",
-    "UInt64", "Void",   "true",      "false",  "nil",
+    "Any",   "Bool",   "Character", "Double", "Float",  "Int",
+    "Int16", "Int32",  "Int64",     "Int8",   "Never",  "Optional",
+    "Self",  "String", "UInt",      "UInt16", "UInt32", "UInt64",
+    "UInt8", "Void",   "false",     "nil",    "true",
 };
 static const char *const dart_kw[] = {
     "abstract", "as",        "assert",   "async",      "await",    "break",
@@ -2157,9 +2174,9 @@ static const char *const dart_kw[] = {
     "while",    "with",      "yield",
 };
 static const char *const dart_ty[] = {
-    "bool",   "double", "dynamic", "int",   "num",  "Object",
-    "String", "void",   "List",    "Map",   "Set",  "Future",
-    "Stream", "null",   "true",    "false", "Null",
+    "Future", "List",   "Map",  "Null",   "Object",  "Set",
+    "Stream", "String", "bool", "double", "dynamic", "false",
+    "int",    "null",   "num",  "true",   "void",
 };
 static const char *const perl_kw[] = {
     "chomp",   "chop",   "die",     "do",      "else",   "elsif",
@@ -2184,9 +2201,9 @@ static const char *const php_kw[] = {
     "while",     "xor",        "yield",
 };
 static const char *const php_ty[] = {
-    "array", "bool",  "callable", "float", "int",    "iterable",
-    "mixed", "null",  "object",   "self",  "string", "void",
-    "true",  "false", "NULL",     "TRUE",  "FALSE",
+    "FALSE",  "NULL",  "TRUE",   "array",    "bool",  "callable",
+    "false",  "float", "int",    "iterable", "mixed", "null",
+    "object", "self",  "string", "true",     "void",
 };
 static const char *const haskell_kw[] = {
     "case",    "class",  "data",      "default",  "deriving", "do",
@@ -2195,9 +2212,8 @@ static const char *const haskell_kw[] = {
     "newtype", "of",     "qualified", "then",     "type",     "where",
 };
 static const char *const haskell_ty[] = {
-    "Bool", "Char",    "Double", "Either", "Float", "IO",
-    "Int",  "Integer", "Maybe",  "String", "True",  "False",
-    "Just", "Nothing", "Left",   "Right",
+    "Bool",    "Char", "Double", "Either", "False",   "Float", "IO",     "Int",
+    "Integer", "Just", "Left",   "Maybe",  "Nothing", "Right", "String", "True",
 };
 static const char *const elixir_kw[] = {
     "after",     "alias",   "and",      "case",      "catch", "cond",
@@ -2208,10 +2224,10 @@ static const char *const elixir_kw[] = {
     "unquote",   "use",     "when",     "with",
 };
 static const char *const elixir_ty[] = {
-    "true",
     "false",
     "nil",
     "self",
+    "true",
 };
 static const char *const erlang_kw[] = {
     "after", "and",    "andalso", "begin", "case", "catch",
@@ -2219,17 +2235,17 @@ static const char *const erlang_kw[] = {
     "or",    "orelse", "receive", "try",   "when",
 };
 static const char *const erlang_ty[] = {
-    "true",
     "false",
+    "true",
     "undefined",
 };
 static const char *const r_kw[] = {
-    "break",  "else",   "for",   "function", "if",      "in",     "next",
-    "repeat", "return", "while", "library",  "require", "source",
+    "break", "else",   "for",     "function", "if",     "in",    "library",
+    "next",  "repeat", "require", "return",   "source", "while",
 };
 static const char *const r_ty[] = {
-    "TRUE", "FALSE",       "NULL",     "NA",          "Inf",
-    "NaN",  "NA_integer_", "NA_real_", "NA_complex_", "NA_character_",
+    "FALSE",       "Inf",      "NA",   "NA_character_", "NA_complex_",
+    "NA_integer_", "NA_real_", "NULL", "NaN",           "TRUE",
 };
 static const char *const zig_kw[] = {
     "addrspace", "align",  "and",      "asm",       "break",       "catch",
@@ -2241,9 +2257,9 @@ static const char *const zig_kw[] = {
     "volatile",  "while",
 };
 static const char *const zig_ty[] = {
-    "bool", "f16",   "f32",  "f64",       "f80",  "f128", "i8",    "i16",
-    "i32",  "i64",   "i128", "isize",     "u8",   "u16",  "u32",   "u64",
-    "u128", "usize", "void", "anyopaque", "null", "true", "false", "undefined",
+    "anyopaque", "bool", "f128", "f16", "f32", "f64",       "f80",   "false",
+    "i128",      "i16",  "i32",  "i64", "i8",  "isize",     "null",  "true",
+    "u128",      "u16",  "u32",  "u64", "u8",  "undefined", "usize", "void",
 };
 static const char *const ocaml_kw[] = {
     "and",      "as",      "assert",  "begin",       "class",   "constraint",
@@ -2256,19 +2272,19 @@ static const char *const ocaml_kw[] = {
     "virtual",  "when",    "while",   "with",
 };
 static const char *const ocaml_ty[] = {
-    "int",   "float",  "bool", "char", "string", "unit", "list",
-    "array", "option", "ref",  "true", "false",  "None", "Some",
+    "None", "Some", "array",  "bool", "char",   "false", "float",
+    "int",  "list", "option", "ref",  "string", "true",  "unit",
 };
 static const char *const clojure_kw[] = {
-    "def",     "defn", "defmacro", "defonce", "fn",    "if",    "do",
-    "let",     "loop", "recur",    "throw",   "try",   "catch", "finally",
-    "cond",    "case", "when",     "and",     "or",    "not",   "ns",
-    "require", "use",  "import",   "in-ns",   "refer",
+    "and",     "case",  "catch",   "cond", "def",  "defmacro", "defn",
+    "defonce", "do",    "finally", "fn",   "if",   "import",   "in-ns",
+    "let",     "loop",  "not",     "ns",   "or",   "recur",    "refer",
+    "require", "throw", "try",     "use",  "when",
 };
 static const char *const clojure_ty[] = {
+    "false",
     "nil",
     "true",
-    "false",
 };
 static const char *const julia_kw[] = {
     "abstract",  "baremodule", "begin",    "break",  "catch",  "const",
@@ -2279,10 +2295,10 @@ static const char *const julia_kw[] = {
     "using",     "where",      "while",
 };
 static const char *const julia_ty[] = {
-    "Any",     "Bool",    "Char",  "Float16", "Float32", "Float64",
-    "Int",     "Int8",    "Int16", "Int32",   "Int64",   "Int128",
-    "Nothing", "String",  "UInt",  "UInt8",   "UInt16",  "UInt32",
-    "UInt64",  "UInt128", "true",  "false",   "nothing",
+    "Any",     "Bool",   "Char",  "Float16", "Float32", "Float64",
+    "Int",     "Int128", "Int16", "Int32",   "Int64",   "Int8",
+    "Nothing", "String", "UInt",  "UInt128", "UInt16",  "UInt32",
+    "UInt64",  "UInt8",  "false", "nothing", "true",
 };
 static const char *const nim_kw[] = {
     "addr",      "and",     "as",        "asm",      "bind",   "block",
@@ -2298,10 +2314,10 @@ static const char *const nim_kw[] = {
     "using",     "var",     "when",      "while",    "xor",    "yield",
 };
 static const char *const nim_ty[] = {
-    "int",     "int8",   "int16",  "int32",  "int64", "uint",
-    "uint8",   "uint16", "uint32", "uint64", "float", "float32",
-    "float64", "bool",   "char",   "string", "seq",   "array",
-    "void",    "true",   "false",  "nil",
+    "array",   "bool",   "char",   "false", "float", "float32",
+    "float64", "int",    "int16",  "int32", "int64", "int8",
+    "nil",     "seq",    "string", "true",  "uint",  "uint16",
+    "uint32",  "uint64", "uint8",  "void",
 };
 static const char *const groovy_kw[] = {
     "abstract",     "as",     "assert",     "break",    "case",    "catch",
@@ -2314,9 +2330,9 @@ static const char *const groovy_kw[] = {
     "while",
 };
 static const char *const groovy_ty[] = {
-    "boolean", "byte",   "char", "double", "float", "int",
-    "long",    "short",  "void", "def",    "null",  "true",
-    "false",   "String", "List", "Map",    "Set",
+    "List", "Map",  "Set",    "String", "boolean", "byte",
+    "char", "def",  "double", "false",  "float",   "int",
+    "long", "null", "short",  "true",   "void",
 };
 static const char *const powershell_kw[] = {
     "begin",   "break",    "catch",        "class",   "continue", "data",
@@ -2353,10 +2369,10 @@ static const char *const d_kw[] = {
     "void",         "while",     "with",
 };
 static const char *const d_ty[] = {
-    "bool",   "byte",   "cdouble", "cfloat", "char",  "creal",  "dchar",
-    "double", "float",  "idouble", "ifloat", "int",   "ireal",  "long",
-    "real",   "short",  "ubyte",   "uint",   "ulong", "ushort", "wchar",
-    "string", "size_t", "null",    "true",   "false",
+    "bool",   "byte",  "cdouble", "cfloat",  "char",   "creal",  "dchar",
+    "double", "false", "float",   "idouble", "ifloat", "int",    "ireal",
+    "long",   "null",  "real",    "short",   "size_t", "string", "true",
+    "ubyte",  "uint",  "ulong",   "ushort",  "wchar",
 };
 static const char *const fsharp_kw[] = {
     "abstract", "and",     "as",       "assert",    "base",      "begin",
@@ -2372,10 +2388,10 @@ static const char *const fsharp_kw[] = {
     "with",     "yield",
 };
 static const char *const fsharp_ty[] = {
-    "bool",    "byte",   "char",   "decimal", "double", "float",
-    "float32", "int",    "int16",  "int32",   "int64",  "nativeint",
-    "sbyte",   "single", "string", "uint16",  "uint32", "uint64",
-    "unit",    "true",   "false",  "None",    "Some",
+    "None",   "Some",   "bool",      "byte",    "char",   "decimal",
+    "double", "false",  "float",     "float32", "int",    "int16",
+    "int32",  "int64",  "nativeint", "sbyte",   "single", "string",
+    "true",   "uint16", "uint32",    "uint64",  "unit",
 };
 static const char *const glsl_kw[] = {
     "attribute",  "break",  "case",      "const",     "continue", "default",
@@ -2385,11 +2401,11 @@ static const char *const glsl_kw[] = {
     "subroutine", "switch", "uniform",   "varying",   "while",
 };
 static const char *const glsl_ty[] = {
-    "bool",        "bvec2", "bvec3", "bvec4", "double",    "dvec2",
-    "dvec3",       "dvec4", "float", "int",   "ivec2",     "ivec3",
-    "ivec4",       "mat2",  "mat3",  "mat4",  "sampler2D", "sampler3D",
-    "samplerCube", "uint",  "uvec2", "uvec3", "uvec4",     "vec2",
-    "vec3",        "vec4",  "void",  "true",  "false",
+    "bool",      "bvec2",       "bvec3", "bvec4", "double", "dvec2",
+    "dvec3",     "dvec4",       "false", "float", "int",    "ivec2",
+    "ivec3",     "ivec4",       "mat2",  "mat3",  "mat4",   "sampler2D",
+    "sampler3D", "samplerCube", "true",  "uint",  "uvec2",  "uvec3",
+    "uvec4",     "vec2",        "vec3",  "vec4",  "void",
 };
 static const char *const coffee_kw[] = {
     "and",    "break",      "by",    "case",    "catch",   "class",  "continue",
@@ -2400,7 +2416,7 @@ static const char *const coffee_kw[] = {
     "while",  "yes",        "yield",
 };
 static const char *const coffee_ty[] = {
-    "true", "false", "null", "undefined", "NaN", "Infinity",
+    "Infinity", "NaN", "false", "null", "true", "undefined",
 };
 static const char *const crystal_kw[] = {
     "abstract",  "alias",
@@ -2432,17 +2448,17 @@ static const char *const crystal_kw[] = {
     "yield",
 };
 static const char *const crystal_ty[] = {
-    "Bool",   "Char", "Float32", "Float64", "Int8",  "Int16",  "Int32",
-    "Int64",  "Nil",  "String",  "Symbol",  "UInt8", "UInt16", "UInt32",
-    "UInt64", "Void", "true",    "false",   "nil",   "self",
+    "Bool",  "Char", "Float32", "Float64", "Int16",  "Int32",  "Int64",
+    "Int8",  "Nil",  "String",  "Symbol",  "UInt16", "UInt32", "UInt64",
+    "UInt8", "Void", "false",   "nil",     "self",   "true",
 };
 static const char *const elm_kw[] = {
     "alias", "as",     "case", "else", "exposing", "if",   "import", "in",
     "let",   "module", "of",   "port", "then",     "type", "where",
 };
 static const char *const elm_ty[] = {
-    "Bool",  "Char",   "Float", "Int",   "List", "Maybe",
-    "Never", "String", "True",  "False", "Just", "Nothing",
+    "Bool", "Char",  "False", "Float",   "Int",    "Just",
+    "List", "Maybe", "Never", "Nothing", "String", "True",
 };
 static const char *const solidity_kw[] = {
     "abstract", "break",    "case",    "catch",    "constant",  "constructor",
@@ -2456,9 +2472,9 @@ static const char *const solidity_kw[] = {
     "view",     "virtual",  "while",
 };
 static const char *const solidity_ty[] = {
-    "address", "bool",   "bytes",   "int",     "int8", "int16", "int32",
-    "int64",   "int128", "int256",  "string",  "uint", "uint8", "uint16",
-    "uint32",  "uint64", "uint128", "uint256", "true", "false",
+    "address", "bool",   "bytes",   "false",  "int",    "int128", "int16",
+    "int256",  "int32",  "int64",   "int8",   "string", "true",   "uint",
+    "uint128", "uint16", "uint256", "uint32", "uint64", "uint8",
 };
 static const char *const ada_kw[] = {
     "abort",   "abs",          "abstract",  "accept",     "access",
@@ -2478,8 +2494,8 @@ static const char *const ada_kw[] = {
     "while",   "with",         "xor",
 };
 static const char *const ada_ty[] = {
-    "Boolean", "Character", "Duration", "Float", "Integer",
-    "Natural", "Positive",  "String",   "True",  "False",
+    "boolean", "character", "duration", "false",  "float",
+    "integer", "natural",   "positive", "string", "true",
 };
 static const char *const pascal_kw[] = {
     "and",
@@ -2535,10 +2551,10 @@ static const char *const pascal_kw[] = {
     "xor",
 };
 static const char *const pascal_ty[] = {
-    "boolean", "byte",     "cardinal", "char",    "comp",     "currency",
-    "double",  "extended", "int64",    "integer", "longint",  "longword",
-    "pointer", "real",     "shortint", "single",  "smallint", "string",
-    "word",    "true",     "false",    "nil",
+    "boolean",  "byte",     "cardinal", "char",  "comp",     "currency",
+    "double",   "extended", "false",    "int64", "integer",  "longint",
+    "longword", "nil",      "pointer",  "real",  "shortint", "single",
+    "smallint", "string",   "true",     "word",
 };
 static const char *const matlab_kw[] = {
     "break",  "case",   "catch",     "classdef", "continue",
@@ -2547,37 +2563,37 @@ static const char *const matlab_kw[] = {
     "return", "spmd",   "switch",    "try",      "while",
 };
 static const char *const matlab_ty[] = {
-    "true", "false", "inf", "Inf", "nan", "NaN", "pi",
+    "Inf", "NaN", "false", "inf", "nan", "pi", "true",
 };
 static const char *const protobuf_kw[] = {
-    "enum",     "extend",   "extensions", "import",  "message",  "oneof",
-    "option",   "optional", "package",    "public",  "repeated", "required",
-    "reserved", "returns",  "rpc",        "service", "stream",   "syntax",
-    "to",       "weak",     "map",
+    "enum",     "extend",   "extensions", "import",  "map",     "message",
+    "oneof",    "option",   "optional",   "package", "public",  "repeated",
+    "required", "reserved", "returns",    "rpc",     "service", "stream",
+    "syntax",   "to",       "weak",
 };
 static const char *const protobuf_ty[] = {
-    "bool",   "bytes",  "double",   "fixed32",  "fixed64", "float",
-    "int32",  "int64",  "sfixed32", "sfixed64", "sint32",  "sint64",
-    "string", "uint32", "uint64",   "true",     "false",
+    "bool",   "bytes",  "double", "false",    "fixed32",  "fixed64",
+    "float",  "int32",  "int64",  "sfixed32", "sfixed64", "sint32",
+    "sint64", "string", "true",   "uint32",   "uint64",
 };
 static const char *const terraform_kw[] = {
-    "data",      "dynamic",  "for_each", "lifecycle",   "locals",
-    "module",    "output",   "provider", "provisioner", "resource",
-    "terraform", "variable", "for",      "if",          "in",
-    "each",      "self",     "count",    "depends_on",
+    "count",    "data",     "depends_on", "dynamic",  "each",
+    "for",      "for_each", "if",         "in",       "lifecycle",
+    "locals",   "module",   "output",     "provider", "provisioner",
+    "resource", "self",     "terraform",  "variable",
 };
 static const char *const terraform_ty[] = {
-    "bool",   "list",  "map", "number", "object", "set",
-    "string", "tuple", "any", "true",   "false",  "null",
+    "any",    "bool",   "false", "list",   "map",  "null",
+    "number", "object", "set",   "string", "true", "tuple",
 };
 static const char *const nix_kw[] = {
-    "assert", "else", "if",   "in",     "inherit",  "let",
-    "rec",    "then", "with", "import", "builtins",
+    "assert",  "builtins", "else", "if",   "import", "in",
+    "inherit", "let",      "rec",  "then", "with",
 };
 static const char *const nix_ty[] = {
-    "true",
     "false",
     "null",
+    "true",
 };
 static const char *const tcl_kw[] = {
     "after",    "append", "break",   "case",    "catch",     "continue",
@@ -2591,16 +2607,16 @@ static const char *const tcl_kw[] = {
     "variable", "while",
 };
 static const char *const lisp_kw[] = {
-    "and",          "begin",   "case", "cond",       "define", "defmacro",
-    "defun",        "do",      "else", "if",         "lambda", "let",
-    "let*",         "letrec",  "or",   "quasiquote", "quote",  "set!",
-    "syntax-rules", "unquote", "when", "unless",
+    "and",          "begin",  "case",    "cond",       "define", "defmacro",
+    "defun",        "do",     "else",    "if",         "lambda", "let",
+    "let*",         "letrec", "or",      "quasiquote", "quote",  "set!",
+    "syntax-rules", "unless", "unquote", "when",
 };
 static const char *const lisp_ty[] = {
+    "#f",
+    "#t",
     "nil",
     "t",
-    "#t",
-    "#f",
 };
 static const char *const batch_kw[] = {
     "call",  "cls",      "cmd",      "color",      "copy",  "del",  "dir",
@@ -2615,7 +2631,7 @@ static const char *const graphql_kw[] = {
     "scalar",    "schema",    "subscription", "type",     "union",
 };
 static const char *const graphql_ty[] = {
-    "Boolean", "Float", "ID", "Int", "String", "true", "false", "null",
+    "Boolean", "Float", "ID", "Int", "String", "false", "null", "true",
 };
 static const char *const cmake_kw[] = {
     "add_executable",
@@ -2625,9 +2641,9 @@ static const char *const cmake_kw[] = {
     "else",
     "elseif",
     "enable_testing",
-    "endif",
     "endforeach",
     "endfunction",
+    "endif",
     "endmacro",
     "endwhile",
     "find_package",
@@ -2649,34 +2665,34 @@ static const char *const cmake_kw[] = {
     "while",
 };
 static const char *const nginx_kw[] = {
-    "server",
-    "location",
-    "listen",
-    "root",
-    "index",
-    "proxy_pass",
-    "upstream",
-    "include",
-    "return",
-    "rewrite",
-    "if",
-    "set",
-    "error_page",
     "access_log",
     "error_log",
-    "worker_processes",
+    "error_page",
     "events",
     "http",
+    "if",
+    "include",
+    "index",
+    "listen",
+    "location",
+    "proxy_pass",
+    "return",
+    "rewrite",
+    "root",
+    "server",
     "server_name",
+    "set",
     "ssl_certificate",
     "ssl_certificate_key",
+    "upstream",
+    "worker_processes",
 };
 static const char *const viml_kw[] = {
-    "augroup",  "autocmd", "call",     "command",  "echo",        "echom",
-    "else",     "elseif",  "endif",    "endfor",   "endfunction", "endwhile",
-    "execute",  "finish",  "for",      "function", "if",          "let",
-    "map",      "nmap",    "nnoremap", "noremap",  "return",      "set",
-    "setlocal", "silent",  "source",   "syntax",   "while",
+    "augroup",  "autocmd", "call",     "command",     "echo",   "echom",
+    "else",     "elseif",  "endfor",   "endfunction", "endif",  "endwhile",
+    "execute",  "finish",  "for",      "function",    "if",     "let",
+    "map",      "nmap",    "nnoremap", "noremap",     "return", "set",
+    "setlocal", "silent",  "source",   "syntax",      "while",
 };
 static const char *const qml_kw[] = {
     "as",       "break",  "case",   "catch",      "continue", "default",
@@ -2686,9 +2702,8 @@ static const char *const qml_kw[] = {
     "try",      "typeof", "var",    "void",       "while",    "with",
 };
 static const char *const qml_ty[] = {
-    "alias", "bool",  "color",  "date",      "double", "int",
-    "list",  "real",  "string", "url",       "var",    "variant",
-    "true",  "false", "null",   "undefined",
+    "alias", "bool", "color",  "date", "double",    "false", "int", "list",
+    "null",  "real", "string", "true", "undefined", "url",   "var", "variant",
 };
 static const char *const actionscript_kw[] = {
     "break",      "case",    "catch",  "class",      "const",     "continue",
@@ -2701,9 +2716,9 @@ static const char *const actionscript_kw[] = {
     "var",        "void",    "while",  "with",
 };
 static const char *const actionscript_ty[] = {
-    "Array",  "Boolean", "Class",     "Date", "Function", "int",
-    "Number", "Object",  "String",    "uint", "XML",      "null",
-    "true",   "false",   "undefined", "NaN",  "Infinity",
+    "Array", "Boolean", "Class",  "Date",   "Function",  "Infinity",
+    "NaN",   "Number",  "Object", "String", "XML",       "false",
+    "int",   "null",    "true",   "uint",   "undefined",
 };
 static const char *const applescript_kw[] = {
     "about",       "after",   "and",      "as",    "before", "begin",  "by",
@@ -2724,9 +2739,9 @@ static const char *const wgsl_kw[] = {
     "switch",   "var",        "while",
 };
 static const char *const wgsl_ty[] = {
-    "array",  "atomic", "bool",   "f16",  "f32",     "i32",
-    "mat2x2", "mat3x3", "mat4x4", "ptr",  "sampler", "texture_2d",
-    "u32",    "vec2",   "vec3",   "vec4", "true",    "false",
+    "array",      "atomic", "bool",   "f16",    "f32",  "false",
+    "i32",        "mat2x2", "mat3x3", "mat4x4", "ptr",  "sampler",
+    "texture_2d", "true",   "u32",    "vec2",   "vec3", "vec4",
 };
 static const char *const lean_kw[] = {
     "abbrev",    "axiom",     "by",       "calc",       "class",
@@ -2734,14 +2749,14 @@ static const char *const lean_kw[] = {
     "end",       "example",   "extends",  "fun",        "have",
     "if",        "import",    "in",       "inductive",  "instance",
     "let",       "match",     "mutual",   "namespace",  "noncomputable",
-    "notation",  "open",      "opaque",   "partial",    "private",
+    "notation",  "opaque",    "open",     "partial",    "private",
     "protected", "return",    "section",  "set_option", "show",
     "sorry",     "structure", "suffices", "tactic",     "then",
     "theorem",   "universe",  "variable", "where",      "with",
 };
 static const char *const lean_ty[] = {
-    "Bool", "Char",   "Float", "Int",  "IO",   "List",  "Nat",  "Option",
-    "Prop", "String", "Type",  "Unit", "True", "False", "true", "false",
+    "Bool",   "Char", "False",  "Float", "IO",   "Int",  "List",  "Nat",
+    "Option", "Prop", "String", "True",  "Type", "Unit", "false", "true",
 };
 static const char *const puppet_kw[] = {
     "and",     "case",     "class", "default", "define", "else",
@@ -3578,8 +3593,8 @@ static int lex_gitcommit(struct mat_hl *h, const unsigned char *d, size_t len,
 }
 
 static const char *const git_rebase_kw[] = {
-    "pick",  "reword", "edit",  "squash", "fixup", "exec",
-    "break", "drop",   "label", "reset",  "merge",
+    "break", "drop", "edit",  "exec",   "fixup",  "label",
+    "merge", "pick", "reset", "reword", "squash",
 };
 
 static int lex_gitrebase(struct mat_hl *h, const unsigned char *d, size_t len,
@@ -3851,8 +3866,8 @@ static const char *const verilog_kw[] = {
     "task",        "while",       "wire",      "xnor",         "xor",
 };
 static const char *const verilog_ty[] = {
-    "integer", "real",  "realtime", "time", "supply0", "supply1", "tri",
-    "triand",  "trior", "tri0",     "tri1", "wand",    "wor",
+    "integer", "real", "realtime", "supply0", "supply1", "time", "tri",
+    "tri0",    "tri1", "triand",   "trior",   "wand",    "wor",
 };
 static const char *const sv_kw[] = {
     "always",      "always_comb", "always_ff",    "always_latch", "and",
@@ -3865,8 +3880,8 @@ static const char *const sv_kw[] = {
     "extern",      "final",       "for",          "foreach",      "forever",
     "fork",        "function",    "generate",     "if",           "import",
     "initial",     "input",       "interface",    "join",         "local",
-    "localparam",  "module",      "new",          "output",       "package",
-    "parameter",   "posedge",     "negedge",      "priority",     "program",
+    "localparam",  "module",      "negedge",      "new",          "output",
+    "package",     "parameter",   "posedge",      "priority",     "program",
     "property",    "protected",   "pure",         "rand",         "ref",
     "repeat",      "return",      "sequence",     "static",       "struct",
     "super",       "task",        "this",         "typedef",      "union",
@@ -3874,8 +3889,8 @@ static const char *const sv_kw[] = {
     "wire",        "with",
 };
 static const char *const sv_ty[] = {
-    "bit",      "byte", "int",      "integer",   "logic",  "longint", "real",
-    "realtime", "reg",  "shortint", "shortreal", "string", "time",    "chandle",
+    "bit",  "byte",     "chandle", "int",      "integer",   "logic",  "longint",
+    "real", "realtime", "reg",     "shortint", "shortreal", "string", "time",
 };
 
 /* ---- Crontab (timing fields + command) ---- */
@@ -3946,29 +3961,14 @@ static const char *const ninja_kw[] = {
 /* ---- NSIS (; or # comments, !directives, Section) ---- */
 
 static const char *const nsis_kw[] = {
-    "Section",
-    "SectionEnd",
-    "Function",
-    "FunctionEnd",
-    "Goto",
-    "Call",
-    "Quit",
-    "Return",
-    "MessageBox",
-    "DetailPrint",
-    "SetOutPath",
-    "File",
-    "CreateDirectory",
-    "Delete",
-    "RMDir",
-    "ExecWait",
-    "Exec",
-    "StrCpy",
-    "StrCmp",
-    "IntCmp",
-    "IfErrors",
-    "ClearErrors",
-    "Var",
+    "call",        "clearerrors", "createdirectory",
+    "delete",      "detailprint", "exec",
+    "execwait",    "file",        "function",
+    "functionend", "goto",        "iferrors",
+    "intcmp",      "messagebox",  "quit",
+    "return",      "rmdir",       "section",
+    "sectionend",  "setoutpath",  "strcmp",
+    "strcpy",      "var",
 };
 
 /* ---- JQ (# comments, .field, pipes) ---- */
