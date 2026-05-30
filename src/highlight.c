@@ -535,6 +535,171 @@ static const char *const theme_ayu_light[MT_NTOKENS] = {
     [MT_CONSTANT] = "\x1b[38;5;97m",
 };
 
+/* Nightfox (EdenEast/nightfox.nvim). palette/nightfox.lua */
+static const char *const theme_nightfox[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;140m",  /* #9D79D6 */
+    [MT_TYPE] = "\x1b[38;5;180m",     /* #DBC074 */
+    [MT_STRING] = "\x1b[38;5;108m",   /* #81B29A */
+    [MT_NUMBER] = "\x1b[38;5;215m",   /* #F4A261 */
+    [MT_COMMENT] = "\x1b[38;5;243m",  /* #738091 */
+    [MT_FUNCTION] = "\x1b[38;5;110m", /* #86AADC */
+    [MT_OPERATOR] = "\x1b[38;5;145m", /* #AEAFB0 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;176m",  /* #DC8DD8 */
+    [MT_CONSTANT] = "\x1b[38;5;216m", /* #F5AF78 */
+};
+
+/* Dayfox (nightfox.nvim light variant). palette/dayfox.lua */
+static const char *const theme_dayfox[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;62m",  /* #6E33CE */
+    [MT_TYPE] = "\x1b[38;5;130m",    /* #AC5402 */
+    [MT_STRING] = "\x1b[38;5;65m",   /* #396847 */
+    [MT_NUMBER] = "\x1b[38;5;95m",   /* #955F61 */
+    [MT_COMMENT] = "\x1b[38;5;243m", /* #837A72 */
+    [MT_FUNCTION] = "\x1b[38;5;61m", /* #4863B5 */
+    [MT_OPERATOR] = "\x1b[38;5;96m", /* #643F61 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;133m",  /* #B15CC0 */
+    [MT_CONSTANT] = "\x1b[38;5;138m", /* #A47778 */
+};
+
+/* Dawnfox (nightfox.nvim warm light). palette/dawnfox.lua */
+static const char *const theme_dawnfox[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;103m", /* #907AA9 */
+    [MT_TYPE] = "\x1b[38;5;179m",    /* #EA9D34 */
+    [MT_STRING] = "\x1b[38;5;66m",   /* #618774 */
+    [MT_NUMBER] = "\x1b[38;5;174m",  /* #D7827E */
+    [MT_COMMENT] = "\x1b[38;5;247m", /* #9893A5 */
+    [MT_FUNCTION] = "\x1b[38;5;23m", /* #295E73 */
+    [MT_OPERATOR] = "\x1b[38;5;60m", /* #625C87 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;169m",  /* #C9709E */
+    [MT_CONSTANT] = "\x1b[38;5;167m", /* #CA6E69 */
+};
+
+/* Carbonfox (nightfox.nvim IBM Carbon). palette/carbonfox.lua */
+static const char *const theme_carbonfox[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;141m",  /* #BE95FF */
+    [MT_TYPE] = "\x1b[38;5;37m",      /* #08BDBA */
+    [MT_STRING] = "\x1b[38;5;35m",    /* #25BE6A */
+    [MT_NUMBER] = "\x1b[38;5;80m",    /* #3DDBD9 */
+    [MT_COMMENT] = "\x1b[38;5;242m",  /* #6E6E70 */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #8CB5FF */
+    [MT_OPERATOR] = "\x1b[38;5;146m", /* #A2B0CD */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;211m", /* #FF91C0 */
+    [MT_CONSTANT] = "\x1b[38;5;80m", /* #5AE0DE */
+};
+
+/* Oxocarbon (nyoom-engineering/oxocarbon.nvim). IBM Carbon palette. */
+static const char *const theme_oxocarbon[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;111m",  /* #78A9FF */
+    [MT_TYPE] = "\x1b[38;5;111m",     /* #78A9FF */
+    [MT_STRING] = "\x1b[38;5;141m",   /* #BE95FF */
+    [MT_NUMBER] = "\x1b[38;5;117m",   /* #82CFFF */
+    [MT_COMMENT] = "\x1b[38;5;239m",  /* #525252 */
+    [MT_FUNCTION] = "\x1b[38;5;80m",  /* #3DDBD9 */
+    [MT_OPERATOR] = "\x1b[38;5;111m", /* #78A9FF */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;111m",  /* #78A9FF */
+    [MT_CONSTANT] = "\x1b[38;5;254m", /* #DDE1E6 */
+};
+
+/* Poimandres (drcmda/poimandres-theme). Minimal palette. */
+static const char *const theme_poimandres[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;146m",  /* #A6ACCD */
+    [MT_TYPE] = "\x1b[38;5;110m",     /* #91B4D5 */
+    [MT_STRING] = "\x1b[38;5;80m",    /* #5DE4C7 */
+    [MT_NUMBER] = "\x1b[38;5;80m",    /* #5DE4C7 */
+    [MT_COMMENT] = "\x1b[38;5;103m",  /* #767C9D */
+    [MT_FUNCTION] = "\x1b[38;5;153m", /* #ADD7FF */
+    [MT_OPERATOR] = "\x1b[38;5;110m", /* #91B4D5 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;146m", /* #A6ACCD */
+    [MT_CONSTANT] = "\x1b[38;5;80m", /* #5DE4C7 */
+};
+
+/* Moonfly (bluz71/vim-moonfly-colors). moonfly/init.lua */
+static const char *const theme_moonfly[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m",  /* #CF87E8 */
+    [MT_TYPE] = "\x1b[38;5;78m",      /* #36C692 */
+    [MT_STRING] = "\x1b[38;5;186m",   /* #C6C684 */
+    [MT_NUMBER] = "\x1b[38;5;173m",   /* #DE935F */
+    [MT_COMMENT] = "\x1b[38;5;246m",  /* #949494 */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #74B2FF */
+    [MT_OPERATOR] = "\x1b[38;5;167m", /* #E65E72 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;167m",  /* #E65E72 */
+    [MT_CONSTANT] = "\x1b[38;5;141m", /* #AE81FF */
+};
+
+/* Nightfly (bluz71/vim-nightfly-colors). nightfly/init.lua */
+static const char *const theme_nightfly[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m",  /* #C792EA */
+    [MT_TYPE] = "\x1b[38;5;43m",      /* #21C7A8 */
+    [MT_STRING] = "\x1b[38;5;222m",   /* #ECC48D */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #F78C6C */
+    [MT_COMMENT] = "\x1b[38;5;245m",  /* #7C8F8F */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #82AAFF */
+    [MT_OPERATOR] = "\x1b[38;5;204m", /* #FF5874 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;204m",  /* #FF5874 */
+    [MT_CONSTANT] = "\x1b[38;5;209m", /* #F78C6C */
+};
+
+/* Iceberg (cocopon/iceberg.vim). Cohesive blue palette. */
+static const char *const theme_iceberg[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;110m",  /* #84A0C6 */
+    [MT_TYPE] = "\x1b[38;5;110m",     /* #84A0C6 */
+    [MT_STRING] = "\x1b[38;5;109m",   /* #89B8C2 */
+    [MT_NUMBER] = "\x1b[38;5;140m",   /* #A093C7 */
+    [MT_COMMENT] = "\x1b[38;5;243m",  /* #6B7089 */
+    [MT_FUNCTION] = "\x1b[38;5;110m", /* #84A0C6 */
+    [MT_OPERATOR] = "\x1b[38;5;110m", /* #84A0C6 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;144m",  /* #B4BE82 */
+    [MT_CONSTANT] = "\x1b[38;5;140m", /* #A093C7 */
+};
+
+/* Modus Vivendi (Protesilaos Stavrou, Emacs). WCAG AAA dark. */
+static const char *const theme_modus_vivendi[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;147m",  /* #B6A0FF */
+    [MT_TYPE] = "\x1b[38;5;39m",      /* #00BCFF */
+    [MT_STRING] = "\x1b[38;5;111m",   /* #79A8FF */
+    [MT_NUMBER] = "",                 /* fg-main (white) */
+    [MT_COMMENT] = "\x1b[38;5;246m",  /* #989898 */
+    [MT_FUNCTION] = "\x1b[38;5;218m", /* #FEACD0 */
+    [MT_OPERATOR] = "",               /* fg-main */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;210m", /* #FF7F86 */
+    [MT_CONSTANT] = "\x1b[38;5;39m", /* #00BCFF */
+};
+
+/* Modus Operandi (Protesilaos Stavrou, Emacs). WCAG AAA light. */
+static const char *const theme_modus_operandi[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;54m",  /* #721C8F */
+    [MT_TYPE] = "\x1b[38;5;24m",     /* #005F87 */
+    [MT_STRING] = "\x1b[38;5;62m",   /* #3548CF */
+    [MT_NUMBER] = "",                /* fg-main (black) */
+    [MT_COMMENT] = "\x1b[38;5;240m", /* #595959 */
+    [MT_FUNCTION] = "\x1b[38;5;53m", /* #721045 */
+    [MT_OPERATOR] = "",              /* fg-main */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;124m", /* #A0132F */
+    [MT_CONSTANT] = "\x1b[38;5;19m", /* #0000B0 */
+};
+
 static const char *const *active_theme = theme_dark;
 
 int mat_theme_set(const char *name)
@@ -607,6 +772,28 @@ int mat_theme_set(const char *name)
         active_theme = theme_onelight;
     else if (strcmp(name, "nightowl") == 0)
         active_theme = theme_nightowl;
+    else if (strcmp(name, "nightfox") == 0)
+        active_theme = theme_nightfox;
+    else if (strcmp(name, "dayfox") == 0)
+        active_theme = theme_dayfox;
+    else if (strcmp(name, "dawnfox") == 0)
+        active_theme = theme_dawnfox;
+    else if (strcmp(name, "carbonfox") == 0)
+        active_theme = theme_carbonfox;
+    else if (strcmp(name, "oxocarbon") == 0)
+        active_theme = theme_oxocarbon;
+    else if (strcmp(name, "poimandres") == 0)
+        active_theme = theme_poimandres;
+    else if (strcmp(name, "moonfly") == 0)
+        active_theme = theme_moonfly;
+    else if (strcmp(name, "nightfly") == 0)
+        active_theme = theme_nightfly;
+    else if (strcmp(name, "iceberg") == 0)
+        active_theme = theme_iceberg;
+    else if (strcmp(name, "modus-vivendi") == 0)
+        active_theme = theme_modus_vivendi;
+    else if (strcmp(name, "modus-operandi") == 0)
+        active_theme = theme_modus_operandi;
     else
         return -1;
     return 0;
@@ -622,13 +809,16 @@ const char *mat_theme_sgr(enum mat_tok tok)
 void mat_theme_list(void)
 {
     printf("ayu-dark\nayu-light\nayu-mirage\n"
-           "catppuccin\ncatppuccin-frappe\ncatppuccin-latte\n"
-           "catppuccin-macchiato\ndark\ndracula\n"
+           "carbonfox\ncatppuccin\ncatppuccin-frappe\n"
+           "catppuccin-latte\ncatppuccin-macchiato\n"
+           "dark\ndawnfox\ndayfox\ndracula\n"
            "everforest-dark\neverforest-light\n"
            "github-dark\ngithub-light\ngruvbox\ngruvbox-light\n"
-           "kanagawa\nlight\nmaterial\nmonokai\n"
-           "nightowl\nnord\nonedark\nonelight\npalenight\n"
-           "rosepine\nrosepine-dawn\nrosepine-moon\n"
+           "iceberg\nkanagawa\nlight\nmaterial\n"
+           "modus-operandi\nmodus-vivendi\nmoonfly\nmonokai\n"
+           "nightfly\nnightfox\nnightowl\nnord\n"
+           "onedark\nonelight\noxocarbon\npalenight\n"
+           "poimandres\nrosepine\nrosepine-dawn\nrosepine-moon\n"
            "solarized-dark\nsolarized-light\nsynthwave\n"
            "tokyonight\ntomorrow\ntomorrow-night\nzenburn\n");
 }
