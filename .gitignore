@@ -25,3 +25,8 @@ bench/results/*.local.json
 # Editor / OS noise
 *.swp
 .DS_Store
+
+# Core dumps
+*.core
+core
+core.*
