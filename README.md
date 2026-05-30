@@ -18,13 +18,24 @@ are means over 30+ runs with warmup.
 | `cat` | 61 ms | 2.3x slower |
 | `bat --style=plain` | 195 ms | 7.4x slower |
 
+### Throughput (1 GiB random file to /dev/null)
+
+| Command | Time | vs mat |
+|:--------|-----:|-------:|
+| `mat` | 108 ms | 1.0x |
+| `cat` | 244 ms | 2.3x slower |
+
+mat spends 2 ms in user space; the kernel moves the data via `copy_file_range`
+without it ever crossing the user/kernel boundary. The ratio holds from 256 MiB
+to 1 GiB+.
+
 ### Throughput (256 MiB random file to a pipe)
 
 | Command | Time | vs mat |
 |:--------|-----:|-------:|
-| `mat \| wc -c` | 132 ms | 1.0x |
-| `cat \| wc -c` | 148 ms | 1.1x slower |
-| `bat --style=plain \| wc -c` | 927 ms | 7.0x slower |
+| `mat \| wc -c` | 91 ms | 1.0x |
+| `cat \| wc -c` | 147 ms | 1.6x slower |
+| `bat --style=plain \| wc -c` | 927 ms | 10.2x slower |
 
 ### Highlighted output (small C source file)
 
