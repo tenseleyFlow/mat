@@ -1,0 +1,119 @@
+.TH MAT 1 "2026" "mat" "User Commands"
+.SH NAME
+mat \- concatenate files, blazingly fast, with optional bat-style decorations
+.SH SYNOPSIS
+.B mat
+.RI [ OPTION ]...
+.RI [ FILE ]...
+.SH DESCRIPTION
+.B mat
+concatenates each
+.I FILE
+to standard output. With no
+.IR FILE ,
+or when
+.I FILE
+is \fB\-\fR, it reads standard input.
+.PP
+By default mat behaves exactly like
+.BR cat (1):
+piped and redirected output is plain and byte\-identical to cat. The
+.BR bat (1)\-style
+frame (line\-number gutter, grid, header) is opt\-in via
+.B \-\-style
+or
+.BR \-\-pretty .
+.SH OPTIONS
+.SS cat compatibility
+.TP
+.B \-n
+Number all output lines.
+.TP
+.B \-b
+Number nonempty output lines (overrides \fB\-n\fR).
+.TP
+.B \-s
+Squeeze repeated empty lines.
+.TP
+.B \-v
+Show nonprinting characters using \fB^\fR and \fBM\-\fR notation.
+.TP
+.B \-e
+Equivalent to \fB\-vE\fR (also display \fB$\fR at end of line).
+.TP
+.B \-t
+Equivalent to \fB\-vT\fR (also display TAB as \fB^I\fR).
+.TP
+.B \-A
+Equivalent to \fB\-vET\fR.
+.TP
+.B \-E
+Display \fB$\fR at end of each line.
+.TP
+.B \-T
+Display TAB as \fB^I\fR.
+.SS Decorations (opt-in)
+.TP
+.BR \-p ", " \-\-pretty
+Show the full frame: header, grid, and line numbers.
+.TP
+.BR \-S ", " \-\-chop\-long\-lines
+Do not wrap long lines (same as \fB\-\-wrap=never\fR).
+.TP
+.BI \-\-style= LIST
+Comma\-separated components: \fInumbers\fR, \fIgrid\fR, \fIheader\fR,
+\fIheader\-filesize\fR, \fIrule\fR, \fIsnip\fR; or presets \fIplain\fR,
+\fIdefault\fR, \fIfull\fR. A leading \fB+\fR/\fB\-\fR modifies the default set.
+.TP
+.BI \-\-decorations= WHEN
+\fIauto\fR, \fInever\fR, or \fIalways\fR.
+.TP
+.BI \-\-color= WHEN
+\fIauto\fR, \fInever\fR, or \fIalways\fR.
+.TP
+.BI \-\-wrap= MODE
+\fIauto\fR, \fInever\fR, \fIcharacter\fR, or \fIword\fR.
+.TP
+.BI \-\-tabs= N
+Expand tabs to \fIN\fR columns in the frame (0 disables).
+.TP
+.BI \-\-terminal\-width= N
+Columns to assume for the frame.
+.SS Config
+.TP
+.B \-\-no\-config
+Ignore configuration files.
+.TP
+.B \-\-config\-file
+Print the path of the user config file.
+.TP
+.B \-\-config\-dir
+Print the user config directory.
+.TP
+.B \-\-generate\-config\-file
+Print a commented config template.
+.SH ENVIRONMENT
+.TP
+.B MAT_OPTS
+Default options applied before the command line (also \fBBAT_OPTS\fR).
+.TP
+.BR MAT_STYLE ", " MAT_TABS ", " MAT_WRAP
+Default style, tab width, and wrap mode (\fBBAT_STYLE\fR/\fBBAT_TABS\fR fall back).
+.TP
+.B NO_COLOR
+If set, disables color unless forced.
+.TP
+.B MAT_NO_CONFIG
+If set, configuration files are not read.
+.SH FILES
+.TP
+.I /etc/mat/config
+System\-wide configuration.
+.TP
+.I ~/.config/mat/config
+User configuration (one option per line; \fB#\fR begins a comment).
+.SH "EXIT STATUS"
+0 on success, 1 if any file could not be read.
+.SH "SEE ALSO"
+.BR cat (1),
+.BR bat (1)
