@@ -44,6 +44,7 @@ struct cooked {
     bool show_tabs;       /* -T (and -t): tabs as ^I */
     bool show_nonprint;   /* -v (and -e, -t): quote nonprintables */
     bool squeeze;         /* -s: collapse repeated blank lines */
+    int squeeze_limit;    /* max consecutive blanks to keep under -s */
     struct mat_counter counter;
     struct mat_xtable xt; /* built only when show_nonprint */
     int newlines;         /* consecutive-newline state, persists across files */
@@ -78,6 +79,10 @@ static int cook_fd(struct cooked *c, int fd, const char *name)
     char *eob = inbuf;
     char *bpin = eob + 1; /* force an initial read */
     unsigned char ch;
+    /* When squeezing, keep at most squeeze_limit blank lines, i.e. cap the
+     * consecutive-newline run at limit+1; otherwise the old cap of 2 (enough to
+     * tell blank from non-blank without overflowing). */
+    int nl_cap = c->squeeze ? c->squeeze_limit + 1 : 2;
 
     for (;;) {
         do {
@@ -121,8 +126,8 @@ static int cook_fd(struct cooked *c, int fd, const char *name)
             } else {
                 /* A real newline. */
                 if (++newlines > 0) {
-                    if (newlines >= 2) {
-                        newlines = 2; /* cap so the counter can't wrap */
+                    if (newlines >= nl_cap) {
+                        newlines = nl_cap; /* cap so the counter can't wrap */
                         if (c->squeeze) {
                             ch = (unsigned char)*bpin++;
                             continue;
@@ -221,6 +226,7 @@ void mat_cooked_run(const struct config *cfg)
     c.show_tabs = (cfg->xform & MAT_X_SHOW_TABS) != 0;
     c.show_nonprint = (cfg->xform & MAT_X_SHOW_NONPRINT) != 0;
     c.squeeze = (cfg->xform & MAT_X_SQUEEZE) != 0;
+    c.squeeze_limit = cfg->squeeze_limit;
 
     c.inbuf = malloc(COOKED_INSIZE + 1);
     c.outbuf = malloc(COOKED_OUTCAP);

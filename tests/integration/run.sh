@@ -80,5 +80,11 @@ run_stdin range_snip   "$scratch/lines.txt" "$MAT" --pretty --color=never -r 2:3
 run_stdin hl_stream    "$scratch/lines.txt" "$MAT" --pretty --color=always -H 3
 run_stdin hl_in_range  "$scratch/lines.txt" "$MAT" --pretty --color=always -r 2:6 -H 4
 
+# --squeeze-limit caps consecutive blanks (default 1 == cat -s).
+printf 'a\n\n\n\n\nb\n\n\n\nc\n' > "$scratch/blanks.txt"
+run squeeze_def  "$MAT" -s "$scratch/blanks.txt"
+run squeeze_two  "$MAT" -s --squeeze-limit 2 "$scratch/blanks.txt"
+run squeeze_zero "$MAT" -s --squeeze-limit 0 "$scratch/blanks.txt"
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
