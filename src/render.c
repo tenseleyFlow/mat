@@ -15,6 +15,10 @@ void mat_render_init(struct mat_render *r, unsigned style, enum mat_wrap wrap,
     r->panel_width = r->numbers ? 5 : 0;
     r->wrap = wrap;
     r->tab_width = tab_width;
+    r->wbuf = malloc(4096);
+    r->wbuf_cap = r->wbuf ? 4096 : 0;
+    r->seg = malloc(1024);
+    r->seg_cap = r->seg ? 1024 : 0;
 }
 
 void mat_render_free(struct mat_render *r)
