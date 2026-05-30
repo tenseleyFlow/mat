@@ -126,6 +126,7 @@ asan:
 	    src/main.c src/cli.c src/err.c src/iobuf.c src/input.c src/fastpath.c \
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
 	    src/style.c src/interactive.c src/width.c src/conf.c src/render.c src/matpager.c \
+	    src/range.c \
 	    lib/paige/src/term.c lib/paige/src/pager.c
 
 install: mat
