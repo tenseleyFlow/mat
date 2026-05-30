@@ -7,12 +7,13 @@
 *.a
 *.so
 *.dylib
-mat
-!src/mat/
+/mat
+/mat-asan
 
 # configure-generated
 /config.mk
 /config.h
+/src/config_generated.h
 /compile_commands.json
 
 # Test/bench scratch
