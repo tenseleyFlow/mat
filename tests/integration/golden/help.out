@@ -23,6 +23,8 @@ Decorations (opt-in; piped output stays plain like cat):
       --wrap=MODE         auto|never|character|word
       --tabs=N            expand tabs to N columns (0 = off)
       --terminal-width=N  columns for the frame
+  -P, --no-paging      do not page output
+      --paging=WHEN       auto|never|always (bespoke pager)
 
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
