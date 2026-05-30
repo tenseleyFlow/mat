@@ -34,34 +34,48 @@ import json, sys
 res = json.load(open(sys.argv[1]))["results"]
 mat, ref = res[0]["mean"], res[1]["mean"]
 mode, label = sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else ""
+# Allow a small tolerance for the "noregress" gate: file->file is kernel-bound
+# (both use copy_file_range), so the best mat can do is tie cat; we only fail on
+# a meaningful regression, not sub-millisecond jitter.
+TOL = 1.15
 ratio = ref / mat if mat else float("inf")
 faster = "faster" if mat <= ref else "SLOWER"
 print(f"  {label}: mat={mat*1e3:7.2f}ms  cat={ref*1e3:7.2f}ms  ({ratio:.2f}x, mat {faster})")
-sys.exit(1 if (mode == "gate" and mat > ref) else 0)
+if mode == "faster":
+    sys.exit(0 if mat <= ref else 1)
+if mode == "noregress":
+    sys.exit(0 if mat <= ref * TOL else 1)
+sys.exit(0)  # report
 PY
 }
 
 fail=0
 echo "perf gate (mat vs cat):"
 
-# --- HARD GATE: file -> /dev/null ---
-hyperfine -N --warmup 3 --export-json "$scratch/g.json" \
+# HARD GATE — mat must be FASTER (mat has an architectural edge here):
+#   file -> /dev/null : cat detours through an intermediate pipe; mat does not.
+hyperfine -N --warmup 3 --export-json "$scratch/g1.json" \
     "$MAT $scratch/big" "cat $scratch/big" >/dev/null 2>&1
-if ! parse "$scratch/g.json" gate "file -> /dev/null  [GATED]"; then
-    echo "PERF GATE FAIL: mat is slower than cat on file -> /dev/null"
+if ! parse "$scratch/g1.json" faster "file -> /dev/null  [GATE faster]"; then
+    echo "PERF GATE FAIL: mat is not faster than cat on file -> /dev/null"
     fail=1
 fi
 
-# --- REPORT ONLY: file -> file, file -> pipe (redirects/pipes need a shell) ---
-hyperfine --warmup 3 --export-json "$scratch/r1.json" \
-    "$MAT $scratch/big > $scratch/o_m" "cat $scratch/big > $scratch/o_c" >/dev/null 2>&1
-parse "$scratch/r1.json" report "file -> file      [report]" || true
-
-# Use `cat >/dev/null` as the drain, not `wc -c`: counting bytes dominates the
-# measurement and masks the splice advantage with noise.
-hyperfine --warmup 3 --export-json "$scratch/r2.json" \
+#   file -> pipe : mat's direct splice beats cat's intermediate-pipe double splice.
+#   (Drain with `cat >/dev/null`, not `wc -c`, whose counting cost adds noise.)
+hyperfine --warmup 3 --export-json "$scratch/g2.json" \
     "$MAT $scratch/big | cat >/dev/null" "cat $scratch/big | cat >/dev/null" >/dev/null 2>&1
-parse "$scratch/r2.json" report "file -> pipe      [report]" || true
+if ! parse "$scratch/g2.json" faster "file -> pipe      [GATE faster]"; then
+    echo "PERF GATE FAIL: mat is not faster than cat on file -> pipe"
+    fail=1
+fi
+
+# REPORT ONLY — file -> file is a kernel-bound tie: both use copy_file_range, so
+# mat cannot beat cat (same syscall) and the ~5ms reflink times jitter too much
+# to gate without flaking. We surface the number but never fail on it.
+hyperfine --warmup 3 --export-json "$scratch/g3.json" \
+    "$MAT $scratch/big > $scratch/o_m" "cat $scratch/big > $scratch/o_c" >/dev/null 2>&1
+parse "$scratch/g3.json" report "file -> file      [report, tie]" || true
 
 [ "$fail" -eq 0 ] && echo "perf gate: PASS"
 exit $fail
