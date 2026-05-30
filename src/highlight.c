@@ -3601,7 +3601,9 @@ static int lex_gitrebase(struct mat_hl *h, const unsigned char *d, size_t len,
                          struct mat_span *out, int cap)
 {
     (void)h;
-    if (len > 0 && d[0] == '#')
+    if (len == 0)
+        return 0;
+    if (d[0] == '#')
         return emit(out, cap, 0, 0, len, MT_COMMENT);
     int n = 0;
     size_t i = 0;

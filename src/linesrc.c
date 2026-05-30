@@ -3,6 +3,7 @@
 #include "scan.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +16,11 @@ static void off_push(struct mat_linesrc *s, size_t v)
     if (s->noff == s->off_cap) {
         size_t nc = s->off_cap ? s->off_cap * 2 : 1024;
         size_t *nb = realloc(s->off, nc * sizeof *nb);
-        if (nb == NULL)
+        if (nb == NULL) {
+            s->eof_known = true;
+            s->total = s->noff > 0 ? s->noff - 1 : 0;
             return;
+        }
         s->off = nb;
         s->off_cap = nc;
     }
@@ -122,6 +126,8 @@ static char *slurp_fd(int fd, size_t *out)
 static char *decode_utf16(const unsigned char *p, size_t n, bool le,
                           size_t *outlen)
 {
+    if (n > SIZE_MAX / 2)
+        return NULL;
     size_t cap = n + n / 2 + 16, len = 0;
     char *out = malloc(cap);
     if (out == NULL)

@@ -2,6 +2,7 @@
 #include "ansi.h"
 #include "err.h"
 #include "frame.h"
+#include "gitdiff.h"
 #include "highlight.h"
 #include "input.h"
 #include "iobuf.h"
@@ -392,6 +393,12 @@ static void print_file(const struct config *cfg, const char *file,
                                       o);
             else {
                 /* Resolve a syntax and open a highlighter when coloring. */
+                struct mat_changes chg;
+                memset(&chg, 0, sizeof chg);
+                if (cfg->diff && !is_stdin)
+                    mat_changes_load(&chg, file);
+                e.rc.changes = chg.nlines > 0 ? &chg : NULL;
+
                 if (e.rc.color) {
                     const unsigned char *fl = (const unsigned char *)"";
                     size_t fll = 0;
@@ -403,6 +410,8 @@ static void print_file(const struct config *cfg, const char *file,
                         mat_hl_open(mat_syntax_detect(cfg, sname, fl, fll));
                 }
                 print_seekable(cfg, &src, &e);
+                e.rc.changes = NULL;
+                mat_changes_free(&chg);
                 mat_hl_close(e.rc.hl);
                 e.rc.hl = NULL;
             }
