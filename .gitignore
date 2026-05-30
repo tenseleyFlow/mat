@@ -1,5 +1,5 @@
-# Reference clones (other projects, large, own histories) — kept locally, not tracked
-.docs/refs/
+# Planning docs, audits, and reference clones — kept locally, not tracked
+.docs/
 
 # Build output
 /build/
