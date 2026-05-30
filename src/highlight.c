@@ -149,18 +149,109 @@ static const char *const theme_onedark[MT_NTOKENS] = {
     [MT_CONSTANT] = "\x1b[38;5;180m",
 };
 
+/* Catppuccin Mocha (the default "catppuccin"). Palette: catppuccin.com */
 static const char *const theme_catppuccin[MT_NTOKENS] = {
     [MT_TEXT] = "",
-    [MT_KEYWORD] = "\x1b[38;5;183m",
-    [MT_TYPE] = "\x1b[38;5;223m",
-    [MT_STRING] = "\x1b[38;5;151m",
-    [MT_NUMBER] = "\x1b[38;5;223m",
-    [MT_COMMENT] = "\x1b[38;5;247m",
-    [MT_FUNCTION] = "\x1b[38;5;153m",
-    [MT_OPERATOR] = "\x1b[38;5;153m",
+    [MT_KEYWORD] = "\x1b[38;5;183m",  /* #CBA6F7 mauve */
+    [MT_TYPE] = "\x1b[38;5;223m",     /* #F9E2AF yellow */
+    [MT_STRING] = "\x1b[38;5;151m",   /* #A6E3A1 green */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #FAB387 peach */
+    [MT_COMMENT] = "\x1b[38;5;243m",  /* #6C7086 overlay0 */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #89B4FA blue */
+    [MT_OPERATOR] = "\x1b[38;5;116m", /* #89DCEB sky */
     [MT_PUNCT] = "",
-    [MT_PREPROC] = "\x1b[38;5;225m",
-    [MT_CONSTANT] = "\x1b[38;5;223m",
+    [MT_PREPROC] = "\x1b[38;5;225m",  /* #F5C2E7 pink */
+    [MT_CONSTANT] = "\x1b[38;5;209m", /* #FAB387 peach */
+};
+
+/* Catppuccin Latte (light). Palette: catppuccin.com/palette */
+static const char *const theme_catppuccin_latte[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;133m", /* #8839EF mauve */
+    [MT_TYPE] = "\x1b[38;5;136m",    /* #DF8E1D yellow */
+    [MT_STRING] = "\x1b[38;5;65m",   /* #40A02B green */
+    [MT_NUMBER] = "\x1b[38;5;166m",  /* #FE640B peach */
+    [MT_COMMENT] = "\x1b[38;5;247m", /* #9CA0B0 overlay0 */
+    [MT_FUNCTION] = "\x1b[38;5;32m", /* #1E66F5 blue */
+    [MT_OPERATOR] = "\x1b[38;5;74m", /* #04A5E5 sky */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;168m", /* #EA76CB pink */
+    [MT_CONSTANT] = "\x1b[38;5;166m",
+};
+
+/* Catppuccin Frappe (mid-dark). Palette: catppuccin.com/palette */
+static const char *const theme_catppuccin_frappe[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m",  /* #CA9EE6 mauve */
+    [MT_TYPE] = "\x1b[38;5;186m",     /* #E5C890 yellow */
+    [MT_STRING] = "\x1b[38;5;108m",   /* #A6D189 green */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #EF9F76 peach */
+    [MT_COMMENT] = "\x1b[38;5;244m",  /* #737994 overlay0 */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #8CAAEE blue */
+    [MT_OPERATOR] = "\x1b[38;5;117m", /* #99D1DB sky */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;218m", /* #F4B8E4 pink */
+    [MT_CONSTANT] = "\x1b[38;5;209m",
+};
+
+/* Catppuccin Macchiato (dark). Palette: catppuccin.com/palette */
+static const char *const theme_catppuccin_macchiato[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;183m",  /* #C6A0F6 mauve */
+    [MT_TYPE] = "\x1b[38;5;222m",     /* #EED49F yellow */
+    [MT_STRING] = "\x1b[38;5;150m",   /* #A6DA95 green */
+    [MT_NUMBER] = "\x1b[38;5;209m",   /* #F5A97F peach */
+    [MT_COMMENT] = "\x1b[38;5;243m",  /* #6E738D overlay0 */
+    [MT_FUNCTION] = "\x1b[38;5;111m", /* #8AADF4 blue */
+    [MT_OPERATOR] = "\x1b[38;5;117m", /* #91D7E3 sky */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;218m", /* #F5BDE6 pink */
+    [MT_CONSTANT] = "\x1b[38;5;209m",
+};
+
+/* Gruvbox Light (morhetz/gruvbox). Same accents, light bg. */
+static const char *const theme_gruvbox_light[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;124m", /* #9D0006 dark red */
+    [MT_TYPE] = "\x1b[38;5;136m",    /* #B57614 dark yellow */
+    [MT_STRING] = "\x1b[38;5;64m",   /* #79740E dark green */
+    [MT_NUMBER] = "\x1b[38;5;132m",  /* #8F3F71 dark purple */
+    [MT_COMMENT] = "\x1b[38;5;246m", /* #928374 grey */
+    [MT_FUNCTION] = "\x1b[38;5;64m", /* #79740E */
+    [MT_OPERATOR] = "\x1b[38;5;94m", /* #7C6F64 dark fg4 */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;66m", /* #427B58 dark aqua */
+    [MT_CONSTANT] = "\x1b[38;5;132m",
+};
+
+/* One Light (Atom). From atom/one-light-syntax. */
+static const char *const theme_onelight[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;133m", /* #A626A4 hue-3 purple */
+    [MT_TYPE] = "\x1b[38;5;136m",    /* #C18401 hue-6-2 orange */
+    [MT_STRING] = "\x1b[38;5;65m",   /* #50A14F hue-4 green */
+    [MT_NUMBER] = "\x1b[38;5;166m",  /* #986801 hue-6 orange */
+    [MT_COMMENT] = "\x1b[38;5;247m", /* #A0A1A7 mono-3 */
+    [MT_FUNCTION] = "\x1b[38;5;32m", /* #4078F2 hue-2 blue */
+    [MT_OPERATOR] = "\x1b[38;5;30m", /* #0184BC hue-1 cyan */
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;133m",
+    [MT_CONSTANT] = "\x1b[38;5;166m",
+};
+
+/* Night Owl (Sarah Drasner). From sdras/night-owl-vscode-theme. */
+static const char *const theme_nightowl[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;176m", /* #C792EA purple */
+    [MT_TYPE] = "\x1b[38;5;179m",    /* #FFCB6B yellow */
+    [MT_STRING] = "\x1b[38;5;186m",  /* #ECC48D light sand */
+    [MT_NUMBER] = "\x1b[38;5;209m",  /* #F78C6C orange */
+    [MT_COMMENT] = "\x1b[38;5;60m",  /* #637777 muted teal */
+    [MT_FUNCTION] = "\x1b[38;5;75m", /* #82AAFF blue */
+    [MT_OPERATOR] = "\x1b[38;5;176m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;204m", /* #FF5874 red */
+    [MT_CONSTANT] = "\x1b[38;5;209m",
 };
 
 static const char *const theme_github_dark[MT_NTOKENS] = {
@@ -504,6 +595,18 @@ int mat_theme_set(const char *name)
         active_theme = theme_ayu_mirage;
     else if (strcmp(name, "ayu-light") == 0)
         active_theme = theme_ayu_light;
+    else if (strcmp(name, "catppuccin-latte") == 0)
+        active_theme = theme_catppuccin_latte;
+    else if (strcmp(name, "catppuccin-frappe") == 0)
+        active_theme = theme_catppuccin_frappe;
+    else if (strcmp(name, "catppuccin-macchiato") == 0)
+        active_theme = theme_catppuccin_macchiato;
+    else if (strcmp(name, "gruvbox-light") == 0)
+        active_theme = theme_gruvbox_light;
+    else if (strcmp(name, "onelight") == 0)
+        active_theme = theme_onelight;
+    else if (strcmp(name, "nightowl") == 0)
+        active_theme = theme_nightowl;
     else
         return -1;
     return 0;
@@ -518,13 +621,16 @@ const char *mat_theme_sgr(enum mat_tok tok)
 
 void mat_theme_list(void)
 {
-    printf("ayu-dark\nayu-light\nayu-mirage\ncatppuccin\ndark\n"
-           "dracula\neverforest-dark\neverforest-light\ngithub-dark\n"
-           "github-light\ngruvbox\nkanagawa\nlight\nmaterial\n"
-           "monokai\nnord\nonedark\npalenight\nrosepine\n"
-           "rosepine-dawn\nrosepine-moon\nsolarized-dark\n"
-           "solarized-light\nsynthwave\ntokyonight\ntomorrow\n"
-           "tomorrow-night\nzenburn\n");
+    printf("ayu-dark\nayu-light\nayu-mirage\n"
+           "catppuccin\ncatppuccin-frappe\ncatppuccin-latte\n"
+           "catppuccin-macchiato\ndark\ndracula\n"
+           "everforest-dark\neverforest-light\n"
+           "github-dark\ngithub-light\ngruvbox\ngruvbox-light\n"
+           "kanagawa\nlight\nmaterial\nmonokai\n"
+           "nightowl\nnord\nonedark\nonelight\npalenight\n"
+           "rosepine\nrosepine-dawn\nrosepine-moon\n"
+           "solarized-dark\nsolarized-light\nsynthwave\n"
+           "tokyonight\ntomorrow\ntomorrow-night\nzenburn\n");
 }
 
 static int emit(struct mat_span *out, int cap, int n, size_t start, size_t len,
