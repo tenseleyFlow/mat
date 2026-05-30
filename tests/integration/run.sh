@@ -101,5 +101,16 @@ run_pipe range_lastn_pipe "$scratch/lines.txt" "$MAT" -r -3:
 run_pipe range_mix_pipe   "$scratch/lines.txt" "$MAT" -r 1:3 -r -2:
 run_pipe range_bound_pipe "$scratch/lines.txt" "$MAT" -r 2:4
 
+# Encoding (Sprint 07): UTF-16 decoded to UTF-8, UTF-8 BOM stripped, binary
+# files skipped-with-notice (decorated) or shown raw with --binary=as-text.
+printf '\377\376\150\000\151\000\012\000' > "$scratch/u16le.bin" # BOM + "hi\n"
+run enc_utf16le "$MAT" -r 1: "$scratch/u16le.bin"
+printf '\357\273\277\150\151\012' > "$scratch/u8bom.txt" # BOM + "hi\n"
+run enc_u8bom "$MAT" -r 1: "$scratch/u8bom.txt"
+printf '\141\142\000\143\012\144\145\146\012' > "$scratch/binary.bin" # NUL inside
+run_stdin enc_binary_notice "$scratch/binary.bin" "$MAT" --pretty --color=never -r 1:
+run_stdin enc_binary_astext "$scratch/binary.bin" "$MAT" \
+    --pretty --color=never --binary=as-text -r 1:
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

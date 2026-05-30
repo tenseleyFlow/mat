@@ -14,10 +14,20 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "encoding.h"
+
 struct mat_linesrc {
+    /* Logical content the index/lines see: UTF-8 (decoded from UTF-16 when the
+     * source was UTF-16; a leading BOM is skipped). */
     const char *data;
     size_t size;
-    bool mmapped;
+    enum mat_encoding encoding; /* the detected source encoding */
+
+    /* Ownership of the backing bytes, freed at close. */
+    void *map; /* mmap base (munmap), or NULL */
+    size_t map_size;
+    void *owned; /* malloc'd buffer (free), or NULL */
+
     size_t *off; /* off[i] = byte offset of line i */
     size_t noff, off_cap;
     bool eof_known;

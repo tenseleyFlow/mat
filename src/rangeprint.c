@@ -359,7 +359,15 @@ static void print_file(const struct config *cfg, const char *file,
     if (seekable) {
         struct mat_linesrc src;
         if (mat_linesrc_open(&src, fd)) {
-            print_seekable(cfg, &src, &e);
+            /* A decorated binary file is skipped with a notice unless the user
+             * asked for as-text. linesrc has already decoded any UTF-16. */
+            if (decorated && src.encoding == MAT_ENC_BINARY &&
+                cfg->binary == MAT_BINARY_NO_PRINTING)
+                mat_frame_header_line(&e.rc, "<BINARY> ",
+                                      "(--binary=as-text to show)", out_sink,
+                                      o);
+            else
+                print_seekable(cfg, &src, &e);
             mat_linesrc_free(&src);
         } else {
             mat_warn(is_stdin ? "stdin" : file);

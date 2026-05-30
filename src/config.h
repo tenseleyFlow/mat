@@ -26,6 +26,9 @@ enum mat_xform {
 /* When to colorize / decorate (bat-style tri-states). */
 enum mat_when { MAT_WHEN_AUTO, MAT_WHEN_NEVER, MAT_WHEN_ALWAYS };
 
+/* How decorated output treats a binary file. Default skips with a notice. */
+enum mat_binary { MAT_BINARY_NO_PRINTING, MAT_BINARY_AS_TEXT };
+
 /* Long-line handling in the decoration frame. AUTO == CHARACTER (bat default).
  */
 enum mat_wrap {
@@ -74,6 +77,9 @@ struct config {
     struct mat_rangeset ranges;     /* -r: lines to print (empty = all) */
     struct mat_rangeset highlights; /* -H: lines to emphasize */
     int squeeze_limit;              /* -s: max blank run to keep (default 1) */
+
+    /* Encoding / mapping (Sprint 07). */
+    enum mat_binary binary; /* --binary: how decorated output treats binary */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

@@ -51,6 +51,10 @@ void mat_print_usage(void)
         "  -H, --highlight-line=RANGE  emphasize lines (decorated output)\n"
         "      --squeeze-limit=N   max blank lines kept under -s (default 1)\n"
         "\n"
+        "Encoding:\n"
+        "      --binary=WHEN       no-printing|as-text (decorated binary "
+        "files)\n"
+        "\n"
         "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
         "$MAT_OPTS,\n"
         "$MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):\n"
@@ -317,6 +321,21 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                     if (mat_range_parse(&cfg->highlights, val, rerr,
                                         sizeof rerr)) {
                         fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                        return -1;
+                    }
+                    continue;
+                }
+                if ((r = match_val(a, "--binary", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    if (strcmp(val, "no-printing") == 0)
+                        cfg->binary = MAT_BINARY_NO_PRINTING;
+                    else if (strcmp(val, "as-text") == 0)
+                        cfg->binary = MAT_BINARY_AS_TEXT;
+                    else {
+                        fprintf(stderr,
+                                "%s: --binary expects no-printing|as-text\n",
+                                mat_progname);
                         return -1;
                     }
                     continue;

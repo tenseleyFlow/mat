@@ -32,6 +32,9 @@ Line selection:
   -H, --highlight-line=RANGE  emphasize lines (decorated output)
       --squeeze-limit=N   max blank lines kept under -s (default 1)
 
+Encoding:
+      --binary=WHEN       no-printing|as-text (decorated binary files)
+
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
       --no-config              ignore config files

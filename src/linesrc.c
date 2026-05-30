@@ -1,7 +1,9 @@
 #include "linesrc.h"
+#include "encoding.h"
 #include "scan.h"
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -75,10 +77,9 @@ size_t mat_linesrc_total(struct mat_linesrc *s)
 
 void mat_linesrc_free(struct mat_linesrc *s)
 {
-    if (s->mmapped && s->data && s->size)
-        munmap((void *)s->data, s->size);
-    else
-        free((void *)s->data);
+    if (s->map && s->map_size)
+        munmap(s->map, s->map_size);
+    free(s->owned);
     free(s->off);
 }
 
@@ -112,6 +113,95 @@ static char *slurp_fd(int fd, size_t *out)
     return buf;
 }
 
+/* Decode UTF-16 (after its BOM) into a fresh UTF-8 buffer. Lone/invalid
+ * surrogates become U+FFFD. */
+static char *decode_utf16(const unsigned char *p, size_t n, bool le,
+                          size_t *outlen)
+{
+    size_t cap = n + n / 2 + 16, len = 0;
+    char *out = malloc(cap);
+    if (out == NULL)
+        return NULL;
+    size_t i = 0;
+    while (i + 1 < n) {
+        uint32_t u = le ? (uint32_t)(p[i] | (p[i + 1] << 8))
+                        : (uint32_t)((p[i] << 8) | p[i + 1]);
+        i += 2;
+        uint32_t cp;
+        if (u >= 0xD800 && u <= 0xDBFF && i + 1 < n) {
+            uint32_t lo = le ? (uint32_t)(p[i] | (p[i + 1] << 8))
+                             : (uint32_t)((p[i] << 8) | p[i + 1]);
+            if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                i += 2;
+                cp = 0x10000u + ((u - 0xD800u) << 10) + (lo - 0xDC00u);
+            } else {
+                cp = 0xFFFDu;
+            }
+        } else if (u >= 0xD800 && u <= 0xDFFF) {
+            cp = 0xFFFDu; /* lone surrogate */
+        } else {
+            cp = u;
+        }
+        if (len + 4 > cap) {
+            cap *= 2;
+            char *nb = realloc(out, cap);
+            if (nb == NULL) {
+                free(out);
+                return NULL;
+            }
+            out = nb;
+        }
+        if (cp < 0x80) {
+            out[len++] = (char)cp;
+        } else if (cp < 0x800) {
+            out[len++] = (char)(0xC0u | (cp >> 6));
+            out[len++] = (char)(0x80u | (cp & 0x3Fu));
+        } else if (cp < 0x10000) {
+            out[len++] = (char)(0xE0u | (cp >> 12));
+            out[len++] = (char)(0x80u | ((cp >> 6) & 0x3Fu));
+            out[len++] = (char)(0x80u | (cp & 0x3Fu));
+        } else {
+            out[len++] = (char)(0xF0u | (cp >> 18));
+            out[len++] = (char)(0x80u | ((cp >> 12) & 0x3Fu));
+            out[len++] = (char)(0x80u | ((cp >> 6) & 0x3Fu));
+            out[len++] = (char)(0x80u | (cp & 0x3Fu));
+        }
+    }
+    *outlen = len;
+    return out;
+}
+
+/* Sniff the raw bytes and set up the logical (UTF-8) view: decode UTF-16, skip
+ * a UTF-8 BOM, or leave the bytes as-is. The raw allocation (map or owned) is
+ * recorded so it is released at close. */
+static void set_content(struct mat_linesrc *s, const unsigned char *raw,
+                        size_t rawlen)
+{
+    s->encoding = mat_encoding_sniff(raw, rawlen);
+    size_t bom = mat_encoding_bom_len(s->encoding, raw, rawlen);
+
+    if (s->encoding == MAT_ENC_UTF16LE || s->encoding == MAT_ENC_UTF16BE) {
+        size_t declen = 0;
+        char *dec = decode_utf16(raw + bom, rawlen - bom,
+                                 s->encoding == MAT_ENC_UTF16LE, &declen);
+        if (dec != NULL) {
+            if (s->map && s->map_size) {
+                munmap(s->map, s->map_size);
+                s->map = NULL;
+                s->map_size = 0;
+            }
+            free(s->owned);
+            s->owned = dec;
+            s->data = dec;
+            s->size = declen;
+            return;
+        }
+        /* decode failed: fall through and show the raw bytes */
+    }
+    s->data = (const char *)raw + bom;
+    s->size = rawlen - bom;
+}
+
 bool mat_linesrc_open(struct mat_linesrc *s, int fd)
 {
     memset(s, 0, sizeof *s);
@@ -119,16 +209,19 @@ bool mat_linesrc_open(struct mat_linesrc *s, int fd)
     if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
         void *m = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (m != MAP_FAILED) {
-            s->data = m;
-            s->size = (size_t)st.st_size;
-            s->mmapped = true;
+            s->map = m;
+            s->map_size = (size_t)st.st_size;
+            set_content(s, m, (size_t)st.st_size);
+            off_push(s, 0);
+            return true;
         }
     }
-    if (s->data == NULL) {
-        s->data = slurp_fd(fd, &s->size);
-        if (s->data == NULL)
-            return false;
-    }
+    size_t len = 0;
+    char *buf = slurp_fd(fd, &len);
+    if (buf == NULL)
+        return false;
+    s->owned = buf;
+    set_content(s, (const unsigned char *)buf, len);
     off_push(s, 0);
     return true;
 }
