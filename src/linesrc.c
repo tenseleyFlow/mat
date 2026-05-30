@@ -13,8 +13,12 @@
 static void off_push(struct mat_linesrc *s, size_t v)
 {
     if (s->noff == s->off_cap) {
-        s->off_cap = s->off_cap ? s->off_cap * 2 : 1024;
-        s->off = realloc(s->off, s->off_cap * sizeof *s->off);
+        size_t nc = s->off_cap ? s->off_cap * 2 : 1024;
+        size_t *nb = realloc(s->off, nc * sizeof *nb);
+        if (nb == NULL)
+            return;
+        s->off = nb;
+        s->off_cap = nc;
     }
     s->off[s->noff++] = v;
 }

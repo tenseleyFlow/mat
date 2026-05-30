@@ -23,6 +23,7 @@
 #include "scan.h"
 #include "syntax.h"
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,8 @@ static const char *basename_of(const char *path)
 
 int main(int argc, char **argv)
 {
+    signal(SIGPIPE, SIG_IGN);
+
     if (argc > 0 && argv[0] && argv[0][0])
         mat_progname = basename_of(argv[0]);
 
@@ -122,7 +125,8 @@ int main(int argc, char **argv)
 #else
         printf("posix_fadvise: no\n");
 #endif
-        printf("languages: 23\nthemes: 10\n");
+        printf("languages: %d\nthemes: %d\n", mat_hl_language_count(),
+               mat_theme_count());
         free(files_out);
         return 0;
     }

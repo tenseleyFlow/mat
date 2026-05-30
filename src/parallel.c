@@ -199,10 +199,18 @@ bool mat_parallel_run(const struct config *cfg)
             batch = PAR_MAX_WORKERS;
 
         pthread_t thr[PAR_MAX_WORKERS];
+        bool launched[PAR_MAX_WORKERS];
+        for (size_t i = 0; i < batch; i++) {
+            if (pthread_create(&thr[i], NULL, worker, &jobs[base + i]) == 0) {
+                launched[i] = true;
+            } else {
+                launched[i] = false;
+                render_file(&jobs[base + i]);
+            }
+        }
         for (size_t i = 0; i < batch; i++)
-            pthread_create(&thr[i], NULL, worker, &jobs[base + i]);
-        for (size_t i = 0; i < batch; i++)
-            pthread_join(thr[i], NULL);
+            if (launched[i])
+                pthread_join(thr[i], NULL);
     }
 
     /* Write in input order, inserting a rule separator between files when the

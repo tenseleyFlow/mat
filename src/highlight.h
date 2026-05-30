@@ -62,5 +62,7 @@ void mat_theme_list(void);
 
 /* Print the list of known syntax names (one per line). */
 void mat_hl_list_languages(void);
+int mat_hl_language_count(void);
+int mat_theme_count(void);
 
 #endif /* MAT_HIGHLIGHT_H */

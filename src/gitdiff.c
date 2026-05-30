@@ -1,8 +1,11 @@
 #include "gitdiff.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 static void ensure_cap(struct mat_changes *ch, size_t need)
 {
@@ -38,15 +41,37 @@ bool mat_changes_load(struct mat_changes *ch, const char *path)
     if (path == NULL || path[0] == '\0')
         return false;
 
-    char cmd[2048];
-    int n = snprintf(cmd, sizeof cmd,
-                     "git diff --no-color -U0 -- '%s' 2>/dev/null", path);
-    if (n < 0 || (size_t)n >= sizeof cmd)
+    int pfd[2];
+    if (pipe(pfd) < 0)
         return false;
 
-    FILE *fp = popen(cmd, "r");
-    if (fp == NULL)
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pfd[0]);
+        close(pfd[1]);
         return false;
+    }
+    if (pid == 0) {
+        close(pfd[0]);
+        dup2(pfd[1], STDOUT_FILENO);
+        close(pfd[1]);
+        int devnull = open("/dev/null", O_WRONLY);
+        if (devnull >= 0) {
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+        execlp("git", "git", "diff", "--no-color", "-U0", "--", path,
+               (char *)NULL);
+        _exit(127);
+    }
+    close(pfd[1]);
+
+    FILE *fp = fdopen(pfd[0], "r");
+    if (fp == NULL) {
+        close(pfd[0]);
+        waitpid(pid, NULL, 0);
+        return false;
+    }
 
     char line[4096];
     size_t cur_new = 0, cur_count = 0, cur_old_count = 0, cur_idx = 0;
@@ -93,7 +118,8 @@ bool mat_changes_load(struct mat_changes *ch, const char *path)
         }
         (void)cur_idx;
     }
-    pclose(fp);
+    fclose(fp);
+    waitpid(pid, NULL, 0);
     return ch->nlines > 0;
 }
 

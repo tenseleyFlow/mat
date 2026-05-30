@@ -51,8 +51,12 @@ int mat_tokenize(const char *s, bool comments, char ***out)
                 quote = 0;
             else {
                 if (tlen + 1 >= tcap) {
-                    tcap = tcap ? tcap * 2 : 32;
-                    t = realloc(t, tcap);
+                    size_t nc = tcap ? tcap * 2 : 32;
+                    char *nb = realloc(t, nc);
+                    if (nb == NULL)
+                        break;
+                    t = nb;
+                    tcap = nc;
                 }
                 t[tlen++] = c;
             }
@@ -79,8 +83,12 @@ int mat_tokenize(const char *s, bool comments, char ***out)
             continue;
         }
         if (tlen + 1 >= tcap) {
-            tcap = tcap ? tcap * 2 : 32;
-            t = realloc(t, tcap);
+            size_t nc = tcap ? tcap * 2 : 32;
+            char *nb = realloc(t, nc);
+            if (nb == NULL)
+                break;
+            t = nb;
+            tcap = nc;
         }
         t[tlen++] = c;
         in_tok = true;

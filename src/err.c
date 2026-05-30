@@ -1,12 +1,13 @@
 #include "err.h"
 
 #include <errno.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
 
 const char *mat_progname = "mat";
 
-static int had_error;
+static atomic_int had_error;
 
 void mat_fail(void)
 {
