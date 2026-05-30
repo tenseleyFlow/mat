@@ -65,6 +65,39 @@ printf 'mid\n' | cat   "$tmp/single" - "$tmp/multi" > "$tmp/c.out" 2>/dev/null
 if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
 else echo "FAIL - interleave a - b"; fail=1; fi
 
+# --- pipe output: exercises the splice path (stdout is a pipe) ---
+check_pipe() { # desc -- args...
+    desc=$1; shift
+    "$MAT" "$@" | cat > "$tmp/m.out" 2>/dev/null
+    cat   "$@" | cat > "$tmp/c.out" 2>/dev/null
+    if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
+    else echo "FAIL - $desc"; fail=1; fi
+}
+check_pipe "pipe out: large file (splice)"      "$tmp/big"
+check_pipe "pipe out: small file (rw fallback)" "$tmp/single"
+check_pipe "pipe out: all 256 bytes"            "$tmp/all256"
+check_pipe "pipe out: empty file"               "$tmp/empty"
+
+# pipe in -> pipe out: both ends pipes, splice can't, falls back to read/write
+cat "$tmp/big" | "$MAT" | cat > "$tmp/m.out" 2>/dev/null
+cat "$tmp/big" | cat    | cat > "$tmp/c.out" 2>/dev/null
+if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
+else echo "FAIL - pipe in -> pipe out"; fail=1; fi
+
+# self-overwrite: mat f > f  (shell truncates f first; both produce empty, exit 0)
+cp "$tmp/multi" "$tmp/self_m"; cp "$tmp/multi" "$tmp/self_c"
+"$MAT" "$tmp/self_m" > "$tmp/self_m" 2>/dev/null; rm="$?"
+cat   "$tmp/self_c" > "$tmp/self_c" 2>/dev/null; rc="$?"
+if cmp -s "$tmp/self_m" "$tmp/self_c" && [ "$rm" = "$rc" ]; then ok=$((ok + 1))
+else echo "FAIL - self overwrite '> f' (exit mat=$rm cat=$rc)"; fail=1; fi
+
+# self-append: mat f >> f  (SAME_INODE guard must refuse, like cat: exit 1, unchanged)
+cp "$tmp/multi" "$tmp/app_m"; cp "$tmp/multi" "$tmp/app_c"
+"$MAT" "$tmp/app_m" >> "$tmp/app_m" 2>/dev/null; rm="$?"
+cat   "$tmp/app_c" >> "$tmp/app_c" 2>/dev/null; rc="$?"
+if cmp -s "$tmp/app_m" "$tmp/app_c" && [ "$rm" = "$rc" ]; then ok=$((ok + 1))
+else echo "FAIL - self append '>> f' (exit mat=$rm cat=$rc)"; fail=1; fi
+
 if [ "$fail" -eq 0 ]; then
     echo "parity: $ok/$ok cases byte-identical to cat"
 fi
