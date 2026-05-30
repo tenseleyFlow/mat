@@ -21,6 +21,7 @@ void mat_render_free(struct mat_render *r)
 {
     free(r->wbuf);
     free(r->seg);
+    free(r->spans);
 }
 
 int mat_render_content_width(const struct mat_render *r, int width)
@@ -135,17 +136,63 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
         seg_str(r, COL_RESET);
 }
 
+#define SGR_FG_DEFAULT "\x1b[39m" /* reset foreground without touching bg */
+
+/* Emit wbuf[woff, woff+clen) with per-span syntax colors. Foreground SGR only,
+ * so a -H background (if any) survives; the caller resets at the segment end.
+ */
+static void emit_colored(struct mat_render *r, size_t woff, size_t clen)
+{
+    size_t end = woff + clen, pos = woff;
+    int si = 0;
+    while (si < r->nspans &&
+           (size_t)r->spans[si].start + r->spans[si].len <= pos)
+        si++;
+    const char *last = SGR_FG_DEFAULT; /* fg is default at segment start */
+    while (pos < end) {
+        const char *sgr;
+        size_t run_end;
+        if (si >= r->nspans || pos < r->spans[si].start) {
+            run_end = (si < r->nspans && (size_t)r->spans[si].start < end)
+                          ? r->spans[si].start
+                          : end;
+            sgr = SGR_FG_DEFAULT;
+        } else {
+            struct mat_span *sp = &r->spans[si];
+            size_t sp_end = (size_t)sp->start + sp->len;
+            run_end = sp_end < end ? sp_end : end;
+            sgr = mat_theme_sgr(sp->tok);
+            if (sgr[0] == '\0')
+                sgr = SGR_FG_DEFAULT; /* uncolored token: reset fg */
+            if (run_end >= sp_end)
+                si++;
+        }
+        if (sgr != last) {
+            seg_str(r, sgr);
+            last = sgr;
+        }
+        seg_append(r, r->wbuf + pos, run_end - pos);
+        pos = run_end;
+    }
+}
+
 static void emit_seg(struct mat_render *r, unsigned long n, bool continuation,
-                     const char *content, size_t clen, mat_sink_fn sink,
-                     void *ctx)
+                     const char *content, size_t clen, size_t woff,
+                     mat_sink_fn sink, void *ctx)
 {
     r->seg_len = 0;
     put_gutter(r, n, continuation);
-    if (r->highlight && r->color)
+    bool bg = r->highlight && r->color;
+    if (bg)
         seg_str(r, COL_HL);
-    seg_append(r, content, clen);
-    if (r->highlight && r->color)
+    if (r->hl_on) {
+        emit_colored(r, woff, clen);
         seg_str(r, COL_RESET);
+    } else {
+        seg_append(r, content, clen);
+        if (bg)
+            seg_str(r, COL_RESET);
+    }
     sink(ctx, r->seg, r->seg_len);
 }
 
@@ -158,8 +205,21 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
     size_t wl = r->wbuf_len;
     int content_width = mat_render_content_width(r, width);
 
+    /* Tokenize the (tab-expanded) line once when highlighting is active. */
+    r->hl_on = false;
+    if (r->hl != NULL && r->color) {
+        if (r->spans == NULL) {
+            r->spans_cap = 4096;
+            r->spans = malloc((size_t)r->spans_cap * sizeof *r->spans);
+        }
+        if (r->spans != NULL) {
+            r->nspans = mat_hl_line(r->hl, w, wl, r->spans, r->spans_cap);
+            r->hl_on = true;
+        }
+    }
+
     if (r->wrap == MAT_WRAP_NEVER) {
-        emit_seg(r, lineno, false, r->wbuf, wl, sink, ctx);
+        emit_seg(r, lineno, false, r->wbuf, wl, 0, sink, ctx);
         return 1;
     }
 
@@ -177,7 +237,8 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
                 brk = last_ws;
                 next = last_ws + 1;
             }
-            emit_seg(r, lineno, !first, r->wbuf + seg, brk - seg, sink, ctx);
+            emit_seg(r, lineno, !first, r->wbuf + seg, brk - seg, seg, sink,
+                     ctx);
             count++;
             first = false;
             seg = next;
@@ -191,6 +252,6 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
         col += cw;
         i += cl;
     }
-    emit_seg(r, lineno, !first, r->wbuf + seg, wl - seg, sink, ctx);
+    emit_seg(r, lineno, !first, r->wbuf + seg, wl - seg, seg, sink, ctx);
     return count + 1;
 }

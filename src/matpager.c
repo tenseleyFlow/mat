@@ -1,8 +1,10 @@
 #include "matpager.h"
 #include "err.h"
+#include "highlight.h"
 #include "input.h"
 #include "linesrc.h"
 #include "render.h"
+#include "syntax.h"
 #include "term.h"
 
 #include <stdio.h>
@@ -111,6 +113,15 @@ int mat_page(const struct config *cfg, bool decorated)
     }
     mat_render_init(&c.rc, style, cfg->wrap, tab_width, color);
 
+    if (color) {
+        const unsigned char *fl = (const unsigned char *)"";
+        size_t fll = 0;
+        mat_linesrc_line(&c.src, 0, &fl, &fll);
+        const char *sname =
+            is_stdin ? (cfg->file_name ? cfg->file_name : "") : name;
+        c.rc.hl = mat_hl_open(mat_syntax_detect(cfg, sname, fl, fll));
+    }
+
     /* When paging is auto, fall back to streaming the full frame for content
      * that fits on one screen (the peek is lazy, so a huge file stays instant).
      * --paging=always always enters the pager. */
@@ -134,6 +145,7 @@ int mat_page(const struct config *cfg, bool decorated)
             ret = 1; /* no terminal after all: stream instead */
     }
 
+    mat_hl_close(c.rc.hl);
     mat_render_free(&c.rc);
     mat_linesrc_free(&c.src);
     mat_close_input(fd, is_stdin, name);

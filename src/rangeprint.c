@@ -2,12 +2,14 @@
 #include "ansi.h"
 #include "err.h"
 #include "frame.h"
+#include "highlight.h"
 #include "input.h"
 #include "iobuf.h"
 #include "linesrc.h"
 #include "range.h"
 #include "render.h"
 #include "scan.h"
+#include "syntax.h"
 #include "term.h"
 
 #include <errno.h>
@@ -388,8 +390,22 @@ static void print_file(const struct config *cfg, const char *file,
                 mat_frame_header_line(&e.rc, "<BINARY> ",
                                       "(--binary=as-text to show)", out_sink,
                                       o);
-            else
+            else {
+                /* Resolve a syntax and open a highlighter when coloring. */
+                if (e.rc.color) {
+                    const unsigned char *fl = (const unsigned char *)"";
+                    size_t fll = 0;
+                    mat_linesrc_line(&src, 0, &fl, &fll);
+                    const char *sname =
+                        is_stdin ? (cfg->file_name ? cfg->file_name : "")
+                                 : file;
+                    e.rc.hl =
+                        mat_hl_open(mat_syntax_detect(cfg, sname, fl, fll));
+                }
                 print_seekable(cfg, &src, &e);
+                mat_hl_close(e.rc.hl);
+                e.rc.hl = NULL;
+            }
             mat_linesrc_free(&src);
         } else {
             mat_warn(is_stdin ? "stdin" : file);

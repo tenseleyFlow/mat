@@ -13,6 +13,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "highlight.h"
 
 /* Box-drawing glyphs (explicit UTF-8) and gutter color, shared with the frame
  * chrome in interactive.c. */
@@ -35,6 +36,13 @@ struct mat_render {
     size_t wbuf_cap, wbuf_len;
     char *seg; /* one assembled segment, reused */
     size_t seg_cap, seg_len;
+
+    /* Syntax highlighting (Sprint 08). The highlighter is caller-owned; spans
+     * is renderer scratch. hl_on is set per line when coloring is active. */
+    struct mat_hl *hl;
+    bool hl_on;
+    struct mat_span *spans;
+    int spans_cap, nspans;
 };
 
 void mat_render_init(struct mat_render *r, unsigned style, enum mat_wrap wrap,

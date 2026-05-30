@@ -1,10 +1,12 @@
 #include "interactive.h"
 #include "err.h"
 #include "frame.h"
+#include "highlight.h"
 #include "input.h"
 #include "iobuf.h"
 #include "render.h"
 #include "scan.h"
+#include "syntax.h"
 #include "term.h"
 
 #include <errno.h>
@@ -241,6 +243,13 @@ void mat_interactive_run(const struct config *cfg)
             continue;
 
         const char *label = is_stdin ? "stdin" : files[i];
+
+        if (p.color) {
+            const char *sname =
+                is_stdin ? (cfg->file_name ? cfg->file_name : "") : files[i];
+            p.rc.hl = mat_hl_open(mat_syntax_detect(cfg, sname, NULL, 0));
+        }
+
         if (p.rule && i > 0)
             hrule(&p, BX_H);
         if (p.header)
@@ -253,6 +262,8 @@ void mat_interactive_run(const struct config *cfg)
 
         if (p.grid)
             hrule(&p, BX_U);
+        mat_hl_close(p.rc.hl);
+        p.rc.hl = NULL;
         mat_close_input(fd, is_stdin, files[i]);
     }
 
