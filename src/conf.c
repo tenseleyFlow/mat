@@ -213,7 +213,16 @@ void mat_conf_print_template(void)
           "#--tabs=4\n"
           "\n"
           "# Long-line handling: auto|never|character|word\n"
-          "#--wrap=auto\n",
+          "#--wrap=auto\n"
+          "\n"
+          "# Color theme (see --list-themes):\n"
+          "#--theme=dark\n"
+          "\n"
+          "# Paging: auto|never|always\n"
+          "#--paging=auto\n"
+          "\n"
+          "# Color: auto|never|always\n"
+          "#--color=auto\n",
           stdout);
 }
 
