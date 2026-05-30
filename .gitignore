@@ -1,5 +1,6 @@
-# Planning docs, audits, and reference clones — kept locally, not tracked
+# Planning docs, audits, AI guide, reference clones — kept locally, not tracked
 .docs/
+CLAUDE.md
 
 # Build output
 /build/
