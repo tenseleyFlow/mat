@@ -18,7 +18,16 @@
  * pending_cr for cross-buffer CRLF, and the threshold flush — is preserved so
  * the output is byte-identical to GNU cat. The two differences are mat's
  * pre-formatted counter (counter.c) and the 256-entry expansion table
- * (expand.c) in place of cat's inline branch chain.
+ * (expand.c) in place of cat's inline branch chain, plus SIMD scanning
+ * (scan.c) to bulk-copy plain runs.
+ *
+ * On mmap: a read-only mmap of the input is deliberately NOT used here. The
+ * loop relies on writing a sentinel newline one byte past the data, which a
+ * read-only mapping cannot host without page-alignment slack and a SIGBUS
+ * guard against concurrent truncation. The payoff would only be removing the
+ * read() copy of already-cached data, while SIMD has already made the transform
+ * dominate the cost (~10x faster than cat on -n) — so it is not worth a second
+ * cooked codepath. The true zero-copy win lives in the fast path (fastpath.c).
  */
 
 #define COOKED_INSIZE ((size_t)(128 * 1024))

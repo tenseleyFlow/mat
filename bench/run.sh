@@ -66,6 +66,16 @@ if have hyperfine; then
     fi
     cat "$scratch/h.md" >> "$OUT" 2>/dev/null
     echo >> "$OUT"
+
+    # Cooked path: line numbering, the SIMD-accelerated transform (mat vs cat;
+    # bat's -n output differs, so it is excluded from this comparison).
+    yes "the quick brown fox jumps over the lazy dog 0123456789" \
+        | head -c 134217728 > "$scratch/text" 2>/dev/null
+    echo "## 128 MiB text -> /dev/null, cat-compat -n (cooked + SIMD)" >> "$OUT"
+    hyperfine -N --warmup 3 --export-markdown "$scratch/h.md" \
+        "$MAT -n $scratch/text" "cat -n $scratch/text" >/dev/null 2>&1 || true
+    cat "$scratch/h.md" >> "$OUT" 2>/dev/null
+    echo >> "$OUT"
     echo "_Data is random (never /dev/zero). \`-N\` runs without a shell where possible._" >> "$OUT"
 else
     echo "hyperfine not found — recording a coarse timed loop instead." >> "$OUT"
