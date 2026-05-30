@@ -6,7 +6,7 @@
 
 include config.mk
 
-CFLAGS = $(CONF_CFLAGS) $(FEATURE_CFLAGS) $(WARNFLAGS) -Isrc
+CFLAGS = $(CONF_CFLAGS) $(FEATURE_CFLAGS) $(WARNFLAGS) -Isrc -Ilib/paige/include
 LDFLAGS =
 
 HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
@@ -14,10 +14,14 @@ HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
        src/counter.h src/expand.h src/cooked.h src/scan.h \
        src/term.h src/style.h src/interactive.h src/width.h src/conf.h
 
+# Bespoke pager, vendored as a submodule. Compiled with mat's flags; distinct
+# object names so paige's term.c doesn't collide with mat's term.c.
+PAIGE_OBJS = build/paige_term.o build/paige_pager.o
+
 OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
        build/cooked.o build/scan.o build/term.o build/style.o \
-       build/interactive.o build/width.o build/conf.o
+       build/interactive.o build/width.o build/conf.o $(PAIGE_OBJS)
 
 all: mat
 
@@ -84,6 +88,14 @@ build/conf.o: src/conf.c $(HDRS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/conf.c -o build/conf.o
 
+build/paige_term.o: lib/paige/src/term.c lib/paige/src/term.h lib/paige/include/paige.h
+	@mkdir -p build
+	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/term.c -o build/paige_term.o
+
+build/paige_pager.o: lib/paige/src/pager.c lib/paige/src/term.h lib/paige/include/paige.h
+	@mkdir -p build
+	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/pager.c -o build/paige_pager.o
+
 test: mat
 	sh tests/run.sh
 
@@ -97,10 +109,11 @@ tidy: mat
 	clang-tidy src/*.c -- $(CFLAGS)
 
 asan:
-	$(CC) $(CFLAGS) -fsanitize=address,undefined -g -Isrc -o mat-asan \
+	$(CC) $(CFLAGS) -fsanitize=address,undefined -g -Ilib/paige/src -o mat-asan \
 	    src/main.c src/cli.c src/err.c src/iobuf.c src/input.c src/fastpath.c \
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
-	    src/style.c src/interactive.c src/width.c src/conf.c
+	    src/style.c src/interactive.c src/width.c src/conf.c \
+	    lib/paige/src/term.c lib/paige/src/pager.c
 
 install: mat
 	mkdir -p $(PREFIX)/bin $(PREFIX)/share/man/man1
