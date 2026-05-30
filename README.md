@@ -40,8 +40,18 @@ deserialization step at startup.
 
 | Command | Time | vs mat |
 |:--------|-----:|-------:|
-| `mat --pretty` | 1.7 ms | 1.0x |
-| `bat --style=full` | 6.0 ms | 3.5x slower |
+| `mat --pretty` | 2.2 ms | 1.0x |
+| `bat --style=full` | 6.6 ms | 3.0x slower |
+
+### Highlighted output (large source file, ~4700 lines)
+
+| Command | Time | vs mat |
+|:--------|-----:|-------:|
+| `mat --pretty` | 4.0 ms | 1.0x |
+| `bat --style=full` | 158 ms | 39.6x slower |
+
+The gap widens on larger files because bat's TextMate regex engine scales
+with line count, while mat's hand-written lexers are a single-pass char scan.
 
 ### Startup (one-line file, plain output)
 
