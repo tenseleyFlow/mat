@@ -1,4 +1,4 @@
-.TH MAT 1 "2026" "mat 0.2.0" "User Commands"
+.TH MAT 1 "2026" "mat 0.3.0" "User Commands"
 .SH NAME
 mat \- concatenate files with syntax highlighting and decorations
 .SH SYNOPSIS
@@ -52,6 +52,9 @@ Display \fB$\fR at end of each line.
 .TP
 .B \-T
 Display TAB as \fB^I\fR.
+.TP
+.B \-u
+Ignored (output is always unbuffered). Accepted for POSIX compatibility.
 .SS "Decorations (opt-in)"
 .TP
 .BR \-p ", " \-\-pretty
@@ -154,6 +157,12 @@ Print the user config directory.
 .TP
 .B \-\-generate\-config\-file
 Print a commented config template.
+.TP
+.B \-\-help
+Display help and exit.
+.TP
+.B \-\-version
+Print version information and exit.
 .SH ENVIRONMENT
 .TP
 .B MAT_OPTS
