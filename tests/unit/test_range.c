@@ -122,7 +122,7 @@ static void test_errors(void)
 {
     struct mat_rangeset rs;
     char err[64];
-    const char *bad[] = {"",   ":",   "abc", "0:5", "3:x",
+    const char *bad[] = {"",   ":",   "abc",  "0:5", "3:x",
                          "-:", "-0:", "1:2x", "::3", "+3"};
     for (size_t i = 0; i < sizeof bad / sizeof bad[0]; i++) {
         mat_rangeset_init(&rs);
