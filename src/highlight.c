@@ -2035,6 +2035,155 @@ static const char *const batch_kw[] = {
     "pause", "popd",     "pushd",    "rd",         "rem",   "ren",  "rmdir",
     "set",   "setlocal", "shift",    "start",      "title", "type",
 };
+static const char *const graphql_kw[] = {
+    "directive", "enum",      "extend",       "fragment", "implements",
+    "input",     "interface", "mutation",     "on",       "query",
+    "scalar",    "schema",    "subscription", "type",     "union",
+};
+static const char *const graphql_ty[] = {
+    "Boolean", "Float", "ID", "Int", "String", "true", "false", "null",
+};
+static const char *const cmake_kw[] = {
+    "add_executable",
+    "add_library",
+    "add_subdirectory",
+    "cmake_minimum_required",
+    "else",
+    "elseif",
+    "enable_testing",
+    "endif",
+    "endforeach",
+    "endfunction",
+    "endmacro",
+    "endwhile",
+    "find_package",
+    "foreach",
+    "function",
+    "if",
+    "include",
+    "install",
+    "macro",
+    "message",
+    "option",
+    "project",
+    "return",
+    "set",
+    "target_compile_definitions",
+    "target_compile_options",
+    "target_include_directories",
+    "target_link_libraries",
+    "while",
+};
+static const char *const nginx_kw[] = {
+    "server",
+    "location",
+    "listen",
+    "root",
+    "index",
+    "proxy_pass",
+    "upstream",
+    "include",
+    "return",
+    "rewrite",
+    "if",
+    "set",
+    "error_page",
+    "access_log",
+    "error_log",
+    "worker_processes",
+    "events",
+    "http",
+    "server_name",
+    "ssl_certificate",
+    "ssl_certificate_key",
+};
+static const char *const viml_kw[] = {
+    "augroup",  "autocmd", "call",     "command",  "echo",        "echom",
+    "else",     "elseif",  "endif",    "endfor",   "endfunction", "endwhile",
+    "execute",  "finish",  "for",      "function", "if",          "let",
+    "map",      "nmap",    "nnoremap", "noremap",  "return",      "set",
+    "setlocal", "silent",  "source",   "syntax",   "while",
+};
+static const char *const qml_kw[] = {
+    "as",       "break",  "case",   "catch",      "continue", "default",
+    "delete",   "do",     "else",   "finally",    "for",      "function",
+    "if",       "import", "in",     "instanceof", "new",      "property",
+    "readonly", "return", "signal", "switch",     "this",     "throw",
+    "try",      "typeof", "var",    "void",       "while",    "with",
+};
+static const char *const qml_ty[] = {
+    "alias", "bool",  "color",  "date",      "double", "int",
+    "list",  "real",  "string", "url",       "var",    "variant",
+    "true",  "false", "null",   "undefined",
+};
+static const char *const actionscript_kw[] = {
+    "break",      "case",    "catch",  "class",      "const",     "continue",
+    "default",    "delete",  "do",     "dynamic",    "else",      "extends",
+    "final",      "finally", "for",    "function",   "get",       "if",
+    "implements", "import",  "in",     "instanceof", "interface", "internal",
+    "is",         "native",  "new",    "override",   "package",   "private",
+    "protected",  "public",  "return", "set",        "static",    "super",
+    "switch",     "this",    "throw",  "try",        "typeof",    "use",
+    "var",        "void",    "while",  "with",
+};
+static const char *const actionscript_ty[] = {
+    "Array",  "Boolean", "Class",     "Date", "Function", "int",
+    "Number", "Object",  "String",    "uint", "XML",      "null",
+    "true",   "false",   "undefined", "NaN",  "Infinity",
+};
+static const char *const applescript_kw[] = {
+    "about",       "after",   "and",      "as",    "before", "begin",  "by",
+    "considering", "copy",    "div",      "does",  "else",   "end",    "error",
+    "every",       "exit",    "first",    "from",  "get",    "global", "if",
+    "ignoring",    "in",      "instead",  "is",    "it",     "its",    "last",
+    "local",       "me",      "mod",      "my",    "not",    "of",     "on",
+    "or",          "prop",    "property", "put",   "ref",    "repeat", "return",
+    "run",         "set",     "some",     "tell",  "that",   "the",    "then",
+    "through",     "to",      "try",      "until", "where",  "while",  "whose",
+    "with",        "without",
+};
+static const char *const wgsl_kw[] = {
+    "bitcast",  "break",      "case",     "const",      "const_assert",
+    "continue", "continuing", "default",  "diagnostic", "discard",
+    "else",     "enable",     "fn",       "for",        "if",
+    "let",      "loop",       "override", "return",     "struct",
+    "switch",   "var",        "while",
+};
+static const char *const wgsl_ty[] = {
+    "array",  "atomic", "bool",   "f16",  "f32",     "i32",
+    "mat2x2", "mat3x3", "mat4x4", "ptr",  "sampler", "texture_2d",
+    "u32",    "vec2",   "vec3",   "vec4", "true",    "false",
+};
+static const char *const lean_kw[] = {
+    "abbrev",    "axiom",     "by",       "calc",       "class",
+    "constant",  "def",       "deriving", "do",         "else",
+    "end",       "example",   "extends",  "fun",        "have",
+    "if",        "import",    "in",       "inductive",  "instance",
+    "let",       "match",     "mutual",   "namespace",  "noncomputable",
+    "notation",  "open",      "opaque",   "partial",    "private",
+    "protected", "return",    "section",  "set_option", "show",
+    "sorry",     "structure", "suffices", "tactic",     "then",
+    "theorem",   "universe",  "variable", "where",      "with",
+};
+static const char *const lean_ty[] = {
+    "Bool", "Char",   "Float", "Int",  "IO",   "List",  "Nat",  "Option",
+    "Prop", "String", "Type",  "Unit", "True", "False", "true", "false",
+};
+static const char *const puppet_kw[] = {
+    "and",     "case",     "class", "default", "define", "else",
+    "elsif",   "fail",     "false", "if",      "import", "in",
+    "include", "inherits", "node",  "notify",  "or",     "realize",
+    "require", "tag",      "true",  "undef",   "unless",
+};
+static const char *const rego_kw[] = {
+    "as",   "default", "else", "false", "import", "not",
+    "null", "package", "set",  "some",  "true",   "with",
+};
+static const char *const jsonnet_kw[] = {
+    "assert", "else",   "error",      "false", "for",   "function",
+    "if",     "import", "importstr",  "in",    "local", "null",
+    "self",   "super",  "tailstrict", "then",  "true",
+};
 
 #define WS(arr)                                                                \
     (struct wordset)                                                           \
@@ -2725,6 +2874,124 @@ static int lex_batch(struct mat_hl *h, const unsigned char *d, size_t len,
     return n;
 }
 
+/* ---- VimL (" comments) ---- */
+
+static int lex_viml(struct mat_hl *h, const unsigned char *d, size_t len,
+                    struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '"') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '\'') {
+            i++;
+            while (i < len && d[i] != '\'')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (is_digit(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '.'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_' || d[i] == ':' ||
+                               d[i] == '#'))
+                i++;
+            size_t wl = i - s;
+            enum mat_tok t = MT_TEXT;
+            if (ws_has(&h->keywords, (const char *)d + s, wl))
+                t = MT_KEYWORD;
+            n = emit(out, cap, n, s, wl, t);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
+/* ---- Groff/troff/manpage (.command directives) ---- */
+
+static int lex_groff(struct mat_hl *h, const unsigned char *d, size_t len,
+                     struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    if (len > 0 && d[0] == '.') {
+        size_t i = 1;
+        while (i < len && is_word(d[i]))
+            i++;
+        n = emit(out, cap, n, 0, i, MT_KEYWORD);
+        if (i < len)
+            n = emit(out, cap, n, i, len - i, MT_TEXT);
+        return n;
+    }
+    if (len > 0 && d[0] == '\\') {
+        n = emit(out, cap, n, 0, len, MT_PREPROC);
+        return n;
+    }
+    n = emit(out, cap, n, 0, len, MT_TEXT);
+    return n;
+}
+
+/* ---- BibTeX (@type{key, field=value}) ---- */
+
+static int lex_bibtex(struct mat_hl *h, const unsigned char *d, size_t len,
+                      struct mat_span *out, int cap)
+{
+    (void)h;
+    int n = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t s = i;
+        unsigned char c = d[i];
+        if (c == '%') {
+            n = emit(out, cap, n, s, len - s, MT_COMMENT);
+            return n;
+        }
+        if (c == '@') {
+            i++;
+            while (i < len && is_word(d[i]))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_KEYWORD);
+        } else if (c == '"') {
+            i++;
+            while (i < len && d[i] != '"')
+                i++;
+            if (i < len)
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_STRING);
+        } else if (c == '{' || c == '}') {
+            i++;
+            n = emit(out, cap, n, s, 1, MT_PUNCT);
+        } else if (c == '=') {
+            i++;
+            n = emit(out, cap, n, s, 1, MT_OPERATOR);
+        } else if (is_digit(c)) {
+            i++;
+            while (i < len && is_digit(d[i]))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_NUMBER);
+        } else if (is_word(c)) {
+            i++;
+            while (i < len && (is_alnum(d[i]) || d[i] == '_' || d[i] == '-'))
+                i++;
+            n = emit(out, cap, n, s, i - s, MT_TEXT);
+        } else {
+            i++;
+        }
+    }
+    return n;
+}
+
 /* ---- dispatch ---- */
 
 struct mat_hl *mat_hl_open(const char *syntax)
@@ -2960,6 +3227,80 @@ struct mat_hl *mat_hl_open(const char *syntax)
         lex = lex_haskell;
         kw = WS(ocaml_kw);
         ty = WS(ocaml_ty);
+    } else if (strcmp(syntax, "GraphQL") == 0) {
+        lex = lex_python;
+        kw = WS(graphql_kw);
+        ty = WS(graphql_ty);
+    } else if (strcmp(syntax, "CMake") == 0) {
+        lex = lex_python;
+        kw = WS(cmake_kw);
+    } else if (strcmp(syntax, "nginx") == 0 ||
+               strcmp(syntax, "Apache Conf") == 0) {
+        lex = lex_python;
+        kw = WS(nginx_kw);
+    } else if (strcmp(syntax, "VimL") == 0) {
+        lex = lex_viml;
+        kw = WS(viml_kw);
+    } else if (strcmp(syntax, "Sass") == 0 || strcmp(syntax, "Less") == 0 ||
+               strcmp(syntax, "Stylus") == 0) {
+        lex = lex_css;
+    } else if (strcmp(syntax, "jsonnet") == 0) {
+        lex = lex_cfamily;
+        kw = WS(jsonnet_kw);
+    } else if (strcmp(syntax, "Puppet") == 0) {
+        lex = lex_python;
+        kw = WS(puppet_kw);
+    } else if (strcmp(syntax, "QML") == 0) {
+        lex = lex_cfamily;
+        kw = WS(qml_kw);
+        ty = WS(qml_ty);
+    } else if (strcmp(syntax, "LLVM") == 0) {
+        lex = lex_asm;
+    } else if (strcmp(syntax, "gnuplot") == 0) {
+        lex = lex_python;
+    } else if (strcmp(syntax, "ActionScript") == 0) {
+        lex = lex_cfamily;
+        kw = WS(actionscript_kw);
+        ty = WS(actionscript_ty);
+    } else if (strcmp(syntax, "AppleScript") == 0) {
+        lex = lex_haskell;
+        kw = WS(applescript_kw);
+    } else if (strcmp(syntax, "WGSL") == 0) {
+        lex = lex_cfamily;
+        kw = WS(wgsl_kw);
+        ty = WS(wgsl_ty);
+    } else if (strcmp(syntax, "Rego") == 0) {
+        lex = lex_python;
+        kw = WS(rego_kw);
+    } else if (strcmp(syntax, "Vyper") == 0) {
+        lex = lex_python;
+        kw = WS(rego_kw);
+    } else if (strcmp(syntax, "Java Properties") == 0 ||
+               strcmp(syntax, "DotENV") == 0 ||
+               strcmp(syntax, "Requirements.txt") == 0) {
+        lex = lex_ini;
+    } else if (strcmp(syntax, "TypeScriptReact") == 0 ||
+               strcmp(syntax, "JSX") == 0) {
+        lex = lex_cfamily;
+        kw = WS(js_kw);
+        ty = WS(js_ty);
+    } else if (strcmp(syntax, "Lean") == 0) {
+        lex = lex_haskell;
+        kw = WS(lean_kw);
+        ty = WS(lean_ty);
+    } else if (strcmp(syntax, "Groff") == 0 || strcmp(syntax, "Manpage") == 0) {
+        lex = lex_groff;
+    } else if (strcmp(syntax, "BibTeX") == 0) {
+        lex = lex_bibtex;
+    } else if (strcmp(syntax, "Svelte") == 0 || strcmp(syntax, "Vue") == 0) {
+        lex = lex_html;
+    } else if (strcmp(syntax, "Jinja2") == 0) {
+        lex = lex_html;
+    } else if (strcmp(syntax, "AsciiDoc") == 0 ||
+               strcmp(syntax, "reStructuredText") == 0 ||
+               strcmp(syntax, "MediaWiki") == 0 ||
+               strcmp(syntax, "orgmode") == 0) {
+        lex = lex_markdown;
     }
     if (lex == NULL)
         return NULL;
@@ -2980,20 +3321,108 @@ void mat_hl_close(struct mat_hl *h)
 void mat_hl_list_languages(void)
 {
     static const char *const langs[] = {
-        "Ada",        "Assembly", "AWK",         "Bash",     "Batch File",
-        "C",          "C#",       "C++",         "Clojure",  "CoffeeScript",
-        "Crystal",    "CSS",      "D",           "Dart",     "Diff",
-        "Dockerfile", "Elixir",   "Elm",         "Erlang",   "F#",
-        "Fish",       "Fortran",  "GLSL",        "Go",       "Graphviz",
-        "Groovy",     "Haskell",  "HTML",        "INI",      "Java",
-        "JavaScript", "JSON",     "Julia",       "Kotlin",   "LaTeX",
-        "Lisp",       "Lua",      "Makefile",    "Markdown", "MATLAB",
-        "Nim",        "Nix",      "Objective-C", "OCaml",    "Pascal",
-        "Perl",       "PHP",      "PowerShell",  "Protobuf", "PureScript",
-        "Python",     "R",        "Racket",      "Ruby",     "Rust",
-        "Scala",      "SCSS",     "SML",         "Solidity", "SQL",
-        "Swift",      "Tcl",      "Terraform",   "TOML",     "TypeScript",
-        "XML",        "YAML",     "Zig",         "Zsh",
+        "ActionScript",
+        "Ada",
+        "Apache Conf",
+        "AppleScript",
+        "AsciiDoc",
+        "Assembly",
+        "AWK",
+        "Bash",
+        "Batch File",
+        "BibTeX",
+        "C",
+        "C#",
+        "C++",
+        "Clojure",
+        "CMake",
+        "CoffeeScript",
+        "Crystal",
+        "CSS",
+        "D",
+        "Dart",
+        "Diff",
+        "Dockerfile",
+        "DotENV",
+        "Elixir",
+        "Elm",
+        "Erlang",
+        "F#",
+        "Fish",
+        "Fortran",
+        "GLSL",
+        "gnuplot",
+        "Go",
+        "GraphQL",
+        "Graphviz",
+        "Groff",
+        "Groovy",
+        "Haskell",
+        "HTML",
+        "INI",
+        "Java",
+        "Java Properties",
+        "JavaScript",
+        "Jinja2",
+        "JSON",
+        "jsonnet",
+        "JSX",
+        "Julia",
+        "Kotlin",
+        "LaTeX",
+        "Lean",
+        "Less",
+        "Lisp",
+        "LLVM",
+        "Lua",
+        "Makefile",
+        "Manpage",
+        "Markdown",
+        "MATLAB",
+        "MediaWiki",
+        "nginx",
+        "Nim",
+        "Nix",
+        "Objective-C",
+        "Objective-C++",
+        "OCaml",
+        "orgmode",
+        "Pascal",
+        "Perl",
+        "PHP",
+        "PowerShell",
+        "Protobuf",
+        "Puppet",
+        "PureScript",
+        "Python",
+        "QML",
+        "R",
+        "Racket",
+        "Rego",
+        "reStructuredText",
+        "Ruby",
+        "Rust",
+        "Sass",
+        "Scala",
+        "SCSS",
+        "SML",
+        "Solidity",
+        "SQL",
+        "Svelte",
+        "Swift",
+        "Tcl",
+        "Terraform",
+        "TOML",
+        "TypeScript",
+        "TypeScriptReact",
+        "VimL",
+        "Vue",
+        "Vyper",
+        "WGSL",
+        "XML",
+        "YAML",
+        "Zig",
+        "Zsh",
     };
     for (size_t i = 0; i < sizeof langs / sizeof langs[0]; i++)
         printf("%s\n", langs[i]);
