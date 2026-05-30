@@ -18,8 +18,10 @@ make >/dev/null || { echo "build failed"; exit 1; }
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/mat_bench.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT INT TERM
 
-# 64 MiB regular file, and a many-small-files directory.
-dd if=/dev/zero bs=1048576 count=64 of="$scratch/big" >/dev/null 2>&1
+# 256 MiB of RANDOM data — never /dev/zero: tmpfs zero-pages flatter any reader
+# and produce dishonest (inflated) throughput numbers.
+dd if=/dev/urandom bs=1048576 count=256 of="$scratch/big" >/dev/null 2>&1 \
+    || dd if=/dev/random bs=1048576 count=256 of="$scratch/big" >/dev/null 2>&1
 mkdir "$scratch/many"
 i=0; while [ "$i" -lt 200 ]; do printf 'line %d\n' "$i" > "$scratch/many/f$i"; i=$((i+1)); done
 printf 'tiny\n' > "$scratch/tiny"
@@ -49,9 +51,22 @@ if have hyperfine; then
         cat "$scratch/h.md" >> "$OUT" 2>/dev/null
         echo >> "$OUT"
     }
-    run_case "64 MiB file -> /dev/null" "$scratch/big"
+    run_case "256 MiB random file -> /dev/null" "$scratch/big"
     run_case "tiny file (startup-dominated)" "$scratch/tiny"
-    echo "_Note: pipe redirection handled by the shell; -N disables hyperfine's own shell._" >> "$OUT"
+
+    # Pipe scenario needs a shell, so drop -N for this one.
+    echo "## 256 MiB random file -> pipe (| wc -c)" >> "$OUT"
+    if [ -n "$BAT" ]; then
+        hyperfine --warmup 2 --export-markdown "$scratch/h.md" \
+            "$MAT $scratch/big | wc -c" "cat $scratch/big | wc -c" \
+            "$BAT $scratch/big | wc -c" >/dev/null 2>&1 || true
+    else
+        hyperfine --warmup 2 --export-markdown "$scratch/h.md" \
+            "$MAT $scratch/big | wc -c" "cat $scratch/big | wc -c" >/dev/null 2>&1 || true
+    fi
+    cat "$scratch/h.md" >> "$OUT" 2>/dev/null
+    echo >> "$OUT"
+    echo "_Data is random (never /dev/zero). \`-N\` runs without a shell where possible._" >> "$OUT"
 else
     echo "hyperfine not found — recording a coarse timed loop instead." >> "$OUT"
     echo '```' >> "$OUT"
