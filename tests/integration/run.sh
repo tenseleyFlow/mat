@@ -129,6 +129,15 @@ run_stdin ansi_deco_strip "$scratch/ansi.txt" "$MAT" --pretty --color=never -r 1
 run_stdin ansi_deco_keep "$scratch/ansi.txt" "$MAT" \
     --pretty --color=never --strip-ansi=never -r 1:
 
+# strip-ansi on the interactive path (no -r, tests interactive.c wiring)
+"$MAT" --pretty --color=never --strip-ansi=always "$scratch/ansi.txt" \
+    > "$scratch/ansi_interactive.out" 2>/dev/null
+if grep -q $'\033' "$scratch/ansi_interactive.out"; then
+    echo "FAIL - ansi_interactive_strip (ANSI codes still present)"; fail=1
+else
+    echo "ok   - ansi_interactive_strip"
+fi
+
 # Syntax detection (--detect-syntax). Fed on stdin with --file-name for a stable
 # display name; covers extension, -l override, -m glob, and shebang order.
 printf 'content\n' > "$scratch/detect.in"
@@ -150,6 +159,9 @@ printf 'int z;\n' > "$scratch/p3.c"
 "$MAT" --pretty --color=never "$scratch/p1.c" "$scratch/p2.c" "$scratch/p3.c" \
     > "$scratch/par_run2.out" 2>/dev/null
 par_ok=1
+if [ ! -s "$scratch/par_run1.out" ]; then
+    echo "FAIL - parallel_empty (no output)"; par_ok=0; fail=1
+fi
 if ! cmp -s "$scratch/par_run1.out" "$scratch/par_run2.out"; then
     echo "FAIL - parallel_stable (two runs differ)"; par_ok=0; fail=1
 fi
@@ -171,10 +183,11 @@ fi
 
 # Streaming ring edge cases (piped = non-seekable).
 printf '' | "$MAT" -r -3: > "$scratch/ring_empty.out" 2>/dev/null
-if [ ! -s "$scratch/ring_empty.out" ]; then
+ring_empty_rc=$?
+if [ ! -s "$scratch/ring_empty.out" ] && [ "$ring_empty_rc" -eq 0 ]; then
     echo "ok   - ring_empty"
 else
-    echo "FAIL - ring_empty"; fail=1
+    echo "FAIL - ring_empty (rc=$ring_empty_rc, size=$(wc -c < "$scratch/ring_empty.out"))"; fail=1
 fi
 
 echo "one" | "$MAT" -r -1: > "$scratch/ring_single.out" 2>/dev/null
