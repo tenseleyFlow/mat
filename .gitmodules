@@ -1,0 +1,3 @@
+[submodule "lib/paige"]
+	path = lib/paige
+	url = https://github.com/tenseleyFlow/paige
