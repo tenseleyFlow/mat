@@ -74,9 +74,20 @@ jobs:
       - name: Benchmark vs cat/bat
         run: sh bench/run.sh
 
+  perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install hyperfine
+        run: sudo apt-get update && sudo apt-get install -y hyperfine
+      - name: Configure
+        run: ./configure
+      - name: Enforce perf gate (mat must beat cat on the fast path)
+        run: sh bench/gate.sh
+
   all-jobs:
     if: always()
-    needs: [lint, build, freebsd, sanitizers]
+    needs: [lint, build, freebsd, sanitizers, perf]
     runs-on: ubuntu-latest
     steps:
       - name: Verify all required jobs passed
