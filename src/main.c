@@ -14,6 +14,7 @@
 #include "err.h"
 #include "fastpath.h"
 #include "interactive.h"
+#include "matpager.h"
 #include "scan.h"
 
 #include <stdio.h>
@@ -104,8 +105,25 @@ int main(int argc, char **argv)
     else
         deco_on = cfg.style_given && cfg.stdout_is_tty;
 
-    if (deco_on) {
+    if (deco_on)
         cfg.style = cfg.style_given ? cfg.style : MAT_STYLE_DEFAULT;
+
+    /* Paging (bespoke, via lib/paige): only on a terminal, for a single input,
+     * and only in decorated mode or when forced — plain `mat file` still dumps
+     * like cat. mat_page returns 1 to ask us to stream instead (fits one
+     * screen, or no usable tty). */
+    bool want_page = cfg.paging != MAT_WHEN_NEVER && cfg.stdout_is_tty &&
+                     cfg.nfiles <= 1 &&
+                     (deco_on || cfg.paging == MAT_WHEN_ALWAYS);
+    if (want_page) {
+        mat_scan_init();
+        if (mat_page(&cfg, deco_on) == 0) {
+            free(files_out);
+            return mat_status();
+        }
+    }
+
+    if (deco_on) {
         mat_scan_init();
         mat_interactive_run(&cfg);
     } else if (cfg.xform != 0) {

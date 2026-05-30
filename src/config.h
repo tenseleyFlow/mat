@@ -61,11 +61,12 @@ struct config {
      * explicitly requested. */
     enum mat_when color;
     enum mat_when decorations;
-    unsigned style;     /* OR of enum mat_style */
-    bool style_given;   /* --style was explicitly set */
-    int term_width;     /* explicit columns, or <=0 to auto-detect */
-    enum mat_wrap wrap; /* long-line wrapping in the frame */
-    int tab_width;      /* -1 = default (4 in the frame), 0 = no expansion */
+    unsigned style;       /* OR of enum mat_style */
+    bool style_given;     /* --style was explicitly set */
+    int term_width;       /* explicit columns, or <=0 to auto-detect */
+    enum mat_wrap wrap;   /* long-line wrapping in the frame */
+    int tab_width;        /* -1 = default (4 in the frame), 0 = no expansion */
+    enum mat_when paging; /* page the output through the bespoke pager */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

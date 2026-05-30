@@ -40,6 +40,8 @@ void mat_print_usage(void)
         "      --wrap=MODE         auto|never|character|word\n"
         "      --tabs=N            expand tabs to N columns (0 = off)\n"
         "      --terminal-width=N  columns for the frame\n"
+        "  -P, --no-paging      do not page output\n"
+        "      --paging=WHEN       auto|never|always (bespoke pager)\n"
         "\n"
         "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
         "$MAT_OPTS,\n"
@@ -190,6 +192,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 cfg->wrap = MAT_WRAP_NEVER;
                 continue;
             }
+            if (strcmp(a, "--no-paging") == 0 || strcmp(a, "--no-pager") == 0) {
+                cfg->paging = MAT_WHEN_NEVER;
+                continue;
+            }
             if (a[1] == '-') {
                 const char *val;
                 int r;
@@ -261,6 +267,17 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                     }
                     continue;
                 }
+                if ((r = match_val(a, "--paging", &i, argc, argv, &val))) {
+                    if (r < 0 || parse_when(val, &cfg->paging)) {
+                        if (r >= 0)
+                            fprintf(stderr,
+                                    "%s: --paging expects auto|never|"
+                                    "always\n",
+                                    mat_progname);
+                        return -1;
+                    }
+                    continue;
+                }
                 if ((r = match_val(a, "--tabs", &i, argc, argv, &val))) {
                     if (r < 0)
                         return -1;
@@ -294,6 +311,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 }
                 if (*p == 'S') {
                     cfg->wrap = MAT_WRAP_NEVER; /* --chop-long-lines */
+                    continue;
+                }
+                if (*p == 'P') {
+                    cfg->paging = MAT_WHEN_NEVER; /* --no-paging */
                     continue;
                 }
                 if (!apply_short(*p, cfg)) {
