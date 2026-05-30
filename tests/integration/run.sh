@@ -170,7 +170,7 @@ fi
 [ "$par_ok" -eq 1 ] && echo "ok   - parallel"
 
 # Streaming ring edge cases (piped = non-seekable).
-echo -n "" | "$MAT" -r -3: > "$scratch/ring_empty.out" 2>/dev/null
+printf '' | "$MAT" -r -3: > "$scratch/ring_empty.out" 2>/dev/null
 if [ ! -s "$scratch/ring_empty.out" ]; then
     echo "ok   - ring_empty"
 else
