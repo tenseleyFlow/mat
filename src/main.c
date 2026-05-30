@@ -8,6 +8,7 @@
  * means later sprints slot in without restructuring main.
  */
 #include "cli.h"
+#include "compat.h"
 #include "conf.h"
 #include "config.h"
 #include "cooked.h"
@@ -94,6 +95,34 @@ int main(int argc, char **argv)
     }
     if (cfg.gen_config) {
         mat_conf_print_template();
+        free(files_out);
+        return 0;
+    }
+
+    if (cfg.diagnostic) {
+        printf("mat %s\n", MAT_VERSION);
+        printf("build: %s %s\n", __DATE__, __TIME__);
+#ifdef HAVE_COPY_FILE_RANGE
+        printf("copy_file_range: yes\n");
+#else
+        printf("copy_file_range: no\n");
+#endif
+#ifdef HAVE_SPLICE
+        printf("splice: yes\n");
+#else
+        printf("splice: no\n");
+#endif
+#ifdef HAVE_VMSPLICE
+        printf("vmsplice: yes\n");
+#else
+        printf("vmsplice: no\n");
+#endif
+#ifdef HAVE_POSIX_FADVISE
+        printf("posix_fadvise: yes\n");
+#else
+        printf("posix_fadvise: no\n");
+#endif
+        printf("languages: 23\nthemes: 10\n");
         free(files_out);
         return 0;
     }

@@ -239,6 +239,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 cfg->diff = true;
                 continue;
             }
+            if (strcmp(a, "--diagnostic") == 0) {
+                cfg->diagnostic = true;
+                return 0;
+            }
             if (strcmp(a, "--config-file") == 0) {
                 cfg->show_config_file = true;
                 return 0;

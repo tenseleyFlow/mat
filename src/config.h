@@ -100,7 +100,8 @@ struct config {
     bool list_languages;            /* -L/--list-languages */
 
     /* Git change markers (Sprint 09). */
-    bool diff; /* -d/--diff: show git change markers in the gutter */
+    bool diff;       /* -d/--diff: show git change markers in the gutter */
+    bool diagnostic; /* --diagnostic: print build info and exit */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

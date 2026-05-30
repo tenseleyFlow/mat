@@ -76,6 +76,28 @@ jobs:
       - name: Integration under sanitizers
         run: MAT="$PWD/mat-asan" sh tests/integration/run.sh
 
+  tsan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CC: clang
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: ./configure
+      - name: Build with TSan
+        run: |
+          $CC -std=c11 -O2 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wconversion \
+            -Isrc -Ilib/paige/include -Ilib/paige/src \
+            -fsanitize=thread -g -lpthread -o mat-tsan \
+            $(ls src/*.c) lib/paige/src/term.c lib/paige/src/search.c lib/paige/src/pager.c
+      - name: Multi-file parallel under TSan
+        run: |
+          ./mat-tsan --pretty --color=never src/*.c > /dev/null 2>&1
+          ./mat-tsan --pretty --color=always -d src/main.c src/cli.c > /dev/null 2>&1
+
   bench:
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -105,7 +127,7 @@ jobs:
 
   all-jobs:
     if: always()
-    needs: [lint, build, freebsd, sanitizers, perf]
+    needs: [lint, build, freebsd, sanitizers, tsan, perf]
     runs-on: ubuntu-latest
     steps:
       - name: Verify all required jobs passed

@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, cc: gcc, name: linux-x86_64 }
+          - { os: macos-latest, cc: clang, name: macos-arm64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: ./configure
+      - name: Build
+        run: make
+      - name: Test
+        run: make test
+      - name: Package
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          dir="mat-${tag}-${{ matrix.name }}"
+          mkdir -p "$dir"
+          cp mat "$dir/"
+          cp man/mat.1 "$dir/" 2>/dev/null || true
+          cp completions/* "$dir/" 2>/dev/null || true
+          cp README.md LICENSE "$dir/" 2>/dev/null || true
+          tar czf "$dir.tar.gz" "$dir"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mat-${{ matrix.name }}
+          path: '*.tar.gz'
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '**/*.tar.gz'
+          generate_release_notes: true
