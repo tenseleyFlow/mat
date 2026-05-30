@@ -26,6 +26,12 @@ Decorations (opt-in; piped output stays plain like cat):
   -P, --no-paging      do not page output
       --paging=WHEN       auto|never|always (bespoke pager)
 
+Line selection:
+  -r, --line-range=RANGE  print only RANGE; repeat to accumulate.
+                       N:M  :M  N:  -N: (last N)  N:+M  N::C (context)
+  -H, --highlight-line=RANGE  emphasize lines (decorated output)
+      --squeeze-limit=N   max blank lines kept under -s (default 1)
+
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
       --no-config              ignore config files

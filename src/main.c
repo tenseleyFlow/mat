@@ -35,7 +35,8 @@ int main(int argc, char **argv)
 
     struct config cfg;
     memset(&cfg, 0, sizeof cfg);
-    cfg.tab_width = -1; /* -1 = use the decorated-mode default (4) */
+    cfg.tab_width = -1;    /* -1 = use the decorated-mode default (4) */
+    cfg.squeeze_limit = 1; /* -s keeps one blank line unless overridden */
 
     /* Apply config-file + env defaults before the command line (which wins).
      * --no-config must be honored before the files are read, so detect it in

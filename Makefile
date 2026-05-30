@@ -21,7 +21,8 @@ PAIGE_OBJS = build/paige_term.o build/paige_pager.o
 OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
        build/cooked.o build/scan.o build/term.o build/style.o \
-       build/interactive.o build/width.o build/conf.o build/render.o build/matpager.o $(PAIGE_OBJS)
+       build/interactive.o build/width.o build/conf.o build/render.o build/matpager.o \
+       build/range.o $(PAIGE_OBJS)
 
 all: mat
 
@@ -95,6 +96,10 @@ build/render.o: src/render.c $(HDRS)
 build/matpager.o: src/matpager.c $(HDRS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/matpager.c -o build/matpager.o
+
+build/range.o: src/range.c $(HDRS)
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/range.c -o build/range.o
 
 build/paige_term.o: lib/paige/src/term.c lib/paige/src/term.h lib/paige/include/paige.h
 	@mkdir -p build

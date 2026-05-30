@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "range.h"
+
 /* Transform flags — any set bit forces the cooked path (Sprint 02). */
 enum mat_xform {
     MAT_X_NUMBER = 1u << 0,        /* -n */
@@ -67,6 +69,11 @@ struct config {
     enum mat_wrap wrap;   /* long-line wrapping in the frame */
     int tab_width;        /* -1 = default (4 in the frame), 0 = no expansion */
     enum mat_when paging; /* page the output through the bespoke pager */
+
+    /* Line selection / emphasis (Sprint 06). */
+    struct mat_rangeset ranges;     /* -r: lines to print (empty = all) */
+    struct mat_rangeset highlights; /* -H: lines to emphasize */
+    int squeeze_limit;              /* -s: max blank run to keep (default 1) */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

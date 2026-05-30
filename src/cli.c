@@ -1,5 +1,6 @@
 #include "cli.h"
 #include "err.h"
+#include "range.h"
 #include "style.h"
 
 #include <stdio.h>
@@ -42,6 +43,13 @@ void mat_print_usage(void)
         "      --terminal-width=N  columns for the frame\n"
         "  -P, --no-paging      do not page output\n"
         "      --paging=WHEN       auto|never|always (bespoke pager)\n"
+        "\n"
+        "Line selection:\n"
+        "  -r, --line-range=RANGE  print only RANGE; repeat to accumulate.\n"
+        "                       N:M  :M  N:  -N: (last N)  N:+M  N::C "
+        "(context)\n"
+        "  -H, --highlight-line=RANGE  emphasize lines (decorated output)\n"
+        "      --squeeze-limit=N   max blank lines kept under -s (default 1)\n"
         "\n"
         "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
         "$MAT_OPTS,\n"
@@ -291,9 +299,66 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                     cfg->tab_width = (int)t;
                     continue;
                 }
+                if ((r = match_val(a, "--line-range", &i, argc, argv, &val))) {
+                    char rerr[64];
+                    if (r < 0)
+                        return -1;
+                    if (mat_range_parse(&cfg->ranges, val, rerr, sizeof rerr)) {
+                        fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                        return -1;
+                    }
+                    continue;
+                }
+                if ((r = match_val(a, "--highlight-line", &i, argc, argv,
+                                   &val))) {
+                    char rerr[64];
+                    if (r < 0)
+                        return -1;
+                    if (mat_range_parse(&cfg->highlights, val, rerr,
+                                        sizeof rerr)) {
+                        fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                        return -1;
+                    }
+                    continue;
+                }
+                if ((r = match_val(a, "--squeeze-limit", &i, argc, argv,
+                                   &val))) {
+                    if (r < 0)
+                        return -1;
+                    char *end;
+                    long sl = strtol(val, &end, 10);
+                    if (*end != '\0' || sl < 0 || sl > 100000) {
+                        fprintf(stderr, "%s: invalid --squeeze-limit '%s'\n",
+                                mat_progname, val);
+                        return -1;
+                    }
+                    cfg->squeeze_limit = (int)sl;
+                    continue;
+                }
                 fprintf(stderr, "%s: unrecognized option '%s'\n", mat_progname,
                         a);
                 return -1;
+            }
+            /* -r/-H take a value (attached '-rN:M' or separate '-r N:M'). */
+            if (a[1] == 'r' || a[1] == 'H') {
+                const char *val;
+                if (a[2] != '\0') {
+                    val = a + 2;
+                } else if (i + 1 < argc) {
+                    val = argv[++i];
+                } else {
+                    fprintf(stderr, "%s: option '-%c' requires an argument\n",
+                            mat_progname, a[1]);
+                    return -1;
+                }
+                struct mat_rangeset *set =
+                    a[1] == 'r' ? &cfg->ranges : &cfg->highlights;
+                char rerr[64];
+                if (mat_range_parse(set, val, rerr, sizeof rerr)) {
+                    fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                    return -1;
+                }
+                continue;
             }
             /* Short cluster, e.g. -vET. */
             for (const char *p = a + 1; *p; p++) {
