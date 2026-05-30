@@ -17,6 +17,7 @@
 /compile_commands.json
 
 # Test/bench scratch
+/tests/build/
 tests/fixtures/huge/
 bench/results/*.local.json
 
