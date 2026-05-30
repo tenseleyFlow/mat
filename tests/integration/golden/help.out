@@ -1,0 +1,16 @@
+usage: mat [OPTION]... [FILE]...
+Concatenate FILE(s) to standard output. With no FILE, or when FILE is
+-, read standard input.
+
+  -n            number all output lines
+  -b            number nonempty output lines (overrides -n)
+  -s            squeeze repeated empty lines
+  -e            display $ at end of each line (implies -v)
+  -t            display TAB as ^I (implies -v)
+  -v            show nonprinting characters (^ and M- notation)
+  -A            equivalent to -vet
+  -E            display $ at end of each line
+  -T            display TAB as ^I
+  -u            (ignored; output is always unbuffered on the fast path)
+      --help    display this help and exit
+      --version output version information and exit
