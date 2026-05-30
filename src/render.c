@@ -130,6 +130,17 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
                 seg_append(r, num, (size_t)len);
         }
     }
+    if (r->changes && !continuation && r->color) {
+        enum mat_change chg = MAT_CHG_NONE;
+        if (n > 0 && n <= r->changes->nlines)
+            chg = r->changes->line[n];
+        const char *cc = mat_change_color(chg);
+        if (cc[0])
+            seg_str(r, cc);
+        seg_str(r, mat_change_marker(chg));
+        if (cc[0])
+            seg_str(r, COL_GUTTER);
+    }
     if (r->grid && r->panel_width > 0)
         seg_str(r, BX_V " ");
     if (r->color)

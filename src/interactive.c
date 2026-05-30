@@ -1,6 +1,7 @@
 #include "interactive.h"
 #include "err.h"
 #include "frame.h"
+#include "gitdiff.h"
 #include "highlight.h"
 #include "input.h"
 #include "iobuf.h"
@@ -250,6 +251,12 @@ void mat_interactive_run(const struct config *cfg)
             p.rc.hl = mat_hl_open(mat_syntax_detect(cfg, sname, NULL, 0));
         }
 
+        struct mat_changes chg;
+        memset(&chg, 0, sizeof chg);
+        if (cfg->diff && !is_stdin)
+            mat_changes_load(&chg, files[i]);
+        p.rc.changes = chg.nlines > 0 ? &chg : NULL;
+
         if (p.rule && i > 0)
             hrule(&p, BX_H);
         if (p.header)
@@ -262,6 +269,8 @@ void mat_interactive_run(const struct config *cfg)
 
         if (p.grid)
             hrule(&p, BX_U);
+        p.rc.changes = NULL;
+        mat_changes_free(&chg);
         mat_hl_close(p.rc.hl);
         p.rc.hl = NULL;
         mat_close_input(fd, is_stdin, files[i]);

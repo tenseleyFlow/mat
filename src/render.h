@@ -13,6 +13,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "gitdiff.h"
 #include "highlight.h"
 
 /* Box-drawing glyphs (explicit UTF-8) and gutter color, shared with the frame
@@ -40,6 +41,7 @@ struct mat_render {
     /* Syntax highlighting (Sprint 08). The highlighter is caller-owned; spans
      * is renderer scratch. hl_on is set per line when coloring is active. */
     struct mat_hl *hl;
+    const struct mat_changes *changes; /* git diff markers, or NULL */
     bool hl_on;
     struct mat_span *spans;
     int spans_cap, nspans;

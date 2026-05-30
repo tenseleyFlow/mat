@@ -63,6 +63,9 @@ void mat_print_usage(void)
         "      --file-name=NAME    display/detection name for stdin\n"
         "      --fallback-syntax=NAME  when detection fails\n"
         "      --detect-syntax     print the detected syntax and exit\n"
+        "\n"
+        "Git:\n"
+        "  -d, --diff             show git change markers in the gutter\n"
         "      --theme=NAME        color theme (dark|light|monokai)\n"
         "      --list-themes       print available themes\n"
         "  -L, --list-languages    print supported languages\n"
@@ -231,6 +234,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
             if (strcmp(a, "--list-languages") == 0) {
                 cfg->list_languages = true;
                 return 0;
+            }
+            if (strcmp(a, "--diff") == 0) {
+                cfg->diff = true;
+                continue;
             }
             if (strcmp(a, "--config-file") == 0) {
                 cfg->show_config_file = true;
@@ -511,6 +518,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 if (*p == 'L') {
                     cfg->list_languages = true;
                     return 0;
+                }
+                if (*p == 'd') {
+                    cfg->diff = true;
+                    continue;
                 }
                 if (!apply_short(*p, cfg)) {
                     fprintf(stderr, "%s: invalid option -- '%c'\n",

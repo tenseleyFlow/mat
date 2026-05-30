@@ -46,6 +46,7 @@ enum mat_style {
     MAT_S_HEADER_SIZE = 1u << 3, /* "Size: <n> B" */
     MAT_S_RULE = 1u << 4,        /* horizontal rule between files */
     MAT_S_SNIP = 1u << 5,        /* separator between disjoint ranges */
+    MAT_S_CHANGES = 1u << 6,     /* git change markers in the gutter */
 };
 #define MAT_STYLE_FULL                                                         \
     (MAT_S_NUMBERS | MAT_S_GRID | MAT_S_HEADER | MAT_S_HEADER_SIZE |           \
@@ -97,6 +98,9 @@ struct config {
     const char *theme;              /* --theme: named color theme */
     bool list_themes;               /* --list-themes */
     bool list_languages;            /* -L/--list-languages */
+
+    /* Git change markers (Sprint 09). */
+    bool diff; /* -d/--diff: show git change markers in the gutter */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

@@ -43,6 +43,9 @@ Syntax mapping (detection inputs; highlighting is a later sprint):
       --file-name=NAME    display/detection name for stdin
       --fallback-syntax=NAME  when detection fails
       --detect-syntax     print the detected syntax and exit
+
+Git:
+  -d, --diff             show git change markers in the gutter
       --theme=NAME        color theme (dark|light|monokai)
       --list-themes       print available themes
   -L, --list-languages    print supported languages
