@@ -88,8 +88,17 @@ int mat_full_write(int fd, const void *buf, size_t n)
 int mat_pipe_write(int fd, const void *buf, size_t n)
 {
 #ifdef HAVE_VMSPLICE
-    struct stat st;
-    if (fstat(fd, &st) == 0 && S_ISFIFO(st.st_mode)) {
+    static int cached_fd = -1, cached_is_pipe = -1;
+    int is_pipe;
+    if (fd == cached_fd && cached_is_pipe >= 0) {
+        is_pipe = cached_is_pipe;
+    } else {
+        struct stat st;
+        is_pipe = (fstat(fd, &st) == 0 && S_ISFIFO(st.st_mode)) ? 1 : 0;
+        cached_fd = fd;
+        cached_is_pipe = is_pipe;
+    }
+    if (is_pipe) {
         const char *p = (const char *)buf;
         while (n > 0) {
             struct iovec v = {(void *)p, n};
