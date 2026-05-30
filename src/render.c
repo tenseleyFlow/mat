@@ -79,7 +79,7 @@ static void expand_tabs(struct mat_render *r, const unsigned char *d,
                         size_t len)
 {
     r->wbuf_len = 0;
-    if (r->tab_width <= 0) {
+    if (r->tab_width <= 0 || memchr(d, '\t', len) == NULL) {
         wbuf_append(r, (const char *)d, len);
         return;
     }
