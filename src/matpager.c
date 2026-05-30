@@ -17,6 +17,8 @@
 struct ctx {
     struct mat_linesrc src;
     struct mat_render rc;
+    const struct config *cfg;
+    struct mat_changes chg;
 };
 
 static void to_paige(void *p, const char *bytes, size_t len)
@@ -68,6 +70,9 @@ static int render_cb(void *vc, size_t L, int width, paige_sink *sink)
     size_t len;
     if (!mat_linesrc_line(&c->src, L, &d, &len))
         return 0;
+    long line1 = (long)(L + 1);
+    const struct mat_rangeset *hl = c->cfg ? &c->cfg->highlights : NULL;
+    c->rc.highlight = hl && hl->n > 0 && mat_rangeset_contains(hl, line1, 0);
     return mat_render_line(&c->rc, (unsigned long)(L + 1), d, len, width,
                            to_paige, sink);
 }
@@ -112,6 +117,12 @@ int mat_page(const struct config *cfg, bool decorated)
         tab_width = cfg->tab_width < 0 ? 4 : cfg->tab_width;
     }
     mat_render_init(&c.rc, style, cfg->wrap, tab_width, color);
+    c.cfg = cfg;
+
+    memset(&c.chg, 0, sizeof c.chg);
+    if (cfg->diff && !is_stdin)
+        mat_changes_load(&c.chg, name);
+    c.rc.changes = c.chg.nlines > 0 ? &c.chg : NULL;
 
     if (color) {
         const unsigned char *fl = (const unsigned char *)"";
@@ -145,6 +156,8 @@ int mat_page(const struct config *cfg, bool decorated)
             ret = 1; /* no terminal after all: stream instead */
     }
 
+    c.rc.changes = NULL;
+    mat_changes_free(&c.chg);
     mat_hl_close(c.rc.hl);
     mat_render_free(&c.rc);
     mat_linesrc_free(&c.src);
