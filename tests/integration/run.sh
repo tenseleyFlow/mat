@@ -63,7 +63,15 @@ run_pipe() { # name infile -- command...
     check "$name"
 }
 
-run version  "$MAT" --version
+# Version includes a commit hash that changes every commit, so check the
+# format ("mat X.Y.Z (hash)") rather than an exact golden.
+ver=$("$MAT" --version 2>&1)
+if echo "$ver" | grep -qE '^mat [0-9]+\.[0-9]+\.[0-9]+ \([0-9a-f]+\)$'; then
+    echo "ok   - version"
+else
+    echo "FAIL - version: got '$ver'"; fail=1
+fi
+
 run help     "$MAT" --help
 run badopt   "$MAT" -Z
 run badlong  "$MAT" --nope
