@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "compat.h"
 #include "err.h"
 #include "range.h"
 #include "style.h"
