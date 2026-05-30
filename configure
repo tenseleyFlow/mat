@@ -54,7 +54,17 @@ if ! $CC -std=c11 -o "$tmpc.out" "$tmpc" >/dev/null 2>&1; then
     echo "configure: error: '$CC' cannot compile a C11 program" >&2
     exit 1
 fi
-echo "configure: using CC=$CC, PREFIX=$PREFIX, version $VERSION" >&2
+# Feature-test macro so POSIX/extension symbols are visible under -std=c11.
+# glibc hides them in strict ISO mode; _GNU_SOURCE also exposes copy_file_range
+# and splice (needed from Sprint 01). BSDs expose everything by default.
+OS=$(uname -s 2>/dev/null || echo unknown)
+case "$OS" in
+    Linux)  FEATURE_CFLAGS="-D_GNU_SOURCE" ;;
+    Darwin) FEATURE_CFLAGS="-D_DARWIN_C_SOURCE" ;;
+    *)      FEATURE_CFLAGS="" ;;
+esac
+
+echo "configure: using CC=$CC, OS=$OS, PREFIX=$PREFIX, version $VERSION" >&2
 echo "configure: running probes..." >&2
 
 # --- generate src/config_generated.h ---
@@ -87,6 +97,7 @@ WERROR_FLAG=""
     echo "PREFIX = $PREFIX"
     echo "VERSION = $VERSION"
     echo "WARNFLAGS = -Wall -Wextra -Wshadow -Wconversion $WERROR_FLAG"
+    echo "FEATURE_CFLAGS = $FEATURE_CFLAGS"
     echo "CONF_CFLAGS = -std=c11 -O2 $EXTRA_CFLAGS"
 } > config.mk
 

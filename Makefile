@@ -6,7 +6,7 @@
 
 include config.mk
 
-CFLAGS = $(CONF_CFLAGS) $(WARNFLAGS) -Isrc
+CFLAGS = $(CONF_CFLAGS) $(FEATURE_CFLAGS) $(WARNFLAGS) -Isrc
 LDFLAGS =
 
 HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \

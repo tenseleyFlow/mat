@@ -6,10 +6,12 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT" || exit 1
 CC=${CC:-cc}
 UNITY=tests/vendor/unity
-TCFLAGS="-std=c11 -O2 -Isrc -I$UNITY"
 fail=0
 
 [ -f config.mk ] || ./configure >/dev/null 2>&1
+# Reuse configure's feature-test macro so unit tests see POSIX symbols too.
+FEATURE=$(sed -n 's/^FEATURE_CFLAGS = //p' config.mk 2>/dev/null)
+TCFLAGS="-std=c11 -O2 $FEATURE -Isrc -I$UNITY"
 
 echo "== build =="
 make >/dev/null || { echo "build failed"; exit 1; }

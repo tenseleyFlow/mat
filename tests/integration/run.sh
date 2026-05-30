@@ -13,6 +13,16 @@ update=0
 mkdir -p "$G"
 fail=0
 
+# Invoke the binary under a stable name "mat" so progname in diagnostics is
+# constant regardless of the real binary (mat, mat-asan, ...). argv[0] basename
+# is what mat prints, so the goldens stay valid across builds.
+case "$MAT" in
+    /*) abs=$MAT ;;
+    *)  abs=$PWD/$MAT ;;
+esac
+ln -sf "$abs" "$scratch/mat"
+MAT="$scratch/mat"
+
 run() { # name -- command...
     name=$1; shift
     "$@" > "$scratch/$name.out" 2>"$scratch/$name.err"
