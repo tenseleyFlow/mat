@@ -4,6 +4,7 @@
 #include "expand.h"
 #include "input.h"
 #include "iobuf.h"
+#include "scan.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -143,17 +144,38 @@ static int cook_fd(struct cooked *c, int fd, const char *name)
             bpout = stpcpy(bpout, mat_counter_next(&c->counter));
 
         if (c->show_nonprint) {
+            /* Quote mode: bulk-copy printable runs, expand each special byte.
+             */
             const struct mat_xtable *xt = &c->xt;
+            const unsigned char *s = (const unsigned char *)bpin - 1;
+            const unsigned char *lim = (const unsigned char *)eob + 1;
             for (;;) {
-                if (ch == '\n') {
+                const unsigned char *q = mat_scan_nonprint(s, lim);
+                if (q > s) {
+                    memcpy(bpout, s, (size_t)(q - s));
+                    bpout += q - s;
+                }
+                unsigned char cc = *q;
+                if (cc == '\n') {
+                    bpin = (char *)(q + 1);
                     newlines = -1;
                     break;
                 }
-                unsigned len = xt->len[ch];
-                memcpy(bpout, xt->buf[ch], len);
-                bpout += len;
-                ch = (unsigned char)*bpin++;
+                memcpy(bpout, xt->buf[cc], xt->len[cc]);
+                bpout += xt->len[cc];
+                s = q + 1;
             }
+        } else if (!c->show_tabs && !c->show_ends) {
+            /* Only newlines are special: scan straight to the next one. */
+            const unsigned char *s = (const unsigned char *)bpin - 1;
+            const unsigned char *q =
+                mat_scan_newline(s, (const unsigned char *)eob + 1);
+            if (q > s) {
+                memcpy(bpout, s, (size_t)(q - s));
+                bpout += q - s;
+            }
+            bpin = (char *)(q + 1);
+            newlines = -1;
         } else {
             for (;;) {
                 if (ch == '\t' && c->show_tabs) {

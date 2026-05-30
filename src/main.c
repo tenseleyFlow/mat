@@ -12,6 +12,7 @@
 #include "cooked.h"
 #include "err.h"
 #include "fastpath.h"
+#include "scan.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -57,10 +58,12 @@ int main(int argc, char **argv)
 
     /* The split: transforms take the cooked path, otherwise the zero-copy
      * fast path. (TTY decorations arrive in Sprint 03.) */
-    if (cfg.xform != 0)
+    if (cfg.xform != 0) {
+        mat_scan_init(); /* select SIMD byte scanners for this CPU */
         mat_cooked_run(&cfg);
-    else
+    } else {
         mat_fastpath_run(&cfg);
+    }
 
     free(files_out);
     return mat_status();
