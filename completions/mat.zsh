@@ -11,6 +11,7 @@ _mat() {
         '(-A)-A[show all (-vET)]' \
         '(-E)-E[show line ends]' \
         '(-T)-T[show tabs]' \
+        '(-u)-u[ignored (always unbuffered)]' \
         '(-p --pretty)'{-p,--pretty}'[full decoration frame]' \
         '(-S --chop-long-lines)'{-S,--chop-long-lines}'[do not wrap]' \
         '(-P --no-paging)'{-P,--no-paging}'[disable pager]' \

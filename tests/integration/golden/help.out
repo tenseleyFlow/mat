@@ -57,5 +57,6 @@ $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
       --config-dir             print the config directory
       --generate-config-file   print a config template
 
-      --help    display this help and exit
-      --version output version information and exit
+      --diagnostic     print build capabilities and exit
+      --help           display this help and exit
+      --version        output version information and exit

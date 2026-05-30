@@ -79,8 +79,9 @@ void mat_print_usage(void)
         "      --config-dir             print the config directory\n"
         "      --generate-config-file   print a config template\n"
         "\n"
-        "      --help    display this help and exit\n"
-        "      --version output version information and exit\n",
+        "      --diagnostic     print build capabilities and exit\n"
+        "      --help           display this help and exit\n"
+        "      --version        output version information and exit\n",
         stdout);
 }
 
