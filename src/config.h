@@ -21,6 +21,24 @@ enum mat_xform {
     MAT_X_SHOW_NONPRINT = 1u << 5, /* -v */
 };
 
+/* When to colorize / decorate (bat-style tri-states). */
+enum mat_when { MAT_WHEN_AUTO, MAT_WHEN_NEVER, MAT_WHEN_ALWAYS };
+
+/* --style components (the decoration frame). */
+enum mat_style {
+    MAT_S_NUMBERS = 1u << 0,     /* line-number gutter */
+    MAT_S_GRID = 1u << 1,        /* │ / ─ / ┬┼┴ box drawing */
+    MAT_S_HEADER = 1u << 2,      /* "File: <name>" */
+    MAT_S_HEADER_SIZE = 1u << 3, /* "Size: <n> B" */
+    MAT_S_RULE = 1u << 4,        /* horizontal rule between files */
+    MAT_S_SNIP = 1u << 5,        /* separator between disjoint ranges */
+};
+#define MAT_STYLE_FULL                                                         \
+    (MAT_S_NUMBERS | MAT_S_GRID | MAT_S_HEADER | MAT_S_HEADER_SIZE |           \
+     MAT_S_RULE | MAT_S_SNIP)
+#define MAT_STYLE_DEFAULT                                                      \
+    (MAT_S_NUMBERS | MAT_S_GRID | MAT_S_HEADER | MAT_S_SNIP)
+
 struct config {
     /* Inputs: pointers into argv, not owned. "-" means stdin. */
     const char *const *files;
@@ -29,6 +47,14 @@ struct config {
     unsigned xform;     /* OR of enum mat_xform; 0 => fast path eligible */
     bool unbuffered;    /* -u */
     bool stdout_is_tty; /* isatty(STDOUT_FILENO), cached once */
+
+    /* Decorations (Sprint 03). mat is plain cat unless decorations are
+     * explicitly requested. */
+    enum mat_when color;
+    enum mat_when decorations;
+    unsigned style;   /* OR of enum mat_style */
+    bool style_given; /* --style was explicitly set */
+    int term_width;   /* explicit columns, or -1 to auto-detect */
 
     /* Early-exit actions. */
     bool show_help;
