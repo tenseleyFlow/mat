@@ -27,8 +27,13 @@ head -c 1048576 /dev/urandom > "$tmp/big" 2>/dev/null \
     || dd if=/dev/zero bs=1024 count=1024 > "$tmp/big" 2>/dev/null
 
 ok=0
+# Progress to stderr so a hanging case is visible in CI logs (the last line
+# printed is the culprit). Unbuffered: each echo is its own write().
+say() { echo "[parity] $*" >&2; }
+
 check() { # desc -- args...
     desc=$1; shift
+    say "$desc"
     "$MAT" "$@" > "$tmp/m.out" 2>/dev/null; rm="$?"
     cat   "$@" > "$tmp/c.out" 2>/dev/null; rc="$?"
     if cmp -s "$tmp/m.out" "$tmp/c.out" && [ "$rm" = "$rc" ]; then
@@ -39,6 +44,7 @@ check() { # desc -- args...
 }
 check_stdin() { # desc infile -- args...
     desc=$1; infile=$2; shift 2
+    say "$desc"
     "$MAT" "$@" < "$infile" > "$tmp/m.out" 2>/dev/null; rm="$?"
     cat   "$@" < "$infile" > "$tmp/c.out" 2>/dev/null; rc="$?"
     if cmp -s "$tmp/m.out" "$tmp/c.out" && [ "$rm" = "$rc" ]; then
@@ -60,6 +66,7 @@ check_stdin "stdin, no args" "$tmp/all256"
 check_stdin "stdin via -"    "$tmp/multi" -
 
 # file / stdin / file interleave
+say "interleave a - b"
 printf 'mid\n' | "$MAT" "$tmp/single" - "$tmp/multi" > "$tmp/m.out" 2>/dev/null
 printf 'mid\n' | cat   "$tmp/single" - "$tmp/multi" > "$tmp/c.out" 2>/dev/null
 if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
@@ -68,6 +75,7 @@ else echo "FAIL - interleave a - b"; fail=1; fi
 # --- pipe output: exercises the splice path (stdout is a pipe) ---
 check_pipe() { # desc -- args...
     desc=$1; shift
+    say "$desc"
     "$MAT" "$@" | cat > "$tmp/m.out" 2>/dev/null
     cat   "$@" | cat > "$tmp/c.out" 2>/dev/null
     if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
@@ -79,12 +87,14 @@ check_pipe "pipe out: all 256 bytes"            "$tmp/all256"
 check_pipe "pipe out: empty file"               "$tmp/empty"
 
 # pipe in -> pipe out: both ends pipes, splice can't, falls back to read/write
+say "pipe in -> pipe out"
 cat "$tmp/big" | "$MAT" | cat > "$tmp/m.out" 2>/dev/null
 cat "$tmp/big" | cat    | cat > "$tmp/c.out" 2>/dev/null
 if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
 else echo "FAIL - pipe in -> pipe out"; fail=1; fi
 
 # self-overwrite: mat f > f  (shell truncates f first; both produce empty, exit 0)
+say "self overwrite > f"
 cp "$tmp/multi" "$tmp/self_m"; cp "$tmp/multi" "$tmp/self_c"
 "$MAT" "$tmp/self_m" > "$tmp/self_m" 2>/dev/null; rm="$?"
 cat   "$tmp/self_c" > "$tmp/self_c" 2>/dev/null; rc="$?"
@@ -92,6 +102,7 @@ if cmp -s "$tmp/self_m" "$tmp/self_c" && [ "$rm" = "$rc" ]; then ok=$((ok + 1))
 else echo "FAIL - self overwrite '> f' (exit mat=$rm cat=$rc)"; fail=1; fi
 
 # self-append: mat f >> f  (SAME_INODE guard must refuse, like cat: exit 1, unchanged)
+say "self append >> f"
 cp "$tmp/multi" "$tmp/app_m"; cp "$tmp/multi" "$tmp/app_c"
 "$MAT" "$tmp/app_m" >> "$tmp/app_m" 2>/dev/null; rm="$?"
 cat   "$tmp/app_c" >> "$tmp/app_c" 2>/dev/null; rc="$?"
