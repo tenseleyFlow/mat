@@ -20,8 +20,10 @@ struct mat_hl {
     struct wordset types;
 };
 
-/* A dark default theme: token class -> ANSI SGR (empty == default color). */
-static const char *const theme_sgr[MT_NTOKENS] = {
+#include <stdio.h>
+
+/* Named themes: each maps token class -> ANSI SGR (empty == default). */
+static const char *const theme_dark[MT_NTOKENS] = {
     [MT_TEXT] = "",
     [MT_KEYWORD] = "\x1b[35m",
     [MT_TYPE] = "\x1b[33m",
@@ -35,11 +37,59 @@ static const char *const theme_sgr[MT_NTOKENS] = {
     [MT_CONSTANT] = "\x1b[33m",
 };
 
+static const char *const theme_light[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[35m",
+    [MT_TYPE] = "\x1b[34m",
+    [MT_STRING] = "\x1b[31m",
+    [MT_NUMBER] = "\x1b[36m",
+    [MT_COMMENT] = "\x1b[37m",
+    [MT_FUNCTION] = "\x1b[34m",
+    [MT_OPERATOR] = "\x1b[36m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[35m",
+    [MT_CONSTANT] = "\x1b[34m",
+};
+
+static const char *const theme_monokai[MT_NTOKENS] = {
+    [MT_TEXT] = "",
+    [MT_KEYWORD] = "\x1b[38;5;197m",
+    [MT_TYPE] = "\x1b[38;5;81m",
+    [MT_STRING] = "\x1b[38;5;186m",
+    [MT_NUMBER] = "\x1b[38;5;141m",
+    [MT_COMMENT] = "\x1b[38;5;242m",
+    [MT_FUNCTION] = "\x1b[38;5;148m",
+    [MT_OPERATOR] = "\x1b[38;5;197m",
+    [MT_PUNCT] = "",
+    [MT_PREPROC] = "\x1b[38;5;197m",
+    [MT_CONSTANT] = "\x1b[38;5;141m",
+};
+
+static const char *const *active_theme = theme_dark;
+
+int mat_theme_set(const char *name)
+{
+    if (name == NULL || strcmp(name, "dark") == 0)
+        active_theme = theme_dark;
+    else if (strcmp(name, "light") == 0)
+        active_theme = theme_light;
+    else if (strcmp(name, "monokai") == 0)
+        active_theme = theme_monokai;
+    else
+        return -1;
+    return 0;
+}
+
 const char *mat_theme_sgr(enum mat_tok tok)
 {
     if (tok < 0 || tok >= MT_NTOKENS)
         return "";
-    return theme_sgr[tok];
+    return active_theme[tok];
+}
+
+void mat_theme_list(void)
+{
+    printf("dark\nlight\nmonokai\n");
 }
 
 static int emit(struct mat_span *out, int cap, int n, size_t start, size_t len,
@@ -527,6 +577,16 @@ struct mat_hl *mat_hl_open(const char *syntax)
 void mat_hl_close(struct mat_hl *h)
 {
     free(h);
+}
+
+void mat_hl_list_languages(void)
+{
+    static const char *const langs[] = {
+        "Bash", "C",      "C++",  "Go",         "Java", "JavaScript",
+        "JSON", "Python", "Rust", "TypeScript", "Zsh",
+    };
+    for (size_t i = 0; i < sizeof langs / sizeof langs[0]; i++)
+        printf("%s\n", langs[i]);
 }
 
 int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,

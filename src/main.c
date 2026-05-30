@@ -13,6 +13,7 @@
 #include "cooked.h"
 #include "err.h"
 #include "fastpath.h"
+#include "highlight.h"
 #include "input.h"
 #include "interactive.h"
 #include "matpager.h"
@@ -94,6 +95,23 @@ int main(int argc, char **argv)
         mat_conf_print_template();
         free(files_out);
         return 0;
+    }
+
+    if (cfg.list_themes) {
+        mat_theme_list();
+        free(files_out);
+        return 0;
+    }
+    if (cfg.list_languages) {
+        mat_hl_list_languages();
+        free(files_out);
+        return 0;
+    }
+    if (cfg.theme && mat_theme_set(cfg.theme) != 0) {
+        fprintf(stderr, "%s: unknown theme '%s' (--list-themes for options)\n",
+                mat_progname, cfg.theme);
+        free(files_out);
+        return 1;
     }
 
     /* --detect-syntax: print the resolved syntax for each input and exit. The

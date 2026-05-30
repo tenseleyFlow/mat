@@ -94,6 +94,9 @@ struct config {
     const char *file_name;          /* --file-name: name/detection for stdin */
     const char *fallback_syntax;    /* --fallback-syntax when detection fails */
     bool detect_syntax;             /* --detect-syntax: print syntax and exit */
+    const char *theme;              /* --theme: named color theme */
+    bool list_themes;               /* --list-themes */
+    bool list_languages;            /* -L/--list-languages */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */

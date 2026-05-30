@@ -43,6 +43,9 @@ Syntax mapping (detection inputs; highlighting is a later sprint):
       --file-name=NAME    display/detection name for stdin
       --fallback-syntax=NAME  when detection fails
       --detect-syntax     print the detected syntax and exit
+      --theme=NAME        color theme (dark|light|monokai)
+      --list-themes       print available themes
+  -L, --list-languages    print supported languages
 
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):

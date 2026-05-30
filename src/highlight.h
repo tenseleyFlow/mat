@@ -50,7 +50,17 @@ void mat_hl_close(struct mat_hl *h);
 int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,
                 struct mat_span *spans, int cap);
 
+/* Select a named theme ("dark", "light", or NULL for the default). Returns 0
+ * on success, -1 if the name is unknown. */
+int mat_theme_set(const char *name);
+
 /* The ANSI SGR introducing a token class (empty string for MT_TEXT). */
 const char *mat_theme_sgr(enum mat_tok tok);
+
+/* Print the list of known theme names. */
+void mat_theme_list(void);
+
+/* Print the list of known syntax names (one per line). */
+void mat_hl_list_languages(void);
 
 #endif /* MAT_HIGHLIGHT_H */
