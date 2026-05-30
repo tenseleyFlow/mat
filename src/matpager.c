@@ -85,6 +85,17 @@ int mat_page(const struct config *cfg, bool decorated)
         return 0;
     }
 
+    /* A binary file is skipped with a notice unless the user asked for as-text;
+     * linesrc has already decoded any UTF-16. */
+    if (decorated && c.src.encoding == MAT_ENC_BINARY &&
+        cfg->binary == MAT_BINARY_NO_PRINTING) {
+        printf("%s: binary file (--binary=as-text to show)\n",
+               is_stdin ? "STDIN" : name);
+        mat_linesrc_free(&c.src);
+        mat_close_input(fd, is_stdin, name);
+        return 0;
+    }
+
     unsigned style = 0;
     bool color = false;
     int tab_width = 0;
