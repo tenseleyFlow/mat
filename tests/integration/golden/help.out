@@ -36,8 +36,11 @@ Encoding:
       --binary=WHEN       no-printing|as-text (decorated binary files)
       --strip-ansi=WHEN   auto|never|always (remove input escapes)
 
-Syntax mapping (detection inputs; highlighting is a later sprint):
+Highlighting:
+      --theme=NAME        color theme (see --list-themes)
+      --list-themes       print available themes
   -l, --language=NAME     force the syntax
+  -L, --list-languages    print supported languages
   -m, --map-syntax=GLOB:NAME  map a filename glob to a syntax
       --ignored-suffix=.EXT   strip before extension detection
       --file-name=NAME    display/detection name for stdin
@@ -46,9 +49,6 @@ Syntax mapping (detection inputs; highlighting is a later sprint):
 
 Git:
   -d, --diff             show git change markers in the gutter
-      --theme=NAME        color theme (dark|light|monokai)
-      --list-themes       print available themes
-  -L, --list-languages    print supported languages
 
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
