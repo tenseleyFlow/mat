@@ -24,4 +24,11 @@ size_t mat_iobuf_size(int in_fd, int out_fd);
  */
 int mat_full_write(int fd, const void *buf, size_t n);
 
+/*
+ * Like mat_full_write but uses vmsplice when available (Linux) and fd is a
+ * pipe, avoiding the final userspace→kernel copy. Falls back to write()
+ * on non-Linux or non-pipe fds.
+ */
+int mat_pipe_write(int fd, const void *buf, size_t n);
+
 #endif /* MAT_IOBUF_H */

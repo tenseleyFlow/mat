@@ -59,7 +59,7 @@ static int flush_pending(struct cooked *c)
 {
     size_t n = (size_t)(c->bpout - c->outbuf);
     if (n > 0) {
-        if (mat_full_write(STDOUT_FILENO, c->outbuf, n) < 0) {
+        if (mat_pipe_write(STDOUT_FILENO, c->outbuf, n) < 0) {
             mat_warn("stdout");
             return -1;
         }
@@ -91,7 +91,7 @@ static int cook_fd(struct cooked *c, int fd, const char *name)
                 char *wp = outbuf;
                 size_t rem;
                 do {
-                    if (mat_full_write(STDOUT_FILENO, wp, COOKED_OUTSIZE) < 0) {
+                    if (mat_pipe_write(STDOUT_FILENO, wp, COOKED_OUTSIZE) < 0) {
                         mat_warn("stdout");
                         c->bpout = outbuf;
                         c->newlines = newlines;

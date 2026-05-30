@@ -85,6 +85,10 @@ int main(void){ return (int)splice(0,0,1,0,0,0); }'
 int main(void){ return 0; }'
     probe POSIX_FADVISE '#include <fcntl.h>
 int main(void){ return posix_fadvise(0,0,0,POSIX_FADV_SEQUENTIAL); }'
+    probe VMSPLICE '#define _GNU_SOURCE
+#include <fcntl.h>
+#include <sys/uio.h>
+int main(void){ struct iovec v={0,0}; return (int)vmsplice(1,&v,1,0); }'
     echo "#endif /* MAT_CONFIG_GENERATED_H */"
 } > src/config_generated.h
 

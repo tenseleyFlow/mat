@@ -1,8 +1,14 @@
 #include "iobuf.h"
+#include "compat.h"
 
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+#ifdef HAVE_VMSPLICE
+#include <fcntl.h>
+#include <sys/uio.h>
+#endif
 
 /*
  * Bounds. We never go below one page, never above 1 MiB. The cap reflects
@@ -77,4 +83,31 @@ int mat_full_write(int fd, const void *buf, size_t n)
         n -= (size_t)w;
     }
     return 0;
+}
+
+int mat_pipe_write(int fd, const void *buf, size_t n)
+{
+#ifdef HAVE_VMSPLICE
+    struct stat st;
+    if (fstat(fd, &st) == 0 && S_ISFIFO(st.st_mode)) {
+        const char *p = (const char *)buf;
+        while (n > 0) {
+            struct iovec v = {(void *)p, n};
+            ssize_t w = vmsplice(fd, &v, 1, 0);
+            if (w < 0) {
+                if (errno == EINTR)
+                    continue;
+                return mat_full_write(fd, p, n);
+            }
+            if (w == 0) {
+                errno = EIO;
+                return -1;
+            }
+            p += (size_t)w;
+            n -= (size_t)w;
+        }
+        return 0;
+    }
+#endif
+    return mat_full_write(fd, buf, n);
 }
