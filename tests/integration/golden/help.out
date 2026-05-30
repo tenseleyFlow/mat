@@ -36,6 +36,14 @@ Encoding:
       --binary=WHEN       no-printing|as-text (decorated binary files)
       --strip-ansi=WHEN   auto|never|always (remove input escapes)
 
+Syntax mapping (detection inputs; highlighting is a later sprint):
+  -l, --language=NAME     force the syntax
+  -m, --map-syntax=GLOB:NAME  map a filename glob to a syntax
+      --ignored-suffix=.EXT   strip before extension detection
+      --file-name=NAME    display/detection name for stdin
+      --fallback-syntax=NAME  when detection fails
+      --detect-syntax     print the detected syntax and exit
+
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):
       --no-config              ignore config files

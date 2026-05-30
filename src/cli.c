@@ -56,6 +56,14 @@ void mat_print_usage(void)
         "files)\n"
         "      --strip-ansi=WHEN   auto|never|always (remove input escapes)\n"
         "\n"
+        "Syntax mapping (detection inputs; highlighting is a later sprint):\n"
+        "  -l, --language=NAME     force the syntax\n"
+        "  -m, --map-syntax=GLOB:NAME  map a filename glob to a syntax\n"
+        "      --ignored-suffix=.EXT   strip before extension detection\n"
+        "      --file-name=NAME    display/detection name for stdin\n"
+        "      --fallback-syntax=NAME  when detection fails\n"
+        "      --detect-syntax     print the detected syntax and exit\n"
+        "\n"
         "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
         "$MAT_OPTS,\n"
         "$MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):\n"
@@ -151,6 +159,26 @@ static int parse_when(const char *v, enum mat_when *out)
     return 0;
 }
 
+/* Parse a --map-syntax "GLOB:SYNTAX" spec, splitting the (writable argv) string
+ * in place. Returns 0 on success, -1 on error. */
+static int add_map_syntax(struct config *cfg, const char *spec)
+{
+    if (cfg->nmaps >= (int)(sizeof cfg->map_glob / sizeof cfg->map_glob[0])) {
+        fprintf(stderr, "%s: too many --map-syntax\n", mat_progname);
+        return -1;
+    }
+    char *colon = strrchr((char *)spec, ':');
+    if (colon == NULL || colon == spec || colon[1] == '\0') {
+        fprintf(stderr, "%s: --map-syntax expects GLOB:SYNTAX\n", mat_progname);
+        return -1;
+    }
+    *colon = '\0'; /* argv is writable: split into glob + syntax */
+    cfg->map_glob[cfg->nmaps] = spec;
+    cfg->map_syntax[cfg->nmaps] = colon + 1;
+    cfg->nmaps++;
+    return 0;
+}
+
 /* --pretty / -p: force the full decoration frame on. */
 static void set_pretty(struct config *cfg)
 {
@@ -187,6 +215,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
             }
             if (strcmp(a, "--no-config") == 0) {
                 cfg->no_config = true;
+                continue;
+            }
+            if (strcmp(a, "--detect-syntax") == 0) {
+                cfg->detect_syntax = true;
                 continue;
             }
             if (strcmp(a, "--config-file") == 0) {
@@ -337,6 +369,45 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                     }
                     continue;
                 }
+                if ((r = match_val(a, "--language", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    cfg->language = val;
+                    continue;
+                }
+                if ((r = match_val(a, "--map-syntax", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    if (add_map_syntax(cfg, val) != 0)
+                        return -1;
+                    continue;
+                }
+                if ((r = match_val(a, "--ignored-suffix", &i, argc, argv,
+                                   &val))) {
+                    if (r < 0)
+                        return -1;
+                    if (cfg->nsuffix >= (int)(sizeof cfg->ignored_suffix /
+                                              sizeof cfg->ignored_suffix[0])) {
+                        fprintf(stderr, "%s: too many --ignored-suffix\n",
+                                mat_progname);
+                        return -1;
+                    }
+                    cfg->ignored_suffix[cfg->nsuffix++] = val;
+                    continue;
+                }
+                if ((r = match_val(a, "--file-name", &i, argc, argv, &val))) {
+                    if (r < 0)
+                        return -1;
+                    cfg->file_name = val;
+                    continue;
+                }
+                if ((r = match_val(a, "--fallback-syntax", &i, argc, argv,
+                                   &val))) {
+                    if (r < 0)
+                        return -1;
+                    cfg->fallback_syntax = val;
+                    continue;
+                }
                 if ((r = match_val(a, "--binary", &i, argc, argv, &val))) {
                     if (r < 0)
                         return -1;
@@ -371,7 +442,7 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 return -1;
             }
             /* -r/-H take a value (attached '-rN:M' or separate '-r N:M'). */
-            if (a[1] == 'r' || a[1] == 'H') {
+            if (a[1] == 'r' || a[1] == 'H' || a[1] == 'l' || a[1] == 'm') {
                 const char *val;
                 if (a[2] != '\0') {
                     val = a + 2;
@@ -382,12 +453,19 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                             mat_progname, a[1]);
                     return -1;
                 }
-                struct mat_rangeset *set =
-                    a[1] == 'r' ? &cfg->ranges : &cfg->highlights;
-                char rerr[64];
-                if (mat_range_parse(set, val, rerr, sizeof rerr)) {
-                    fprintf(stderr, "%s: %s\n", mat_progname, rerr);
-                    return -1;
+                if (a[1] == 'l') {
+                    cfg->language = val;
+                } else if (a[1] == 'm') {
+                    if (add_map_syntax(cfg, val) != 0)
+                        return -1;
+                } else {
+                    struct mat_rangeset *set =
+                        a[1] == 'r' ? &cfg->ranges : &cfg->highlights;
+                    char rerr[64];
+                    if (mat_range_parse(set, val, rerr, sizeof rerr)) {
+                        fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                        return -1;
+                    }
                 }
                 continue;
             }

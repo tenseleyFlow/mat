@@ -13,10 +13,12 @@
 #include "cooked.h"
 #include "err.h"
 #include "fastpath.h"
+#include "input.h"
 #include "interactive.h"
 #include "matpager.h"
 #include "rangeprint.h"
 #include "scan.h"
+#include "syntax.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,6 +94,35 @@ int main(int argc, char **argv)
         mat_conf_print_template();
         free(files_out);
         return 0;
+    }
+
+    /* --detect-syntax: print the resolved syntax for each input and exit. The
+     * resolver is Sprint 07's deliverable; the highlighter (Sprint 08) consumes
+     * the same names. */
+    if (cfg.detect_syntax) {
+        static const char *const stdin_only[] = {"-"};
+        const char *const *files = cfg.nfiles ? cfg.files : stdin_only;
+        size_t nf = cfg.nfiles ? cfg.nfiles : 1;
+        for (size_t i = 0; i < nf; i++) {
+            bool is_stdin = false;
+            unsigned char first[256];
+            size_t fn = 0;
+            int fd = mat_open_input(files[i], &is_stdin);
+            if (fd >= 0) {
+                ssize_t r = read(fd, first, sizeof first);
+                if (r > 0)
+                    fn = (size_t)r;
+                mat_close_input(fd, is_stdin, files[i]);
+            }
+            const char *detect_name =
+                is_stdin ? (cfg.file_name ? cfg.file_name : "") : files[i];
+            const char *disp =
+                is_stdin ? (cfg.file_name ? cfg.file_name : "STDIN") : files[i];
+            printf("%s: %s\n", disp,
+                   mat_syntax_detect(&cfg, detect_name, first, fn));
+        }
+        free(files_out);
+        return mat_status();
     }
 
     cfg.stdout_is_tty = isatty(STDOUT_FILENO) == 1;

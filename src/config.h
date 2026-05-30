@@ -83,6 +83,18 @@ struct config {
     enum mat_when
         strip_ansi; /* --strip-ansi: strip input escapes (auto=deco) */
 
+    /* Syntax mapping inputs (Sprint 07; consumed by the highlighter, Sprint
+     * 08). All pointers point into argv and are not owned. */
+    const char *language;           /* -l/--language: explicit syntax */
+    const char *map_glob[32];       /* --map-syntax glob part */
+    const char *map_syntax[32];     /* --map-syntax syntax part */
+    int nmaps;                      /* number of --map-syntax entries */
+    const char *ignored_suffix[16]; /* --ignored-suffix to strip before ext */
+    int nsuffix;                    /* number of --ignored-suffix entries */
+    const char *file_name;          /* --file-name: name/detection for stdin */
+    const char *fallback_syntax;    /* --fallback-syntax when detection fails */
+    bool detect_syntax;             /* --detect-syntax: print syntax and exit */
+
     /* Config. */
     bool no_config; /* --no-config: skip config files */
 

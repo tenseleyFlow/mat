@@ -121,5 +121,16 @@ run_stdin ansi_deco_strip "$scratch/ansi.txt" "$MAT" --pretty --color=never -r 1
 run_stdin ansi_deco_keep "$scratch/ansi.txt" "$MAT" \
     --pretty --color=never --strip-ansi=never -r 1:
 
+# Syntax detection (--detect-syntax). Fed on stdin with --file-name for a stable
+# display name; covers extension, -l override, -m glob, and shebang order.
+printf 'content\n' > "$scratch/detect.in"
+run_stdin detect_ext "$scratch/detect.in" "$MAT" --file-name foo.c --detect-syntax
+run_stdin detect_lang "$scratch/detect.in" "$MAT" \
+    -l Rust --file-name foo.c --detect-syntax
+run_stdin detect_map "$scratch/detect.in" "$MAT" \
+    -m '*.q:Qlang' --file-name a.q --detect-syntax
+printf '#!/usr/bin/env python3\n' > "$scratch/shebang.in"
+run_stdin detect_shebang "$scratch/shebang.in" "$MAT" --detect-syntax
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
