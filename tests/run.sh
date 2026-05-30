@@ -14,7 +14,7 @@ fail=0
 FEATURE=$(sed -n 's/^FEATURE_CFLAGS = //p' config.mk 2>/dev/null)
 TCFLAGS="-std=c11 -O2 $FEATURE -Isrc -Ilib/paige/include -Ilib/paige/src -I$UNITY"
 # matpager.c (pulled in below) links the paige submodule.
-PAIGE_SRC="lib/paige/src/term.c lib/paige/src/pager.c"
+PAIGE_SRC="lib/paige/src/term.c lib/paige/src/search.c lib/paige/src/pager.c"
 
 echo "== build =="
 make >/dev/null || { echo "build failed"; exit 1; }

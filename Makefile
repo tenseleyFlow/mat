@@ -17,7 +17,7 @@ HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
 
 # Bespoke pager, vendored as a submodule. Compiled with mat's flags; distinct
 # object names so paige's term.c doesn't collide with mat's term.c.
-PAIGE_OBJS = build/paige_term.o build/paige_pager.o
+PAIGE_OBJS = build/paige_term.o build/paige_search.o build/paige_pager.o
 
 OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
@@ -130,7 +130,11 @@ build/paige_term.o: lib/paige/src/term.c lib/paige/src/term.h lib/paige/include/
 	@mkdir -p build
 	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/term.c -o build/paige_term.o
 
-build/paige_pager.o: lib/paige/src/pager.c lib/paige/src/term.h lib/paige/include/paige.h
+build/paige_search.o: lib/paige/src/search.c lib/paige/src/search.h lib/paige/include/paige.h
+	@mkdir -p build
+	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/search.c -o build/paige_search.o
+
+build/paige_pager.o: lib/paige/src/pager.c lib/paige/src/term.h lib/paige/src/search.h lib/paige/include/paige.h
 	@mkdir -p build
 	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/pager.c -o build/paige_pager.o
 
@@ -152,7 +156,7 @@ asan:
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
 	    src/style.c src/interactive.c src/width.c src/conf.c src/render.c src/matpager.c \
 	    src/range.c src/linesrc.c src/rangeprint.c src/frame.c src/encoding.c src/ansi.c src/syntax.c \
-	    lib/paige/src/term.c lib/paige/src/pager.c
+	    lib/paige/src/term.c lib/paige/src/search.c lib/paige/src/pager.c
 
 install: mat
 	mkdir -p $(PREFIX)/bin $(PREFIX)/share/man/man1
