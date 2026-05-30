@@ -1,4 +1,5 @@
 #include "parallel.h"
+#include "ansi.h"
 #include "err.h"
 #include "frame.h"
 #include "gitdiff.h"
@@ -61,6 +62,7 @@ struct work {
     int term_width;
     unsigned rstyle;
     int tab_width;
+    bool strip;
     struct filebuf out;
 };
 
@@ -124,17 +126,34 @@ static void render_file(struct work *w)
     }
 
     /* Content. */
+    char *sbuf = NULL;
+    size_t scap = 0;
     size_t total = mat_linesrc_total(&src);
     for (size_t L = 0; L < total; L++) {
         const unsigned char *d;
         size_t len;
         if (!mat_linesrc_line(&src, L, &d, &len))
             break;
+        if (w->strip && len > 0) {
+            if (scap < len) {
+                char *nb = realloc(sbuf, len);
+                if (nb != NULL) {
+                    sbuf = nb;
+                    scap = len;
+                }
+            }
+            if (scap >= len) {
+                size_t sn = mat_strip_ansi(d, len, sbuf);
+                d = (const unsigned char *)sbuf;
+                len = sn;
+            }
+        }
         const struct mat_rangeset *hl = &w->cfg->highlights;
         rc.highlight = hl->n > 0 && mat_rangeset_contains(hl, (long)(L + 1), 0);
         mat_render_line(&rc, (unsigned long)(L + 1), d, len, w->term_width,
                         fb_seg_sink, &w->out);
     }
+    free(sbuf);
 
     /* Footer. */
     if (rc.grid)
@@ -190,6 +209,8 @@ bool mat_parallel_run(const struct config *cfg)
         jobs[i].term_width = tw;
         jobs[i].rstyle = rstyle;
         jobs[i].tab_width = tab_width;
+        jobs[i].strip = cfg->strip_ansi == MAT_WHEN_ALWAYS ||
+                        (cfg->strip_ansi == MAT_WHEN_AUTO && color);
     }
 
     /* Launch workers in batches of PAR_MAX_WORKERS. */

@@ -1,4 +1,5 @@
 #include "interactive.h"
+#include "ansi.h"
 #include "err.h"
 #include "frame.h"
 #include "gitdiff.h"
@@ -33,6 +34,9 @@ struct ip {
     bool failed;
     struct mat_render rc;
     const struct mat_rangeset *highlights; /* -H lines, or empty */
+    bool strip;                            /* strip input ANSI escapes */
+    char *sbuf;                            /* reused strip buffer */
+    size_t scap;
 };
 
 static void ip_flush(struct ip *p)
@@ -144,8 +148,20 @@ static void pend_append(struct ip *p, const unsigned char *d, size_t n)
 static void emit_line(struct ip *p, unsigned long n, const unsigned char *d,
                       size_t len)
 {
-    /* Streaming has no line total, so end-relative -H (-2:) can't resolve here;
-     * absolute highlight ranges work. */
+    if (p->strip && len > 0) {
+        if (p->scap < len) {
+            char *nb = realloc(p->sbuf, len);
+            if (nb != NULL) {
+                p->sbuf = nb;
+                p->scap = len;
+            }
+        }
+        if (p->scap >= len) {
+            size_t sn = mat_strip_ansi(d, len, p->sbuf);
+            d = (const unsigned char *)p->sbuf;
+            len = sn;
+        }
+    }
     const struct mat_rangeset *hl = p->highlights;
     p->rc.highlight = hl && hl->n > 0 && !hl->needs_total &&
                       mat_rangeset_contains(hl, (long)n, 0);
@@ -225,6 +241,8 @@ void mat_interactive_run(const struct config *cfg)
     int tab_width = cfg->tab_width < 0 ? 4 : cfg->tab_width;
     mat_render_init(&p.rc, eff_style, cfg->wrap, tab_width, p.color);
     p.highlights = &cfg->highlights;
+    p.strip = cfg->strip_ansi == MAT_WHEN_ALWAYS ||
+              (cfg->strip_ansi == MAT_WHEN_AUTO && p.color);
 
     p.buf = malloc(IP_BUFCAP);
     if (p.buf == NULL) {
@@ -279,5 +297,6 @@ void mat_interactive_run(const struct config *cfg)
     ip_flush(&p);
     free(p.buf);
     free(p.pend);
+    free(p.sbuf);
     mat_render_free(&p.rc);
 }
