@@ -9,6 +9,7 @@
  */
 #include "cli.h"
 #include "config.h"
+#include "cooked.h"
 #include "err.h"
 #include "fastpath.h"
 
@@ -54,15 +55,12 @@ int main(int argc, char **argv)
 
     cfg.stdout_is_tty = isatty(STDOUT_FILENO) == 1;
 
-    /* The split. Today both fancy branches are unimplemented stubs. */
-    if (cfg.xform != 0) {
-        /* Cooked path — Sprint 02. */
-        mat_warnx("transform options are not implemented yet (Sprint 02)");
-    } else {
-        /* Fast path: plain concatenation. Decorations (TTY) arrive in Sprint
-         * 03. */
+    /* The split: transforms take the cooked path, otherwise the zero-copy
+     * fast path. (TTY decorations arrive in Sprint 03.) */
+    if (cfg.xform != 0)
+        mat_cooked_run(&cfg);
+    else
         mat_fastpath_run(&cfg);
-    }
 
     free(files_out);
     return mat_status();
