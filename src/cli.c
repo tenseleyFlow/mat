@@ -54,6 +54,7 @@ void mat_print_usage(void)
         "Encoding:\n"
         "      --binary=WHEN       no-printing|as-text (decorated binary "
         "files)\n"
+        "      --strip-ansi=WHEN   auto|never|always (remove input escapes)\n"
         "\n"
         "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
         "$MAT_OPTS,\n"
@@ -321,6 +322,17 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                     if (mat_range_parse(&cfg->highlights, val, rerr,
                                         sizeof rerr)) {
                         fprintf(stderr, "%s: %s\n", mat_progname, rerr);
+                        return -1;
+                    }
+                    continue;
+                }
+                if ((r = match_val(a, "--strip-ansi", &i, argc, argv, &val))) {
+                    if (r < 0 || parse_when(val, &cfg->strip_ansi)) {
+                        if (r >= 0)
+                            fprintf(stderr,
+                                    "%s: --strip-ansi expects auto|never|"
+                                    "always\n",
+                                    mat_progname);
                         return -1;
                     }
                     continue;

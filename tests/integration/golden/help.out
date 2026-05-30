@@ -34,6 +34,7 @@ Line selection:
 
 Encoding:
       --binary=WHEN       no-printing|as-text (decorated binary files)
+      --strip-ansi=WHEN   auto|never|always (remove input escapes)
 
 Config (defaults from /etc/mat/config, ~/.config/mat/config, $MAT_OPTS,
 $MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):

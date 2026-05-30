@@ -13,7 +13,7 @@ HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
        src/iobuf.h src/input.h src/fastpath.h src/cli.h \
        src/counter.h src/expand.h src/cooked.h src/scan.h \
        src/term.h src/style.h src/interactive.h src/width.h src/conf.h src/render.h src/matpager.h \
-       src/range.h src/linesrc.h src/rangeprint.h src/frame.h src/encoding.h lib/paige/include/paige.h
+       src/range.h src/linesrc.h src/rangeprint.h src/frame.h src/encoding.h src/ansi.h lib/paige/include/paige.h
 
 # Bespoke pager, vendored as a submodule. Compiled with mat's flags; distinct
 # object names so paige's term.c doesn't collide with mat's term.c.
@@ -23,7 +23,7 @@ OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
        build/input.o build/fastpath.o build/counter.o build/expand.o \
        build/cooked.o build/scan.o build/term.o build/style.o \
        build/interactive.o build/width.o build/conf.o build/render.o build/matpager.o \
-       build/range.o build/linesrc.o build/rangeprint.o build/frame.o build/encoding.o $(PAIGE_OBJS)
+       build/range.o build/linesrc.o build/rangeprint.o build/frame.o build/encoding.o build/ansi.o $(PAIGE_OBJS)
 
 all: mat
 
@@ -118,6 +118,10 @@ build/encoding.o: src/encoding.c $(HDRS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/encoding.c -o build/encoding.o
 
+build/ansi.o: src/ansi.c $(HDRS)
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/ansi.c -o build/ansi.o
+
 build/paige_term.o: lib/paige/src/term.c lib/paige/src/term.h lib/paige/include/paige.h
 	@mkdir -p build
 	$(CC) $(CFLAGS) -Ilib/paige/src -c lib/paige/src/term.c -o build/paige_term.o
@@ -143,7 +147,7 @@ asan:
 	    src/main.c src/cli.c src/err.c src/iobuf.c src/input.c src/fastpath.c \
 	    src/counter.c src/expand.c src/cooked.c src/scan.c src/term.c \
 	    src/style.c src/interactive.c src/width.c src/conf.c src/render.c src/matpager.c \
-	    src/range.c src/linesrc.c src/rangeprint.c src/frame.c src/encoding.c \
+	    src/range.c src/linesrc.c src/rangeprint.c src/frame.c src/encoding.c src/ansi.c \
 	    lib/paige/src/term.c lib/paige/src/pager.c
 
 install: mat

@@ -112,5 +112,14 @@ run_stdin enc_binary_notice "$scratch/binary.bin" "$MAT" --pretty --color=never 
 run_stdin enc_binary_astext "$scratch/binary.bin" "$MAT" \
     --pretty --color=never --binary=as-text -r 1:
 
+# --strip-ansi: auto keeps escapes in plain output but strips under decorations;
+# always/never force it.
+printf '\033[31mred\033[0m line\nplain line\n' > "$scratch/ansi.txt"
+run ansi_keep_plain   "$MAT" -r 1: "$scratch/ansi.txt"
+run ansi_strip_always "$MAT" -r 1: --strip-ansi=always "$scratch/ansi.txt"
+run_stdin ansi_deco_strip "$scratch/ansi.txt" "$MAT" --pretty --color=never -r 1:
+run_stdin ansi_deco_keep "$scratch/ansi.txt" "$MAT" \
+    --pretty --color=never --strip-ansi=never -r 1:
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

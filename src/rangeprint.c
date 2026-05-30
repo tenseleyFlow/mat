@@ -1,4 +1,5 @@
 #include "rangeprint.h"
+#include "ansi.h"
 #include "err.h"
 #include "frame.h"
 #include "input.h"
@@ -76,7 +77,10 @@ struct emit {
     struct mat_render rc; /* set up when decorated */
     int term_width;
     const struct mat_rangeset *highlights;
-    long prev; /* last emitted line number, for snip detection */
+    long prev;   /* last emitted line number, for snip detection */
+    bool strip;  /* strip input ANSI escapes before emitting */
+    char *sbuf;  /* reused strip buffer */
+    size_t scap; /* its capacity */
 };
 
 static void emit_setup(struct emit *e, const struct config *cfg, bool decorated,
@@ -86,6 +90,9 @@ static void emit_setup(struct emit *e, const struct config *cfg, bool decorated,
     e->o = o;
     e->decorated = decorated;
     e->highlights = &cfg->highlights;
+    /* auto strips only under decorations; always/never force it either way. */
+    e->strip = cfg->strip_ansi == MAT_WHEN_ALWAYS ||
+               (cfg->strip_ansi == MAT_WHEN_AUTO && decorated);
     if (!decorated)
         return;
 
@@ -115,6 +122,7 @@ static void emit_free(struct emit *e)
 {
     if (e->decorated)
         mat_render_free(&e->rc);
+    free(e->sbuf);
 }
 
 static void emit_header(struct emit *e, const struct config *cfg,
@@ -146,6 +154,20 @@ static void emit_footer(struct emit *e)
 static void emit_line(struct emit *e, long L, const unsigned char *d,
                       size_t len, long total)
 {
+    if (e->strip && len > 0) {
+        if (e->scap < len) {
+            char *nb = realloc(e->sbuf, len);
+            if (nb != NULL) {
+                e->sbuf = nb;
+                e->scap = len;
+            }
+        }
+        if (e->scap >= len) {
+            size_t sn = mat_strip_ansi(d, len, e->sbuf);
+            d = (const unsigned char *)e->sbuf;
+            len = sn;
+        }
+    }
     if (e->decorated) {
         if (e->prev != 0 && L > e->prev + 1)
             mat_frame_header_line(&e->rc, "...", "", out_sink, e->o);

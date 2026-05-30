@@ -80,6 +80,8 @@ struct config {
 
     /* Encoding / mapping (Sprint 07). */
     enum mat_binary binary; /* --binary: how decorated output treats binary */
+    enum mat_when
+        strip_ansi; /* --strip-ansi: strip input escapes (auto=deco) */
 
     /* Config. */
     bool no_config; /* --no-config: skip config files */
