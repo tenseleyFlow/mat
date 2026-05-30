@@ -1,6 +1,6 @@
-.TH MAT 1 "2026" "mat" "User Commands"
+.TH MAT 1 "2026" "mat 0.2.0" "User Commands"
 .SH NAME
-mat \- concatenate files, blazingly fast, with optional bat-style decorations
+mat \- concatenate files with syntax highlighting and decorations
 .SH SYNOPSIS
 .B mat
 .RI [ OPTION ]...
@@ -19,12 +19,12 @@ By default mat behaves exactly like
 .BR cat (1):
 piped and redirected output is plain and byte\-identical to cat. The
 .BR bat (1)\-style
-frame (line\-number gutter, grid, header) is opt\-in via
+frame (line\-number gutter, grid, header, syntax highlighting) is opt\-in via
 .B \-\-style
 or
 .BR \-\-pretty .
 .SH OPTIONS
-.SS cat compatibility
+.SS "cat compatibility"
 .TP
 .B \-n
 Number all output lines.
@@ -52,10 +52,10 @@ Display \fB$\fR at end of each line.
 .TP
 .B \-T
 Display TAB as \fB^I\fR.
-.SS Decorations (opt-in)
+.SS "Decorations (opt-in)"
 .TP
 .BR \-p ", " \-\-pretty
-Show the full frame: header, grid, and line numbers.
+Show the full frame: header, grid, line numbers, and syntax highlighting.
 .TP
 .BR \-S ", " \-\-chop\-long\-lines
 Do not wrap long lines (same as \fB\-\-wrap=never\fR).
@@ -63,7 +63,7 @@ Do not wrap long lines (same as \fB\-\-wrap=never\fR).
 .BI \-\-style= LIST
 Comma\-separated components: \fInumbers\fR, \fIgrid\fR, \fIheader\fR,
 \fIheader\-filesize\fR, \fIrule\fR, \fIsnip\fR; or presets \fIplain\fR,
-\fIdefault\fR, \fIfull\fR. A leading \fB+\fR/\fB\-\fR modifies the default set.
+\fIdefault\fR, \fIfull\fR.
 .TP
 .BI \-\-decorations= WHEN
 \fIauto\fR, \fInever\fR, or \fIalways\fR.
@@ -79,7 +79,69 @@ Expand tabs to \fIN\fR columns in the frame (0 disables).
 .TP
 .BI \-\-terminal\-width= N
 Columns to assume for the frame.
-.SS Config
+.TP
+.BR \-P ", " \-\-no\-paging
+Disable the built\-in pager.
+.TP
+.BI \-\-paging= WHEN
+\fIauto\fR, \fInever\fR, or \fIalways\fR.
+.SS "Line selection"
+.TP
+.BI \-r " RANGE" "\fR, \fP" \-\-line\-range= RANGE
+Print only lines in \fIRANGE\fR. Repeat to accumulate. Forms:
+\fIN:M\fR, \fI:M\fR, \fIN:\fR, \fI\-N:\fR (last N), \fIN:+M\fR, \fIN::C\fR (context).
+.TP
+.BI \-H " RANGE" "\fR, \fP" \-\-highlight\-line= RANGE
+Emphasize lines in \fIRANGE\fR in decorated output.
+.TP
+.BI \-\-squeeze\-limit= N
+Maximum consecutive blank lines kept under \fB\-s\fR (default 1).
+.SS "Encoding"
+.TP
+.BI \-\-binary= WHEN
+\fIno\-printing\fR (default, skip with notice) or \fIas\-text\fR.
+.TP
+.BI \-\-strip\-ansi= WHEN
+\fIauto\fR (strip under highlighting), \fInever\fR, or \fIalways\fR.
+.SS "Highlighting"
+.TP
+.BI \-\-theme= NAME
+Color theme. See \fB\-\-list\-themes\fR for available names.
+Set a default in the config file.
+.TP
+.B \-\-list\-themes
+Print available theme names.
+.TP
+.BI \-l " NAME" "\fR, \fP" \-\-language= NAME
+Force the syntax to \fINAME\fR.
+.TP
+.BR \-L ", " \-\-list\-languages
+Print supported language names.
+.TP
+.BI \-m " GLOB:NAME" "\fR, \fP" \-\-map\-syntax= GLOB:NAME
+Map a filename glob to a syntax name.
+.TP
+.BI \-\-ignored\-suffix= .EXT
+Strip suffix before extension detection.
+.TP
+.BI \-\-file\-name= NAME
+Set display name and syntax detection for stdin.
+.TP
+.BI \-\-fallback\-syntax= NAME
+Syntax when detection fails (default \fIplain\fR).
+.TP
+.B \-\-detect\-syntax
+Print the detected syntax for each input and exit.
+.SS "Git"
+.TP
+.BR \-d ", " \-\-diff
+Show git change markers in the gutter
+(\fB+\fR added, \fB~\fR modified, \fB_\fR removed).
+.SS "Diagnostics"
+.TP
+.B \-\-diagnostic
+Print build capabilities and exit.
+.SS "Config"
 .TP
 .B \-\-no\-config
 Ignore configuration files.
