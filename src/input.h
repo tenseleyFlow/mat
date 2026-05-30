@@ -9,6 +9,7 @@
 #define MAT_INPUT_H
 
 #include <stdbool.h>
+#include <sys/stat.h>
 
 /*
  * Open the named input. name == NULL or "-" yields STDIN_FILENO and sets
@@ -19,5 +20,13 @@ int mat_open_input(const char *name, bool *is_stdin);
 
 /* Close a non-stdin input, warning on failure. No-op for stdin. */
 void mat_close_input(int fd, bool is_stdin, const char *name);
+
+/*
+ * Refuse "mat f >> f": copying a file onto itself loops until the disk fills.
+ * Detects input == output by dev/ino (excluding fifo/sock) and a position
+ * check (SEEK_END for an O_APPEND stdout). Returns true (and warns + records a
+ * failure) when the file must be skipped. Shared by the fast and cooked paths.
+ */
+bool mat_input_is_output(int in_fd, const struct stat *in_st, const char *name);
 
 #endif /* MAT_INPUT_H */

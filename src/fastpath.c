@@ -6,7 +6,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -72,13 +71,9 @@ bool mat_cfr_fallback_errno(int e)
 
 struct copier {
     int out_fd;
-    int out_flags; /* lazily fetched F_GETFL; -2 = not fetched */
-    bool out_has_stat;
     bool out_isreg;
     bool out_ispipe;
     bool out_pipe_grown;
-    dev_t out_dev;
-    ino_t out_ino;
     bool cfr_ok;    /* copy_file_range still worth trying this run */
     bool splice_ok; /* splice still worth trying this run */
     char *buf;      /* read/write fallback buffer, allocated on first use */
@@ -88,7 +83,6 @@ struct copier {
 static void copier_init(struct copier *c)
 {
     c->out_fd = STDOUT_FILENO;
-    c->out_flags = -2;
     c->out_pipe_grown = false;
     c->buf = NULL;
     c->bufsz = 0;
@@ -105,46 +99,12 @@ static void copier_init(struct copier *c)
 
     struct stat st;
     if (fstat(c->out_fd, &st) == 0) {
-        c->out_has_stat = true;
         c->out_isreg = S_ISREG(st.st_mode) != 0;
         c->out_ispipe = S_ISFIFO(st.st_mode) != 0;
-        c->out_dev = st.st_dev;
-        c->out_ino = st.st_ino;
     } else {
-        c->out_has_stat = false;
         c->out_isreg = false;
         c->out_ispipe = false;
     }
-}
-
-/* Refuse "mat f > f": copying a file onto itself would loop until the disk
- * fills. Mirrors coreutils' dev/ino + position check. Returns true (and warns)
- * when the input is the output and we must skip it. */
-static bool is_self_overwrite(struct copier *c, int in_fd,
-                              const struct stat *in_st, const char *name)
-{
-    if (!c->out_has_stat)
-        return false;
-    if (S_ISFIFO(in_st->st_mode) || S_ISSOCK(in_st->st_mode))
-        return false;
-    if (in_st->st_dev != c->out_dev || in_st->st_ino != c->out_ino)
-        return false;
-
-    off_t in_pos = lseek(in_fd, 0, SEEK_CUR);
-    if (in_pos < 0)
-        return false;
-    if (c->out_flags == -2)
-        c->out_flags = fcntl(c->out_fd, F_GETFL);
-    int whence =
-        (c->out_flags >= 0 && (c->out_flags & O_APPEND)) ? SEEK_END : SEEK_CUR;
-    off_t out_pos = lseek(c->out_fd, 0, whence);
-    if (in_pos < out_pos) {
-        fprintf(stderr, "%s: %s: input file is output file\n", mat_progname,
-                name);
-        mat_fail();
-        return true;
-    }
-    return false;
 }
 
 #if HAVE_COPY_FILE_RANGE
@@ -289,7 +249,7 @@ void mat_fastpath_run(const struct config *cfg)
             continue;
         }
 
-        if (is_self_overwrite(&c, fd, &in_st, label)) {
+        if (mat_input_is_output(fd, &in_st, label)) {
             mat_close_input(fd, is_stdin, files[i]);
             continue;
         }
