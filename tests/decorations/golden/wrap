@@ -1,0 +1,37 @@
+### --wrap=auto
+─────┬────────────────────────
+   1 │ tab here
+   2 │ xxxxxxxxxxxxxxxxxxxxxxx
+     │ xxxxxxxxxxxxxxxxxxxxx e
+     │ nd
+   3 │ word1 word2 word3 word4
+     │  word5 word6
+─────┴────────────────────────
+
+### --wrap=character
+─────┬────────────────────────
+   1 │ tab here
+   2 │ xxxxxxxxxxxxxxxxxxxxxxx
+     │ xxxxxxxxxxxxxxxxxxxxx e
+     │ nd
+   3 │ word1 word2 word3 word4
+     │  word5 word6
+─────┴────────────────────────
+
+### --wrap=word
+─────┬────────────────────────
+   1 │ tab here
+   2 │ xxxxxxxxxxxxxxxxxxxxxxx
+     │ xxxxxxxxxxxxxxxxxxxxx
+     │ end
+   3 │ word1 word2 word3
+     │ word4 word5 word6
+─────┴────────────────────────
+
+### --wrap=never
+─────┬────────────────────────
+   1 │ tab here
+   2 │ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx end
+   3 │ word1 word2 word3 word4 word5 word6
+─────┴────────────────────────
+

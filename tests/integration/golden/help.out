@@ -19,6 +19,8 @@ Decorations (opt-in; piped output stays plain like cat):
                        presets plain,default,full (e.g. full,-grid)
       --decorations=WHEN  auto|never|always
       --color=WHEN        auto|never|always
+      --wrap=MODE         auto|never|character|word
+      --tabs=N            expand tabs to N columns (0 = off)
       --terminal-width=N  columns for the frame
 
       --help    display this help and exit

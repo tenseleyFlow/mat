@@ -27,6 +27,7 @@ printf 'int main(void) {\n    return 0;\n}\n'  > "$F/src"
 printf 'one\ntwo\nthree\nfour\nfive\n'         > "$F/lines"
 printf 'no trailing newline'                   > "$F/notail"
 printf ''                                      > "$F/empty"
+printf 'tab\there\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx end\nword1 word2 word3 word4 word5 word6\n' > "$F/wrap"
 
 # Run from the fixture dir so the "File:" header shows a stable basename, not
 # the random temp path.
@@ -71,6 +72,16 @@ check "multi"
 "$MAT" --color=always --decorations=always --terminal-width=72 \
     --style=numbers,grid lines > "$scratch/out" 2>/dev/null
 check "color"
+
+# wrapping + tab expansion at a narrow width, across wrap modes
+: > "$scratch/out"
+for wm in auto character word never; do
+    printf '### --wrap=%s\n' "$wm" >> "$scratch/out"
+    "$MAT" --color=never --decorations=always --terminal-width=30 \
+        --style=numbers,grid --wrap="$wm" wrap >> "$scratch/out" 2>/dev/null
+    printf '\n' >> "$scratch/out"
+done
+check "wrap"
 
 if [ "$update" -eq 1 ]; then
     echo "decoration goldens updated"
