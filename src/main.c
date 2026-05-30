@@ -8,6 +8,7 @@
  * means later sprints slot in without restructuring main.
  */
 #include "cli.h"
+#include "conf.h"
 #include "config.h"
 #include "cooked.h"
 #include "err.h"
@@ -15,6 +16,7 @@
 #include "interactive.h"
 #include "scan.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,6 +36,18 @@ int main(int argc, char **argv)
     memset(&cfg, 0, sizeof cfg);
     cfg.tab_width = -1; /* -1 = use the decorated-mode default (4) */
 
+    /* Apply config-file + env defaults before the command line (which wins).
+     * --no-config must be honored before the files are read, so detect it in
+     * the raw argv first. */
+    bool no_config = getenv("MAT_NO_CONFIG") != NULL;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--") == 0)
+            break;
+        if (strcmp(argv[i], "--no-config") == 0)
+            no_config = true;
+    }
+    mat_conf_apply(&cfg, no_config);
+
     const char **files_out =
         malloc(sizeof(*files_out) * (size_t)(argc > 0 ? argc : 1));
     if (files_out == NULL) {
@@ -52,6 +66,27 @@ int main(int argc, char **argv)
     }
     if (cfg.show_version) {
         mat_print_version();
+        free(files_out);
+        return 0;
+    }
+    if (cfg.show_config_file || cfg.show_config_dir) {
+        char buf[1024];
+        const char *path = mat_conf_user_path(buf, sizeof buf);
+        if (path == NULL) {
+            mat_warnx("could not determine config path");
+        } else if (cfg.show_config_dir) {
+            char *slash = strrchr(buf, '/');
+            if (slash)
+                *slash = '\0';
+            printf("%s\n", buf);
+        } else {
+            printf("%s\n", path);
+        }
+        free(files_out);
+        return mat_status();
+    }
+    if (cfg.gen_config) {
+        mat_conf_print_template();
         free(files_out);
         return 0;
     }

@@ -67,9 +67,15 @@ struct config {
     enum mat_wrap wrap; /* long-line wrapping in the frame */
     int tab_width;      /* -1 = default (4 in the frame), 0 = no expansion */
 
+    /* Config. */
+    bool no_config; /* --no-config: skip config files */
+
     /* Early-exit actions. */
     bool show_help;
     bool show_version;
+    bool show_config_file; /* --config-file */
+    bool show_config_dir;  /* --config-dir */
+    bool gen_config;       /* --generate-config-file */
 };
 
 #endif /* MAT_CONFIG_H */

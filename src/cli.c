@@ -31,6 +31,7 @@ void mat_print_usage(void)
         "\n"
         "Decorations (opt-in; piped output stays plain like cat):\n"
         "  -p, --pretty         show the full frame (header, grid, numbers)\n"
+        "  -S, --chop-long-lines  do not wrap (same as --wrap=never)\n"
         "      --style=LIST     numbers,grid,header,header-filesize,rule,"
         "snip\n"
         "                       presets plain,default,full (e.g. full,-grid)\n"
@@ -39,6 +40,14 @@ void mat_print_usage(void)
         "      --wrap=MODE         auto|never|character|word\n"
         "      --tabs=N            expand tabs to N columns (0 = off)\n"
         "      --terminal-width=N  columns for the frame\n"
+        "\n"
+        "Config (defaults from /etc/mat/config, ~/.config/mat/config, "
+        "$MAT_OPTS,\n"
+        "$MAT_STYLE/$MAT_TABS/$MAT_WRAP; the command line overrides):\n"
+        "      --no-config              ignore config files\n"
+        "      --config-file            print the config file path\n"
+        "      --config-dir             print the config directory\n"
+        "      --generate-config-file   print a config template\n"
         "\n"
         "      --help    display this help and exit\n"
         "      --version output version information and exit\n",
@@ -161,6 +170,26 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 set_pretty(cfg);
                 continue;
             }
+            if (strcmp(a, "--no-config") == 0) {
+                cfg->no_config = true;
+                continue;
+            }
+            if (strcmp(a, "--config-file") == 0) {
+                cfg->show_config_file = true;
+                return 0;
+            }
+            if (strcmp(a, "--config-dir") == 0) {
+                cfg->show_config_dir = true;
+                return 0;
+            }
+            if (strcmp(a, "--generate-config-file") == 0) {
+                cfg->gen_config = true;
+                return 0;
+            }
+            if (strcmp(a, "--chop-long-lines") == 0) {
+                cfg->wrap = MAT_WRAP_NEVER;
+                continue;
+            }
             if (a[1] == '-') {
                 const char *val;
                 int r;
@@ -261,6 +290,10 @@ int mat_cli_parse(int argc, char **argv, struct config *cfg,
                 }
                 if (*p == 'p') {
                     set_pretty(cfg);
+                    continue;
+                }
+                if (*p == 'S') {
+                    cfg->wrap = MAT_WRAP_NEVER; /* --chop-long-lines */
                     continue;
                 }
                 if (!apply_short(*p, cfg)) {
