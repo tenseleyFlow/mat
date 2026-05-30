@@ -246,9 +246,9 @@ bool mat_parallel_run(const struct config *cfg)
     }
     for (size_t i = 0; i < n; i++) {
         if (rule && i > 0 && sep.len > 0)
-            mat_full_write(STDOUT_FILENO, sep.data, sep.len);
+            mat_pipe_write(STDOUT_FILENO, sep.data, sep.len);
         if (jobs[i].out.len > 0)
-            mat_full_write(STDOUT_FILENO, jobs[i].out.data, jobs[i].out.len);
+            mat_pipe_write(STDOUT_FILENO, jobs[i].out.data, jobs[i].out.len);
         free(jobs[i].out.data);
     }
     free(sep.data);
