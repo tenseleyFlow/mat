@@ -54,8 +54,20 @@ deserialization step at startup.
 Plain `mat` has comparable startup to `cat`. Adding highlighting does not change
 this number because the lexers load nothing.
 
-## Build
+## Install
 
+**Homebrew** (macOS / Linux):
+```sh
+brew tap tenseleyFlow/tap
+brew install mat
+```
+
+**AUR** (Arch Linux):
+```sh
+yay -S mat-cat
+```
+
+**From source:**
 ```sh
 ./configure        # probes syscalls (copy_file_range, splice, vmsplice, fadvise)
 make               # builds ./mat (GNU make and BSD make)
@@ -64,6 +76,10 @@ make bench         # hyperfine vs cat and bat
 make asan          # ASan/UBSan build
 sudo make install  # installs to /usr/local by default
 ```
+
+**Pre-built binaries** are available on the
+[releases page](https://github.com/tenseleyFlow/mat/releases) for Linux
+(x86_64) and macOS (arm64).
 
 Requires a C11 compiler and POSIX. No external libraries. Tested on Linux,
 macOS, and FreeBSD.
@@ -132,18 +148,37 @@ GNU `cat` (verified by 74 parity test cases on every commit).
 
 ## Languages
 
-mat includes hand-written lexers for 23 languages:
+mat includes hand-written lexers for 131 languages, covering all common
+programming languages, markup formats, config files, and shell scripting
+languages. Run `mat -L` for the full list. A few examples:
 
-Bash, C, C++, CSS, Diff, Fortran, Go, HTML, Java, JavaScript, JSON, Lua,
-Makefile, Markdown, Python, Ruby, Rust, SCSS, SQL, TOML, TypeScript, YAML, Zsh
+Ada, Assembly, AWK, Bash, C, C#, C++, Clojure, CSS, Dart, Dockerfile,
+Elixir, Erlang, F#, Fish, Fortran, GLSL, Go, GraphQL, Groovy, Haskell,
+HTML, Java, JavaScript, JSON, Julia, Kotlin, LaTeX, Lisp, Lua, Makefile,
+Markdown, MATLAB, Nim, Nix, Objective-C, OCaml, Pascal, Perl, PHP,
+PowerShell, Protobuf, Python, R, Ruby, Rust, Scala, Solidity, SQL, Svelte,
+Swift, Tcl, Terraform, TOML, TypeScript, Verilog, VimL, Vue, WGSL, XML,
+YAML, Zig, Zsh
 
 Languages without a lexer render with the decoration frame but no syntax
 coloring.
 
 ## Themes
 
-10 built-in themes: `catppuccin`, `dark` (default), `dracula`, `gruvbox`,
-`light`, `monokai`, `nord`, `onedark`, `solarized-dark`, `solarized-light`
+45 built-in themes, each sourced from its official spec. Run `mat --list-themes`
+for the full list. Set a default in your config file with `--theme=NAME`.
+
+**Dark:** dark (default), dracula, github-dark, gruvbox, kanagawa, material,
+monokai, moonfly, nightfly, nightfox, nightowl, nord, onedark, oxocarbon,
+palenight, poimandres, synthwave, tokyonight, tomorrow-night, zenburn
+
+**Light:** ayu-light, catppuccin-latte, dayfox, everforest-light, github-light,
+gruvbox-light, light, modus-operandi, onelight, rosepine-dawn, solarized-light,
+tomorrow
+
+**Mid/Muted:** ayu-dark, ayu-mirage, carbonfox, catppuccin, catppuccin-frappe,
+catppuccin-macchiato, dawnfox, everforest-dark, iceberg, modus-vivendi, rosepine,
+rosepine-moon, solarized-dark
 
 ## Pager
 
@@ -191,9 +226,9 @@ bulk throughput because it uses zero-copy kernel calls (`copy_file_range`,
 pager. mat provides the same features. The performance difference comes from the
 highlighting engine: bat loads and deserializes a set of TextMate grammar files
 (~8 ms on first use), while mat's hand-written lexers are compiled into the
-binary and require no loading step. mat covers 23 languages where bat covers
-~200. For languages mat does not cover, the file renders with the decoration
-frame but without syntax coloring.
+binary and require no loading step. mat covers 131 languages and 45 themes where
+bat covers ~174 languages and ~25 themes. For languages mat does not cover, the
+file renders with the decoration frame but without syntax coloring.
 
 Both mat and bat fall back to plain output when piped. Both support `--paging`,
 `--style`, `--color`, `-r` (line ranges), and themes.
