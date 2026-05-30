@@ -1,0 +1,21 @@
+{
+  "note": "Reference snapshot on 256 MiB /dev/urandom data; absolute ms are host-specific. CI gate enforces relative mat<=cat on file->/dev/null (large, non-flaky margin); other scenarios are reported.",
+  "unit": "ms",
+  "scenarios": {
+    "file->/dev/null": {
+      "mat": 13.28,
+      "cat": 47.94,
+      "ratio_cat_over_mat": 3.61
+    },
+    "file->file": {
+      "mat": 9.01,
+      "cat": 7.33,
+      "ratio_cat_over_mat": 0.81
+    },
+    "file->pipe": {
+      "mat": 90.94,
+      "cat": 154.75,
+      "ratio_cat_over_mat": 1.7
+    }
+  }
+}
