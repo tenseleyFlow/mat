@@ -113,6 +113,31 @@ after=$(wc -c < "$tmp/app_m")
 if [ "$rm" = "1" ] && [ "$before" = "$after" ]; then ok=$((ok + 1))
 else echo "FAIL - self append '>> f' (exit=$rm, size $before -> $after)"; fail=1; fi
 
+# --- cooked-path differential vs cat, GNU-only ---
+# Only GNU coreutils cat agrees with mat's byte-oriented transforms (BSD cat
+# uses wide-char -v and diverges). We also avoid CRLF inputs here: the \r\n->^M
+# behavior under -E changed between coreutils 8 and 9. The golden tests
+# (tests/cooked) are the primary, platform-independent oracle; this is an extra
+# confidence check on Linux against a real cat.
+if cat --version 2>/dev/null | grep -qi coreutils; then
+    printf 'h\ti\nworld\n\n\n\nfoo\n'  > "$tmp/c_text"
+    printf 'x\n\n\n\n\ny\n'            > "$tmp/c_blanks"
+    printf 'tab\there\n'               > "$tmp/c_tabs"
+    i=0; : > "$tmp/c_bytes"
+    while [ "$i" -lt 256 ]; do printf "\\$(printf '%03o' "$i")" >> "$tmp/c_bytes"; i=$((i + 1)); done
+    for cf in c_text c_blanks c_tabs c_bytes; do
+        for fl in n b s e t v A E T ns bs vet nve Anb; do
+            say "cooked -$fl $cf (vs GNU cat)"
+            "$MAT" "-$fl" "$tmp/$cf" > "$tmp/m.out" 2>/dev/null
+            cat   "-$fl" "$tmp/$cf" > "$tmp/c.out" 2>/dev/null
+            if cmp -s "$tmp/m.out" "$tmp/c.out"; then ok=$((ok + 1))
+            else echo "FAIL - cooked -$fl $cf vs GNU cat"; fail=1; fi
+        done
+    done
+else
+    say "non-GNU cat: skipping cooked differential (golden tests cover it)"
+fi
+
 if [ "$fail" -eq 0 ]; then
     echo "parity: $ok/$ok cases byte-identical to cat"
 fi

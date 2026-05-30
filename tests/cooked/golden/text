@@ -1,0 +1,134 @@
+### mat -n
+     1	hello
+     2	world
+     3	
+     4	
+     5	
+     6	foo
+     7	bar
+
+### mat -b
+     1	hello
+     2	world
+
+
+
+     3	foo
+     4	bar
+
+### mat -s
+hello
+world
+
+foo
+bar
+
+### mat -e
+hello$
+world$
+$
+$
+$
+foo$
+bar$
+
+### mat -t
+hello
+world
+
+
+
+foo
+bar
+
+### mat -v
+hello
+world
+
+
+
+foo
+bar
+
+### mat -A
+hello$
+world$
+$
+$
+$
+foo$
+bar$
+
+### mat -E
+hello$
+world$
+$
+$
+$
+foo$
+bar$
+
+### mat -T
+hello
+world
+
+
+
+foo
+bar
+
+### mat -ns
+     1	hello
+     2	world
+     3	
+     4	foo
+     5	bar
+
+### mat -bs
+     1	hello
+     2	world
+
+     3	foo
+     4	bar
+
+### mat -sv
+hello
+world
+
+foo
+bar
+
+### mat -vet
+hello$
+world$
+$
+$
+$
+foo$
+bar$
+
+### mat -nve
+     1	hello$
+     2	world$
+     3	$
+     4	$
+     5	$
+     6	foo$
+     7	bar$
+
+### mat -sA
+hello$
+world$
+$
+foo$
+bar$
+
+### mat -Anb
+     1	hello$
+     2	world$
+$
+$
+$
+     3	foo$
+     4	bar$
+

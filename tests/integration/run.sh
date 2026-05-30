@@ -43,7 +43,6 @@ run version  "$MAT" --version
 run help     "$MAT" --help
 run badopt   "$MAT" -Z
 run badlong  "$MAT" --nope
-run notyet   "$MAT" -n /dev/null
 
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

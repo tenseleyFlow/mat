@@ -1,0 +1,64 @@
+### mat -n
+     1	a	b	c
+     2		indented line
+
+### mat -b
+     1	a	b	c
+     2		indented line
+
+### mat -s
+a	b	c
+	indented line
+
+### mat -e
+a	b	c$
+	indented line$
+
+### mat -t
+a^Ib^Ic
+^Iindented line
+
+### mat -v
+a	b	c
+	indented line
+
+### mat -A
+a^Ib^Ic$
+^Iindented line$
+
+### mat -E
+a	b	c$
+	indented line$
+
+### mat -T
+a^Ib^Ic
+^Iindented line
+
+### mat -ns
+     1	a	b	c
+     2		indented line
+
+### mat -bs
+     1	a	b	c
+     2		indented line
+
+### mat -sv
+a	b	c
+	indented line
+
+### mat -vet
+a^Ib^Ic$
+^Iindented line$
+
+### mat -nve
+     1	a	b	c$
+     2		indented line$
+
+### mat -sA
+a^Ib^Ic$
+^Iindented line$
+
+### mat -Anb
+     1	a^Ib^Ic$
+     2	^Iindented line$
+

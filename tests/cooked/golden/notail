@@ -1,0 +1,32 @@
+### mat -n
+     1	no newline at end
+### mat -b
+     1	no newline at end
+### mat -s
+no newline at end
+### mat -e
+no newline at end
+### mat -t
+no newline at end
+### mat -v
+no newline at end
+### mat -A
+no newline at end
+### mat -E
+no newline at end
+### mat -T
+no newline at end
+### mat -ns
+     1	no newline at end
+### mat -bs
+     1	no newline at end
+### mat -sv
+no newline at end
+### mat -vet
+no newline at end
+### mat -nve
+     1	no newline at end
+### mat -sA
+no newline at end
+### mat -Anb
+     1	no newline at end

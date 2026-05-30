@@ -34,6 +34,9 @@ done
 echo "== integration =="
 MAT="$MAT" sh tests/integration/run.sh || fail=1
 
+echo "== cooked goldens =="
+MAT="$MAT" sh tests/cooked/run.sh || fail=1
+
 echo "== parity =="
 MAT="$MAT" sh tests/diff/parity.sh || fail=1
 

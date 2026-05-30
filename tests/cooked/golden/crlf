@@ -1,0 +1,80 @@
+### mat -n
+     1	l1
+     2	l2
+     3	barecr
+
+### mat -b
+     1	l1
+     2	l2
+     3	barecr
+
+### mat -s
+l1
+l2
+barecr
+
+### mat -e
+l1^M$
+l2^M$
+bare^Mcr$
+
+### mat -t
+l1^M
+l2^M
+bare^Mcr
+
+### mat -v
+l1^M
+l2^M
+bare^Mcr
+
+### mat -A
+l1^M$
+l2^M$
+bare^Mcr$
+
+### mat -E
+l1^M$
+l2^M$
+barecr$
+
+### mat -T
+l1
+l2
+barecr
+
+### mat -ns
+     1	l1
+     2	l2
+     3	barecr
+
+### mat -bs
+     1	l1
+     2	l2
+     3	barecr
+
+### mat -sv
+l1^M
+l2^M
+bare^Mcr
+
+### mat -vet
+l1^M$
+l2^M$
+bare^Mcr$
+
+### mat -nve
+     1	l1^M$
+     2	l2^M$
+     3	bare^Mcr$
+
+### mat -sA
+l1^M$
+l2^M$
+bare^Mcr$
+
+### mat -Anb
+     1	l1^M$
+     2	l2^M$
+     3	bare^Mcr$
+
