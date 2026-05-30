@@ -141,7 +141,11 @@ static void emit_seg(struct mat_render *r, unsigned long n, bool continuation,
 {
     r->seg_len = 0;
     put_gutter(r, n, continuation);
+    if (r->highlight && r->color)
+        seg_str(r, COL_HL);
     seg_append(r, content, clen);
+    if (r->highlight && r->color)
+        seg_str(r, COL_RESET);
     sink(ctx, r->seg, r->seg_len);
 }
 

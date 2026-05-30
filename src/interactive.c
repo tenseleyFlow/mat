@@ -29,6 +29,7 @@ struct ip {
     size_t pend_cap, pend_len;
     bool failed;
     struct mat_render rc;
+    const struct mat_rangeset *highlights; /* -H lines, or empty */
 };
 
 static void ip_flush(struct ip *p)
@@ -140,6 +141,11 @@ static void pend_append(struct ip *p, const unsigned char *d, size_t n)
 static void emit_line(struct ip *p, unsigned long n, const unsigned char *d,
                       size_t len)
 {
+    /* Streaming has no line total, so end-relative -H (-2:) can't resolve here;
+     * absolute highlight ranges work. */
+    const struct mat_rangeset *hl = p->highlights;
+    p->rc.highlight = hl && hl->n > 0 && !hl->needs_total &&
+                      mat_rangeset_contains(hl, (long)n, 0);
     mat_render_line(&p->rc, n, d, len, p->term_width, stream_sink, p);
 }
 
@@ -215,6 +221,7 @@ void mat_interactive_run(const struct config *cfg)
         (numbers ? MAT_S_NUMBERS : 0u) | (grid ? MAT_S_GRID : 0u);
     int tab_width = cfg->tab_width < 0 ? 4 : cfg->tab_width;
     mat_render_init(&p.rc, eff_style, cfg->wrap, tab_width, p.color);
+    p.highlights = &cfg->highlights;
 
     p.buf = malloc(IP_BUFCAP);
     if (p.buf == NULL) {

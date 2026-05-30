@@ -23,9 +23,11 @@
 #define BX_U "\xe2\x94\xb4" /* ┴ */
 #define COL_GUTTER "\x1b[38;5;238m"
 #define COL_RESET "\x1b[0m"
+#define COL_HL "\x1b[48;5;237m" /* -H highlighted-line background */
 
 struct mat_render {
     bool numbers, grid, color;
+    bool highlight;  /* set per call: emphasize this line's background (-H) */
     int panel_width; /* 5 if numbers else 0 */
     int tab_width;   /* 0 = no tab expansion */
     enum mat_wrap wrap;

@@ -135,8 +135,11 @@ static void print_decorated(const struct config *cfg, struct mat_linesrc *src,
         mat_frame_hrule(&rc, term_width, BX_D, out_sink, o);
     }
 
-    long total;
-    long maxl = bound_and_total(cfg, src, &total);
+    /* Need the total if either selection or highlighting is end-relative. */
+    long total = 0;
+    if (cfg->ranges.needs_total || cfg->highlights.needs_total)
+        total = (long)mat_linesrc_total(src);
+    long maxl = mat_rangeset_max_line(&cfg->ranges);
     long prev = 0;
     for (long L = 1; L <= maxl && !o->failed; L++) {
         const unsigned char *d;
@@ -147,6 +150,8 @@ static void print_decorated(const struct config *cfg, struct mat_linesrc *src,
             continue;
         if (prev != 0 && L > prev + 1)
             snip(&rc, term_width, o);
+        rc.highlight = cfg->highlights.n > 0 &&
+                       mat_rangeset_contains(&cfg->highlights, L, total);
         mat_render_line(&rc, (unsigned long)L, d, len, term_width, seg_sink, o);
         prev = L;
     }

@@ -76,6 +76,9 @@ run range_badarg "$MAT" -r nope   "$scratch/lines.txt"
 run_stdin pretty_plain "$scratch/lines.txt" "$MAT" --pretty --color=never
 run_stdin range_pretty "$scratch/lines.txt" "$MAT" --pretty --color=never -r 3:5
 run_stdin range_snip   "$scratch/lines.txt" "$MAT" --pretty --color=never -r 2:3 -r 8:9
+# Highlighted lines (-H), captured with color on to assert the SGR spans.
+run_stdin hl_stream    "$scratch/lines.txt" "$MAT" --pretty --color=always -H 3
+run_stdin hl_in_range  "$scratch/lines.txt" "$MAT" --pretty --color=always -r 2:6 -H 4
 
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
