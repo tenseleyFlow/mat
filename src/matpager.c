@@ -1,145 +1,19 @@
 #include "matpager.h"
 #include "err.h"
 #include "input.h"
+#include "linesrc.h"
 #include "render.h"
-#include "scan.h"
 #include "term.h"
 
-#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 
 #include "paige.h"
 
-/* A read-only source with a lazily-built logical-line offset index. */
-struct src {
-    const char *data;
-    size_t size;
-    bool mmapped;
-    size_t *off; /* off[i] = byte offset of line i */
-    size_t noff, off_cap;
-    bool eof_known;
-    size_t total; /* valid once eof_known */
-};
-
-static void off_push(struct src *s, size_t v)
-{
-    if (s->noff == s->off_cap) {
-        s->off_cap = s->off_cap ? s->off_cap * 2 : 1024;
-        s->off = realloc(s->off, s->off_cap * sizeof *s->off);
-    }
-    s->off[s->noff++] = v;
-}
-
-/* Ensure line offsets are known through index `want` (or to EOF). */
-static void ensure(struct src *s, size_t want)
-{
-    while (!s->eof_known && s->noff <= want) {
-        size_t from = s->off[s->noff - 1];
-        if (from >= s->size) {
-            s->eof_known = true;
-            s->total = s->noff - 1; /* off[noff-1]==size: not a real line */
-            return;
-        }
-        const unsigned char *base = (const unsigned char *)s->data;
-        const unsigned char *q = mat_scan_newline(base + from, base + s->size);
-        if (q == base + s->size) {
-            s->eof_known = true;
-            s->total =
-                s->noff; /* final line [from, size) with no trailing nl */
-            return;
-        }
-        size_t nl = (size_t)(q - base);
-        if (nl + 1 < s->size) {
-            off_push(s, nl + 1);
-        } else {
-            s->eof_known = true;
-            s->total = s->noff; /* trailing newline: line `noff-1` ends here */
-            return;
-        }
-    }
-}
-
-static bool src_line(struct src *s, size_t L, const unsigned char **d,
-                     size_t *len)
-{
-    ensure(s, L + 1);
-    if (s->eof_known && L >= s->total)
-        return false;
-    size_t start = s->off[L];
-    size_t end = (L + 1 < s->noff) ? s->off[L + 1] - 1 : s->size;
-    *d = (const unsigned char *)s->data + start;
-    *len = end > start ? end - start : 0;
-    return true;
-}
-
-static void src_free(struct src *s)
-{
-    if (s->mmapped && s->data && s->size)
-        munmap((void *)s->data, s->size);
-    else
-        free((void *)s->data);
-    free(s->off);
-}
-
-/* Read a non-seekable input (stdin/pipe) fully into memory. */
-static char *slurp_fd(int fd, size_t *out)
-{
-    size_t cap = 1 << 16, len = 0;
-    char *buf = malloc(cap);
-    for (;;) {
-        if (len == cap) {
-            cap *= 2;
-            char *nb = realloc(buf, cap);
-            if (!nb) {
-                free(buf);
-                return NULL;
-            }
-            buf = nb;
-        }
-        ssize_t r = read(fd, buf + len, cap - len);
-        if (r < 0) {
-            if (errno == EINTR)
-                continue;
-            free(buf);
-            return NULL;
-        }
-        if (r == 0)
-            break;
-        len += (size_t)r;
-    }
-    *out = len;
-    return buf;
-}
-
-static bool src_open(struct src *s, int fd)
-{
-    memset(s, 0, sizeof *s);
-    struct stat st;
-    if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
-        void *m = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-        if (m != MAP_FAILED) {
-            s->data = m;
-            s->size = (size_t)st.st_size;
-            s->mmapped = true;
-        }
-    }
-    if (s->data == NULL) {
-        s->data = slurp_fd(fd, &s->size);
-        if (s->data == NULL)
-            return false;
-    }
-    off_push(s, 0);
-    return true;
-}
-
 struct ctx {
-    struct src src;
+    struct mat_linesrc src;
     struct mat_render rc;
 };
 
@@ -176,7 +50,7 @@ static bool fits_one_screen(struct ctx *c, int rows, int cols)
     for (size_t L = 0;; L++) {
         const unsigned char *d;
         size_t len;
-        if (!src_line(&c->src, L, &d, &len))
+        if (!mat_linesrc_line(&c->src, L, &d, &len))
             return true; /* reached EOF within the screen */
         visual += mat_render_line(&c->rc, (unsigned long)(L + 1), d, len, cols,
                                   noop_sink, NULL);
@@ -190,7 +64,7 @@ static int render_cb(void *vc, size_t L, int width, paige_sink *sink)
     struct ctx *c = vc;
     const unsigned char *d;
     size_t len;
-    if (!src_line(&c->src, L, &d, &len))
+    if (!mat_linesrc_line(&c->src, L, &d, &len))
         return 0;
     return mat_render_line(&c->rc, (unsigned long)(L + 1), d, len, width,
                            to_paige, sink);
@@ -205,7 +79,7 @@ int mat_page(const struct config *cfg, bool decorated)
         return 0; /* error already reported; nothing to fall back to */
 
     struct ctx c;
-    if (!src_open(&c.src, fd)) {
+    if (!mat_linesrc_open(&c.src, fd)) {
         mat_warn(is_stdin ? "stdin" : name);
         mat_close_input(fd, is_stdin, name);
         return 0;
@@ -248,7 +122,7 @@ int mat_page(const struct config *cfg, bool decorated)
     }
 
     mat_render_free(&c.rc);
-    src_free(&c.src);
+    mat_linesrc_free(&c.src);
     mat_close_input(fd, is_stdin, name);
     return ret;
 }
