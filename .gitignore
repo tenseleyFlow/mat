@@ -1,0 +1,24 @@
+# Reference clones (other projects, large, own histories) — kept locally, not tracked
+.docs/refs/
+
+# Build output
+/build/
+*.o
+*.a
+*.so
+*.dylib
+mat
+!src/mat/
+
+# configure-generated
+/config.mk
+/config.h
+/compile_commands.json
+
+# Test/bench scratch
+tests/fixtures/huge/
+bench/results/*.local.json
+
+# Editor / OS noise
+*.swp
+.DS_Store
