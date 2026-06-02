@@ -139,10 +139,15 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
             for (int i = 0; i < r->panel_width; i++)
                 seg_append(r, " ", 1);
         } else {
-            char num[32];
-            int len = snprintf(num, sizeof num, "%4lu ", n);
-            if (len > 0)
-                seg_append(r, num, (size_t)len);
+            char num[] = "    ";
+            int i = 3;
+            unsigned long v = n;
+            do {
+                num[i--] = '0' + (char)(v % 10);
+                v /= 10;
+            } while (v && i >= 0);
+            seg_append(r, num, 4);
+            seg_append(r, " ", 1);
         }
     }
     if (r->changes && !continuation) {
@@ -234,7 +239,7 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
     r->hl_on = false;
     if (r->hl != NULL && r->color) {
         if (r->spans == NULL) {
-            r->spans_cap = 4096;
+            r->spans_cap = 256;
             r->spans = malloc((size_t)r->spans_cap * sizeof *r->spans);
         }
         if (r->spans != NULL) {
