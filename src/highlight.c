@@ -15,7 +15,8 @@ struct wordset {
 
 struct mat_hl {
     lex_fn lex;
-    int state; /* 0=normal, 1=block-comment, 2=multi-line-string */
+    int state;         /* 0=normal, 1=block-comment, 2=multi-line-string */
+    unsigned char tqc; /* triple-quote character (' or ") for Python */
     struct wordset keywords;
     struct wordset types;
 };
@@ -978,9 +979,10 @@ static int lex_python(struct mat_hl *h, const unsigned char *d, size_t len,
     int n = 0;
     size_t i = 0;
     if (h->state == HL_PY_TRIPLE) {
+        unsigned char tq = h->tqc;
         size_t s = 0;
         while (i + 2 < len) {
-            if (d[i] == '"' && d[i + 1] == '"' && d[i + 2] == '"') {
+            if (d[i] == tq && d[i + 1] == tq && d[i + 2] == tq) {
                 i += 3;
                 h->state = HL_NORMAL;
                 break;
@@ -1003,6 +1005,7 @@ static int lex_python(struct mat_hl *h, const unsigned char *d, size_t len,
         if ((c == '"' || c == '\'') && i + 2 < len && d[i + 1] == c &&
             d[i + 2] == c) {
             h->state = HL_PY_TRIPLE;
+            h->tqc = c;
             i += 3;
             while (i + 2 < len) {
                 if (d[i] == c && d[i + 1] == c && d[i + 2] == c) {

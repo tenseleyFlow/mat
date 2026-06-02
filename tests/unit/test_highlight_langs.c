@@ -114,6 +114,28 @@ static void test_py_triple_quote_multiline(void)
     mat_hl_close(h);
 }
 
+static void test_py_triple_single_quote_multiline(void)
+{
+    struct mat_hl *h = mat_hl_open("Python");
+    struct mat_span sp[MAXSPANS];
+    const char *l1 = "x = '''start";
+    const char *l2 = "still string'''";
+    const char *l3 = "print(x)";
+    int n1 =
+        mat_hl_line(h, (const unsigned char *)l1, strlen(l1), sp, MAXSPANS);
+    TEST_ASSERT_EQUAL_INT(MT_STRING, tok_at(sp, n1, 4));
+
+    int n2 =
+        mat_hl_line(h, (const unsigned char *)l2, strlen(l2), sp, MAXSPANS);
+    TEST_ASSERT_EQUAL_INT(MT_STRING, tok_at(sp, n2, 0));
+
+    /* After closing ''', the next line must NOT be string. */
+    int n3 =
+        mat_hl_line(h, (const unsigned char *)l3, strlen(l3), sp, MAXSPANS);
+    TEST_ASSERT_NOT_EQUAL(MT_STRING, tok_at(sp, n3, 0));
+    mat_hl_close(h);
+}
+
 static void test_py_decorator(void)
 {
     struct mat_hl *h = mat_hl_open("Python");
@@ -396,6 +418,7 @@ int main(void)
     /* Python */
     RUN_TEST(test_py_comment);
     RUN_TEST(test_py_triple_quote_multiline);
+    RUN_TEST(test_py_triple_single_quote_multiline);
     RUN_TEST(test_py_decorator);
     RUN_TEST(test_py_keyword_type);
     /* Shell */
