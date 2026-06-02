@@ -133,8 +133,7 @@ static void render_file(struct work *w)
     /* Content. */
     char *sbuf = NULL;
     size_t scap = 0;
-    size_t total = mat_linesrc_total(&src);
-    for (size_t L = 0; L < total; L++) {
+    for (size_t L = 0;; L++) {
         const unsigned char *d;
         size_t len;
         if (!mat_linesrc_line(&src, L, &d, &len))
