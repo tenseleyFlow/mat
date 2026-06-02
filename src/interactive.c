@@ -42,7 +42,7 @@ struct ip {
 static void ip_flush(struct ip *p)
 {
     if (p->pos && !p->failed) {
-        if (mat_full_write(STDOUT_FILENO, p->buf, p->pos) < 0) {
+        if (mat_pipe_write(STDOUT_FILENO, p->buf, p->pos) < 0) {
             mat_warn("stdout");
             p->failed = true;
         }
@@ -56,7 +56,7 @@ static void ip_write(struct ip *p, const char *d, size_t n)
         return;
     if (n >= IP_BUFCAP) {
         ip_flush(p);
-        if (!p->failed && mat_full_write(STDOUT_FILENO, d, n) < 0) {
+        if (!p->failed && mat_pipe_write(STDOUT_FILENO, d, n) < 0) {
             mat_warn("stdout");
             p->failed = true;
         }
@@ -66,11 +66,6 @@ static void ip_write(struct ip *p, const char *d, size_t n)
         ip_flush(p);
     memcpy(p->buf + p->pos, d, n);
     p->pos += n;
-}
-
-static void ip_str(struct ip *p, const char *s)
-{
-    ip_write(p, s, strlen(s));
 }
 
 /* sink for render.c / frame.c: emit bytes into the output buffer. */
@@ -84,7 +79,7 @@ static void stream_sink(void *ctx, const char *bytes, size_t len)
 {
     struct ip *p = ctx;
     ip_write(p, bytes, len);
-    ip_str(p, "\n");
+    ip_write(p, "\n", 1);
 }
 
 static void hrule(struct ip *p, const char *junction)
