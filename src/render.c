@@ -245,37 +245,51 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
 
     expand_tabs(r, d, len);
 
-    /* Remap span offsets from original-byte to expanded-byte positions. */
+    /* Remap span offsets from original-byte to expanded-byte positions.
+     * Must mirror expand_tabs exactly: decode UTF-8 and use mat_wcwidth. */
     if (r->hl_on && r->tab_width > 0 && memchr(d, '\t', len) != NULL) {
-        size_t col = 0, orig = 0, exp = 0;
+        int col = 0;
+        size_t orig = 0, exp = 0;
         int si = 0;
         while (si < r->nspans && orig <= len) {
             struct mat_span *sp = &r->spans[si];
-            /* Advance to sp->start */
             while (orig < (size_t)sp->start && orig < len) {
                 if (d[orig] == '\t') {
-                    int tw = r->tab_width - (int)(col % (unsigned)r->tab_width);
-                    col += (unsigned)tw;
+                    int tw = r->tab_width - (col % r->tab_width);
+                    col += tw;
                     exp += (size_t)tw;
-                } else {
+                    orig++;
+                } else if (d[orig] < 0x80) {
                     col++;
                     exp++;
+                    orig++;
+                } else {
+                    uint32_t cp;
+                    size_t cl = mat_utf8_decode(d + orig, d + len, &cp);
+                    col += mat_wcwidth(cp);
+                    exp += cl;
+                    orig += cl;
                 }
-                orig++;
             }
             unsigned new_start = (unsigned)exp;
-            /* Advance through sp->len bytes */
             size_t sp_end = (size_t)sp->start + sp->len;
             while (orig < sp_end && orig < len) {
                 if (d[orig] == '\t') {
-                    int tw = r->tab_width - (int)(col % (unsigned)r->tab_width);
-                    col += (unsigned)tw;
+                    int tw = r->tab_width - (col % r->tab_width);
+                    col += tw;
                     exp += (size_t)tw;
-                } else {
+                    orig++;
+                } else if (d[orig] < 0x80) {
                     col++;
                     exp++;
+                    orig++;
+                } else {
+                    uint32_t cp;
+                    size_t cl = mat_utf8_decode(d + orig, d + len, &cp);
+                    col += mat_wcwidth(cp);
+                    exp += cl;
+                    orig += cl;
                 }
-                orig++;
             }
             sp->start = new_start;
             sp->len = (unsigned)(exp - new_start);
