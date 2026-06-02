@@ -41,3 +41,4 @@ complete -c mat -l config-dir -d 'print config dir'
 complete -c mat -l generate-config-file -d 'print config template'
 complete -c mat -l help -d 'show help'
 complete -c mat -l version -d 'show version'
+complete -c mat -F
