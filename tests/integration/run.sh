@@ -316,5 +316,48 @@ else
     echo "skip - diff_marker_golden (git not installed)"
 fi
 
+# T3: --diagnostic output contains correct counts
+diag=$("$MAT" --diagnostic 2>/dev/null)
+if echo "$diag" | grep -q 'languages: 130' && echo "$diag" | grep -q 'themes: 45'; then
+    echo "ok   - diagnostic_counts"
+else
+    echo "FAIL - diagnostic_counts"; fail=1
+fi
+
+# T5: /dev/null input — empty output, exit 0
+devnull_out=$("$MAT" /dev/null 2>/dev/null)
+devnull_rc=$?
+if [ "$devnull_rc" -eq 0 ] && [ -z "$devnull_out" ]; then
+    echo "ok   - devnull_input"
+else
+    echo "FAIL - devnull_input (rc=$devnull_rc, len=${#devnull_out})"; fail=1
+fi
+
+# T5: directory as argument — non-zero exit
+"$MAT" /tmp > /dev/null 2>&1
+dir_rc=$?
+if [ "$dir_rc" -ne 0 ]; then
+    echo "ok   - dir_as_input"
+else
+    echo "FAIL - dir_as_input (exit 0)"; fail=1
+fi
+
+# T5: permission denied (skip if root)
+if [ "$(id -u)" != "0" ]; then
+    noperm="$scratch/noperm.txt"
+    printf 'secret\n' > "$noperm"
+    chmod 000 "$noperm"
+    "$MAT" "$noperm" > /dev/null 2>&1
+    perm_rc=$?
+    chmod 644 "$noperm"
+    if [ "$perm_rc" -ne 0 ]; then
+        echo "ok   - permission_denied"
+    else
+        echo "FAIL - permission_denied (exit 0)"; fail=1
+    fi
+else
+    echo "skip - permission_denied (running as root)"
+fi
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

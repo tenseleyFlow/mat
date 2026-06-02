@@ -88,5 +88,24 @@ case "$out" in
     *) echo "FAIL: MAT_OPTS did not override BAT_OPTS"; fail=1 ;;
 esac
 
+# BAT_STYLE fallback when MAT_STYLE is unset
+out=$(MAT_NO_CONFIG= XDG_CONFIG_HOME="$tmp/empty" BAT_STYLE=numbers \
+    "$MAT" --decorations=always --color=never --terminal-width=40 "$tmp/f" \
+    2>/dev/null | head -1)
+case "$out" in
+    *"   1 hello"*) ;;
+    *) echo "FAIL: BAT_STYLE fallback not applied"; fail=1 ;;
+esac
+
+# MAT_TABS=8: verify wider tab expansion
+printf '\thello\n' > "$tmp/tabfile"
+out=$(MAT_NO_CONFIG= XDG_CONFIG_HOME="$tmp/empty" MAT_TABS=8 \
+    "$MAT" --decorations=always --color=never --style=plain \
+    --terminal-width=80 "$tmp/tabfile" 2>/dev/null | head -1)
+case "$out" in
+    "        hello") ;;
+    *) echo "FAIL: MAT_TABS=8 not applied (got: '$out')"; fail=1 ;;
+esac
+
 [ "$fail" -eq 0 ] && echo "config: precedence OK"
 exit $fail
