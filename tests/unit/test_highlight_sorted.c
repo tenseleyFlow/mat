@@ -1,6 +1,8 @@
 #include "unity.h"
 #include "highlight.h"
 
+#include <string.h>
+
 void setUp(void)
 {
 }
@@ -15,28 +17,13 @@ static void test_all_tables_sorted(void)
         TEST_FAIL_MESSAGE(bad);
 }
 
-static void test_every_lang_opens(void)
+static void test_every_dispatch_entry_opens(void)
 {
-    const char *names[] = {
-        "C",          "Python",     "Bash",
-        "JavaScript", "Ruby",       "Go",
-        "Rust",       "Haskell",    "Markdown",
-        "YAML",       "JSON",       "HTML",
-        "CSS",        "SQL",        "Lua",
-        "Makefile",   "Diff",       "LaTeX",
-        "Fortran",    "TOML",       "Assembly",
-        "Pascal",     "MATLAB",     "VimL",
-        "Dockerfile", "INI",        "Clojure",
-        "R",          "Kotlin",     "Scala",
-        "Swift",      "Dart",       "Zig",
-        "Nim",        "Groovy",     "Perl",
-        "PHP",        "OCaml",      "Elixir",
-        "Erlang",     "Julia",      "Strace",
-        "Todo.txt",   "VimHelp",    "JQ",
-        "Crontab",    "Git Commit", "Git Rebase Todo",
-        "SSH Config", "passwd",     "Literate Haskell",
-    };
-    for (size_t i = 0; i < sizeof names / sizeof names[0]; i++) {
+    const char *const *names;
+    int count;
+    mat_hl_dispatch_names(&names, &count);
+    TEST_ASSERT_GREATER_THAN_INT(100, count);
+    for (int i = 0; i < count; i++) {
         struct mat_hl *h = mat_hl_open(names[i]);
         if (h == NULL) {
             char msg[128];
@@ -48,10 +35,29 @@ static void test_every_lang_opens(void)
     }
 }
 
+static void test_every_dispatch_entry_lexes(void)
+{
+    const char *const *names;
+    int count;
+    mat_hl_dispatch_names(&names, &count);
+    struct mat_span sp[64];
+    for (int i = 0; i < count; i++) {
+        struct mat_hl *h = mat_hl_open(names[i]);
+        if (h == NULL)
+            continue;
+        const char *line = "int x = 42;";
+        int n =
+            mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, 64);
+        TEST_ASSERT_GREATER_OR_EQUAL_INT(0, n);
+        mat_hl_close(h);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_all_tables_sorted);
-    RUN_TEST(test_every_lang_opens);
+    RUN_TEST(test_every_dispatch_entry_opens);
+    RUN_TEST(test_every_dispatch_entry_lexes);
     return UNITY_END();
 }

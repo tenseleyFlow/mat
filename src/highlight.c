@@ -4412,6 +4412,16 @@ static const char *ws_sorted(const struct wordset *w)
     return NULL;
 }
 
+static const char *dispatch_names[sizeof lang_tbl / sizeof lang_tbl[0]];
+
+void mat_hl_dispatch_names(const char *const **names, int *count)
+{
+    for (size_t i = 0; i < LANG_TBL_N; i++)
+        dispatch_names[i] = lang_tbl[i].name;
+    *names = dispatch_names;
+    *count = (int)LANG_TBL_N;
+}
+
 const char *mat_hl_validate_tables(void)
 {
     for (size_t i = 1; i < LANG_TBL_N; i++)

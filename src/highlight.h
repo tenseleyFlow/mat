@@ -69,4 +69,7 @@ int mat_theme_count(void);
  * On failure, returns the first mis-sorted entry name. */
 const char *mat_hl_validate_tables(void);
 
+/* Return the dispatch table names and count (for smoke testing). */
+void mat_hl_dispatch_names(const char *const **names, int *count);
+
 #endif /* MAT_HIGHLIGHT_H */
