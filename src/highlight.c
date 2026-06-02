@@ -4398,6 +4398,12 @@ int mat_hl_language_count(void)
     return (int)(sizeof all_langs / sizeof all_langs[0]);
 }
 
+void mat_hl_display_names(const char *const **names, int *count)
+{
+    *names = all_langs;
+    *count = (int)(sizeof all_langs / sizeof all_langs[0]);
+}
+
 int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,
                 struct mat_span *out, int cap)
 {

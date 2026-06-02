@@ -72,4 +72,7 @@ const char *mat_hl_validate_tables(void);
 /* Return the dispatch table names and count (for smoke testing). */
 void mat_hl_dispatch_names(const char *const **names, int *count);
 
+/* Return the user-facing language display names (all_langs). */
+void mat_hl_display_names(const char *const **names, int *count);
+
 #endif /* MAT_HIGHLIGHT_H */

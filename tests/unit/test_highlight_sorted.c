@@ -53,11 +53,32 @@ static void test_every_dispatch_entry_lexes(void)
     }
 }
 
+static void test_all_display_names_open(void)
+{
+    const char *const *names;
+    int count;
+    mat_hl_display_names(&names, &count);
+    TEST_ASSERT_EQUAL_INT(130, count);
+    for (int i = 0; i < count; i++) {
+        struct mat_hl *h = mat_hl_open(names[i]);
+        if (h == NULL) {
+            char msg[128];
+            snprintf(msg, sizeof msg,
+                     "all_langs[\"%s\"] not in lang_tbl (mat_hl_open returned "
+                     "NULL)",
+                     names[i]);
+            TEST_FAIL_MESSAGE(msg);
+        }
+        mat_hl_close(h);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_all_tables_sorted);
     RUN_TEST(test_every_dispatch_entry_opens);
     RUN_TEST(test_every_dispatch_entry_lexes);
+    RUN_TEST(test_all_display_names_open);
     return UNITY_END();
 }
