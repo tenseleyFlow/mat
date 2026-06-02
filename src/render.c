@@ -87,6 +87,8 @@ static void seg_append(struct mat_render *r, const char *d, size_t n)
     r->seg_len += n;
 }
 
+#define seg_lit(r, lit) seg_append(r, lit, sizeof(lit) - 1)
+
 static void seg_str(struct mat_render *r, const char *s)
 {
     seg_append(r, s, strlen(s));
@@ -113,16 +115,20 @@ static void expand_tabs(struct mat_render *r, const unsigned char *d,
             wbuf_append(r, spaces, (size_t)sp);
             col += sp;
             i++;
-        } else if (d[i] < 0x80) {
-            wbuf_append(r, (const char *)d + i, 1);
-            col += 1;
-            i++;
         } else {
-            uint32_t cp;
-            size_t cl = mat_utf8_decode(d + i, d + len, &cp);
-            wbuf_append(r, (const char *)d + i, cl);
-            col += mat_wcwidth(cp);
-            i += cl;
+            size_t run = i;
+            while (i < len && d[i] != '\t') {
+                if (d[i] < 0x80) {
+                    col++;
+                    i++;
+                } else {
+                    uint32_t cp;
+                    size_t cl = mat_utf8_decode(d + i, d + len, &cp);
+                    col += mat_wcwidth(cp);
+                    i += cl;
+                }
+            }
+            wbuf_append(r, (const char *)d + run, i - run);
         }
     }
 }
@@ -143,7 +149,7 @@ static int run_width(const unsigned char *a, const unsigned char *b)
 static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
 {
     if (r->color)
-        seg_str(r, COL_GUTTER);
+        seg_lit(r, COL_GUTTER);
     if (r->numbers) {
         if (continuation) {
             for (int i = 0; i < r->panel_width; i++)
@@ -173,15 +179,15 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
                 seg_str(r, cc);
             seg_str(r, mat_change_marker(chg));
             if (cc[0])
-                seg_str(r, COL_GUTTER);
+                seg_lit(r, COL_GUTTER);
         } else {
             seg_str(r, mat_change_marker(chg));
         }
     }
     if (r->grid && r->panel_width > 0)
-        seg_str(r, BX_V " ");
+        seg_lit(r, BX_V " ");
     if (r->color)
-        seg_str(r, COL_RESET);
+        seg_lit(r, COL_RESET);
 }
 
 #define SGR_FG_DEFAULT "\x1b[39m" /* reset foreground without touching bg */
@@ -192,7 +198,7 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
 static void emit_colored(struct mat_render *r, size_t woff, size_t clen)
 {
     size_t end = woff + clen, pos = woff;
-    int si = 0;
+    int si = r->cur_span;
     while (si < r->nspans &&
            (size_t)r->spans[si].start + r->spans[si].len <= pos)
         si++;
@@ -222,6 +228,7 @@ static void emit_colored(struct mat_render *r, size_t woff, size_t clen)
         seg_append(r, r->wbuf + pos, run_end - pos);
         pos = run_end;
     }
+    r->cur_span = si;
 }
 
 static void emit_seg(struct mat_render *r, unsigned long n, bool continuation,
@@ -232,14 +239,14 @@ static void emit_seg(struct mat_render *r, unsigned long n, bool continuation,
     put_gutter(r, n, continuation);
     bool bg = r->highlight && r->color;
     if (bg)
-        seg_str(r, COL_HL);
+        seg_lit(r, COL_HL);
     if (r->hl_on) {
         emit_colored(r, woff, clen);
-        seg_str(r, COL_RESET);
+        seg_lit(r, COL_RESET);
     } else {
         seg_append(r, content, clen);
         if (bg)
-            seg_str(r, COL_RESET);
+            seg_lit(r, COL_RESET);
     }
     sink(ctx, r->seg, r->seg_len);
 }
@@ -257,6 +264,7 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
         }
         if (r->spans != NULL) {
             r->nspans = mat_hl_line(r->hl, d, len, r->spans, r->spans_cap);
+            r->cur_span = 0;
             r->hl_on = true;
         }
     }

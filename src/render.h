@@ -45,7 +45,7 @@ struct mat_render {
     bool hl_on;
     bool failed; /* set on OOM; callers should stop rendering */
     struct mat_span *spans;
-    int spans_cap, nspans;
+    int spans_cap, nspans, cur_span;
 };
 
 void mat_render_init(struct mat_render *r, unsigned style, enum mat_wrap wrap,
