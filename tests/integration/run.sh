@@ -224,5 +224,63 @@ else
     echo "FAIL - ring_mixed"; fail=1
 fi
 
+# T2: cooked path squeeze across cat-concat boundary
+f1="$scratch/sq1.txt"
+f2="$scratch/sq2.txt"
+printf 'a\n\n\n\n' > "$f1"
+printf '\n\n\nb\n' > "$f2"
+got=$("$MAT" -s "$f1" "$f2")
+expected=$(printf 'a\n\nb\n')
+if [ "$got" = "$expected" ]; then
+    echo "ok   - cooked_squeeze_boundary"
+else
+    echo "FAIL - cooked_squeeze_boundary"; fail=1
+fi
+
+# T2: cooked -n across buffer boundary (line numbers continuous)
+dd if=/dev/zero bs=131072 count=1 2>/dev/null | tr '\0' 'x' > "$scratch/bigline.txt"
+printf '\nsecond\n' >> "$scratch/bigline.txt"
+line2=$("$MAT" -n "$scratch/bigline.txt" | sed -n '2s/^[[:space:]]*//;2p')
+case "$line2" in
+    2*second) echo "ok   - cooked_boundary_linenum" ;;
+    *)        echo "FAIL - cooked_boundary_linenum (got: $line2)"; fail=1 ;;
+esac
+
+# T4: --diff on a file not in a git repo — no crash
+echo "hello" > "$scratch/notgit.txt"
+"$MAT" --pretty --diff --color=never "$scratch/notgit.txt" > /dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 0 ]; then
+    echo "ok   - diff_no_git_repo"
+else
+    echo "FAIL - diff_no_git_repo (exit $rc)"; fail=1
+fi
+
+# T6: parallel error propagation — one missing file
+printf 'aaa\n' > "$scratch/p_ok1.txt"
+printf 'bbb\n' > "$scratch/p_ok2.txt"
+out=$("$MAT" --pretty --color=never "$scratch/p_ok1.txt" /nonexistent "$scratch/p_ok2.txt" 2>/dev/null)
+rc=$?
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q 'aaa' && echo "$out" | grep -q 'bbb'; then
+    echo "ok   - parallel_error_propagation"
+else
+    echo "FAIL - parallel_error_propagation (rc=$rc)"; fail=1
+fi
+
+# T6: 10+ files all appear in order
+for n in $(seq 1 12); do
+    printf 'file%d\n' "$n" > "$scratch/pf_$n.txt"
+done
+out=$("$MAT" --pretty --color=never "$scratch"/pf_*.txt 2>/dev/null)
+allfound=true
+for n in $(seq 1 12); do
+    echo "$out" | grep -q "file$n" || allfound=false
+done
+if $allfound; then
+    echo "ok   - parallel_12_files"
+else
+    echo "FAIL - parallel_12_files"; fail=1
+fi
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
