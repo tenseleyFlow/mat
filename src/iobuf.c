@@ -21,8 +21,12 @@
 
 static size_t page_size(void)
 {
-    long p = sysconf(_SC_PAGESIZE);
-    return (p > 0) ? (size_t)p : MAT_BUF_MIN;
+    static size_t cached;
+    if (cached == 0) {
+        long p = sysconf(_SC_PAGESIZE);
+        cached = (p > 0) ? (size_t)p : MAT_BUF_MIN;
+    }
+    return cached;
 }
 
 static size_t clamp(size_t v, size_t lo, size_t hi)
