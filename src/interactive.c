@@ -121,12 +121,19 @@ static void print_header(struct ip *p, const char *name, int fd, bool is_stdin)
         hrule(p, BX_X);
 }
 
+#define MAT_PEND_LIMIT ((size_t)(16 * 1024 * 1024))
+
 static void pend_append(struct ip *p, const unsigned char *d, size_t n)
 {
     if (p->pend_len + n > p->pend_cap) {
         size_t cap = p->pend_cap ? p->pend_cap * 2 : 8192;
         while (cap < p->pend_len + n)
             cap *= 2;
+        if (cap > MAT_PEND_LIMIT) {
+            mat_warnx("line too long");
+            p->failed = true;
+            return;
+        }
         char *nb = realloc(p->pend, cap);
         if (nb == NULL) {
             mat_warnx("out of memory");
