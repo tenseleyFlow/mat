@@ -168,11 +168,40 @@ static void emit_line(struct ip *p, unsigned long n, const unsigned char *d,
     mat_render_line(&p->rc, n, d, len, p->term_width, stream_sink, p);
 }
 
+static void process_chunk(struct ip *p, const unsigned char *data, size_t n,
+                          unsigned long *lineno)
+{
+    const unsigned char *s = data;
+    const unsigned char *end = data + n;
+    while (s < end) {
+        const unsigned char *q = mat_scan_newline(s, end);
+        if (q < end && p->pend_len == 0) {
+            emit_line(p, (*lineno)++, s, (size_t)(q - s));
+            s = q + 1;
+        } else {
+            pend_append(p, s, (size_t)(q - s));
+            if (q < end) {
+                emit_line(p, (*lineno)++, (const unsigned char *)p->pend,
+                          p->pend_len);
+                p->pend_len = 0;
+                s = q + 1;
+            } else {
+                s = end;
+            }
+        }
+        if (p->failed)
+            return;
+    }
+}
+
 static void print_body(struct ip *p, int fd, const char *name,
-                       unsigned long *lineno)
+                       unsigned long *lineno, const unsigned char *pre,
+                       size_t pre_len)
 {
     unsigned char rbuf[65536];
     p->pend_len = 0;
+    if (pre_len > 0)
+        process_chunk(p, pre, pre_len, lineno);
     for (;;) {
         ssize_t n = read(fd, rbuf, sizeof rbuf);
         if (n < 0) {
@@ -183,27 +212,9 @@ static void print_body(struct ip *p, int fd, const char *name,
         }
         if (n == 0)
             break;
-        const unsigned char *s = rbuf;
-        const unsigned char *end = rbuf + n;
-        while (s < end) {
-            const unsigned char *q = mat_scan_newline(s, end);
-            if (q < end && p->pend_len == 0) {
-                emit_line(p, (*lineno)++, s, (size_t)(q - s));
-                s = q + 1;
-            } else {
-                pend_append(p, s, (size_t)(q - s));
-                if (q < end) {
-                    emit_line(p, (*lineno)++, (const unsigned char *)p->pend,
-                              p->pend_len);
-                    p->pend_len = 0;
-                    s = q + 1;
-                } else {
-                    s = end;
-                }
-            }
-            if (p->failed)
-                return;
-        }
+        process_chunk(p, rbuf, (size_t)n, lineno);
+        if (p->failed)
+            return;
     }
     if (p->pend_len > 0)
         emit_line(p, (*lineno)++, (const unsigned char *)p->pend, p->pend_len);
@@ -263,10 +274,17 @@ void mat_interactive_run(const struct config *cfg)
 
         const char *label = is_stdin ? "stdin" : files[i];
 
+        unsigned char peek[256];
+        size_t peek_len = 0;
         if (p.color) {
             const char *sname =
                 is_stdin ? (cfg->file_name ? cfg->file_name : "") : files[i];
-            p.rc.hl = mat_hl_open(mat_syntax_detect(cfg, sname, NULL, 0));
+            ssize_t pk = read(fd, peek, sizeof peek);
+            if (pk < 0)
+                pk = 0;
+            peek_len = (size_t)pk;
+            p.rc.hl =
+                mat_hl_open(mat_syntax_detect(cfg, sname, peek, peek_len));
         }
 
         struct mat_changes chg;
@@ -283,7 +301,7 @@ void mat_interactive_run(const struct config *cfg)
             hrule(&p, BX_D);
 
         unsigned long lineno = 1;
-        print_body(&p, fd, label, &lineno);
+        print_body(&p, fd, label, &lineno, peek, peek_len);
 
         if (p.grid)
             hrule(&p, BX_U);
