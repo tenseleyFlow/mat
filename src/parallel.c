@@ -25,17 +25,22 @@
 struct filebuf {
     char *data;
     size_t len, cap;
+    bool failed;
 };
 
 static void fb_put(struct filebuf *fb, const char *d, size_t n)
 {
+    if (fb->failed)
+        return;
     if (fb->len + n > fb->cap) {
         size_t nc = fb->cap ? fb->cap * 2 : 65536;
         while (nc < fb->len + n)
             nc *= 2;
         char *nb = realloc(fb->data, nc);
-        if (nb == NULL)
+        if (nb == NULL) {
+            fb->failed = true;
             return;
+        }
         fb->data = nb;
         fb->cap = nc;
     }
@@ -237,7 +242,7 @@ bool mat_parallel_run(const struct config *cfg)
     /* Write in input order, inserting a rule separator between files when the
      * style includes 'rule'. */
     bool rule = (cfg->style & MAT_S_RULE) != 0;
-    struct filebuf sep = {NULL, 0, 0};
+    struct filebuf sep = {NULL, 0, 0, false};
     if (rule) {
         struct mat_render tmp;
         mat_render_init(&tmp, rstyle, cfg->wrap, tab_width, color);
@@ -247,8 +252,11 @@ bool mat_parallel_run(const struct config *cfg)
     for (size_t i = 0; i < n; i++) {
         if (rule && i > 0 && sep.len > 0)
             mat_pipe_write(STDOUT_FILENO, sep.data, sep.len);
-        if (jobs[i].out.len > 0)
+        if (jobs[i].out.failed) {
+            mat_warn(jobs[i].file);
+        } else if (jobs[i].out.len > 0) {
             mat_pipe_write(STDOUT_FILENO, jobs[i].out.data, jobs[i].out.len);
+        }
         free(jobs[i].out.data);
     }
     free(sep.data);
