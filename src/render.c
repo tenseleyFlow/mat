@@ -37,6 +37,8 @@ int mat_render_content_width(const struct mat_render *r, int width)
 
 /* ---- assembly buffers ---- */
 
+#define MAT_BUF_LIMIT ((size_t)(16 * 1024 * 1024))
+
 static void wbuf_append(struct mat_render *r, const char *d, size_t n)
 {
     if (r->failed)
@@ -45,6 +47,10 @@ static void wbuf_append(struct mat_render *r, const char *d, size_t n)
         size_t cap = r->wbuf_cap ? r->wbuf_cap * 2 : 8192;
         while (cap < r->wbuf_len + n)
             cap *= 2;
+        if (cap > MAT_BUF_LIMIT) {
+            r->failed = true;
+            return;
+        }
         char *nb = realloc(r->wbuf, cap);
         if (!nb) {
             r->failed = true;
@@ -65,6 +71,10 @@ static void seg_append(struct mat_render *r, const char *d, size_t n)
         size_t cap = r->seg_cap ? r->seg_cap * 2 : 256;
         while (cap < r->seg_len + n)
             cap *= 2;
+        if (cap > MAT_BUF_LIMIT) {
+            r->failed = true;
+            return;
+        }
         char *nb = realloc(r->seg, cap);
         if (!nb) {
             r->failed = true;
@@ -139,14 +149,17 @@ static void put_gutter(struct mat_render *r, unsigned long n, bool continuation)
             for (int i = 0; i < r->panel_width; i++)
                 seg_append(r, " ", 1);
         } else {
-            char num[] = "    ";
-            int i = 3;
+            char num[] = "       ";
+            int w = r->panel_width - 1;
+            if (w > 7)
+                w = 7;
+            int i = w - 1;
             unsigned long v = n;
             do {
                 num[i--] = '0' + (char)(v % 10);
                 v /= 10;
             } while (v && i >= 0);
-            seg_append(r, num, 4);
+            seg_append(r, num, (size_t)w);
             seg_append(r, " ", 1);
         }
     }
