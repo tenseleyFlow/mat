@@ -222,8 +222,9 @@ for decorated output on a terminal. Navigation:
 `main.c` decides once which pipeline runs:
 
 1. **Fast path** (no flags, or only `-u`): zero-copy I/O via `copy_file_range`,
-   `splice`, or a tight `read`/`write` loop. Allocation-free, stdio-free,
-   locale-free. This is why plain `mat` is faster than `cat`.
+   `splice`, or a tight `read`/`write` loop. Stdio-free, locale-free, and
+   allocation-free for typical invocations. This is why plain `mat` is faster
+   than `cat`.
 
 2. **Cooked path** (`-n`, `-b`, `-s`, `-v`, `-e`, `-t`, `-A`): a faithful port
    of GNU cat's byte loop with SIMD-accelerated newline scanning.
