@@ -76,7 +76,7 @@ mat_scan_newline_avx2(const unsigned char *p, const unsigned char *end)
         if (m)
             return p + __builtin_ctz(m);
     }
-    return mat_scan_newline_scalar(p, end);
+    return mat_scan_newline_sse2(p, end);
 }
 
 __attribute__((target("avx2"))) const unsigned char *
@@ -93,7 +93,7 @@ mat_scan_nonprint_avx2(const unsigned char *p, const unsigned char *end)
         if (plain != 0xFFFFFFFFu)
             return p + __builtin_ctz(~plain);
     }
-    return mat_scan_nonprint_scalar(p, end);
+    return mat_scan_nonprint_sse2(p, end);
 }
 #endif /* x86 */
 
