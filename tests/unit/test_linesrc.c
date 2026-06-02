@@ -114,6 +114,49 @@ static void test_utf8_bom_stripped(void)
     close(fd);
 }
 
+static void test_utf16le_odd_byte_count(void)
+{
+    /* BOM + 3 content bytes = truncated last code unit */
+    unsigned char d[] = {0xFF, 0xFE, 'a', 0x00, 'b'};
+    int fd = write_tmp(d, sizeof d);
+    struct mat_linesrc s;
+    TEST_ASSERT_TRUE(mat_linesrc_open(&s, fd));
+    TEST_ASSERT_EQUAL_INT(MAT_ENC_UTF16LE, s.encoding);
+    const unsigned char *line;
+    size_t len;
+    TEST_ASSERT_TRUE(mat_linesrc_line(&s, 0, &line, &len));
+    TEST_ASSERT_GREATER_THAN_UINT(0, len);
+    mat_linesrc_free(&s);
+    close(fd);
+}
+
+static void test_utf16le_unpaired_surrogate(void)
+{
+    /* BOM + high surrogate D83D + newline 000A — no low surrogate */
+    unsigned char d[] = {0xFF, 0xFE, 0x3D, 0xD8, 0x0A, 0x00};
+    int fd = write_tmp(d, sizeof d);
+    struct mat_linesrc s;
+    TEST_ASSERT_TRUE(mat_linesrc_open(&s, fd));
+    const unsigned char *line;
+    size_t len;
+    TEST_ASSERT_TRUE(mat_linesrc_line(&s, 0, &line, &len));
+    /* Should produce U+FFFD replacement char (3 UTF-8 bytes) */
+    TEST_ASSERT_GREATER_THAN_UINT(0, len);
+    mat_linesrc_free(&s);
+    close(fd);
+}
+
+static void test_utf16le_bom_plus_garbage(void)
+{
+    /* BOM + NUL NUL FF FF — edge-case code points */
+    unsigned char d[] = {0xFF, 0xFE, 0x00, 0x00, 0xFF, 0xFF};
+    int fd = write_tmp(d, sizeof d);
+    struct mat_linesrc s;
+    TEST_ASSERT_TRUE(mat_linesrc_open(&s, fd));
+    mat_linesrc_free(&s);
+    close(fd);
+}
+
 int main(void)
 {
     mat_scan_init();
@@ -123,5 +166,8 @@ int main(void)
     RUN_TEST(test_utf16le_surrogate_pair);
     RUN_TEST(test_utf16_bom_only);
     RUN_TEST(test_utf8_bom_stripped);
+    RUN_TEST(test_utf16le_odd_byte_count);
+    RUN_TEST(test_utf16le_unpaired_surrogate);
+    RUN_TEST(test_utf16le_bom_plus_garbage);
     return UNITY_END();
 }
