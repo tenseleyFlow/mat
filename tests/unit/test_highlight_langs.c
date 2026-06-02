@@ -406,6 +406,72 @@ static void test_diff_short_lines(void)
     mat_hl_close(h);
 }
 
+static void assert_keyword(const char *lang, const char *line, size_t kw_pos)
+{
+    struct mat_hl *h = mat_hl_open(lang);
+    TEST_ASSERT_NOT_NULL_MESSAGE(h, lang);
+    struct mat_span sp[MAXSPANS];
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    enum mat_tok t = tok_at(sp, n, kw_pos);
+    if (t != MT_KEYWORD) {
+        char msg[128];
+        snprintf(msg, sizeof msg, "%s: expected MT_KEYWORD at %zu, got %d",
+                 lang, kw_pos, (int)t);
+        TEST_FAIL_MESSAGE(msg);
+    }
+    mat_hl_close(h);
+}
+
+static void test_js_keyword(void)
+{
+    assert_keyword("JavaScript", "const x = 1;", 0);
+}
+static void test_ts_keyword(void)
+{
+    assert_keyword("TypeScript", "const x = 1;", 0);
+}
+static void test_go_keyword(void)
+{
+    assert_keyword("Go", "func main() {}", 0);
+}
+static void test_rust_keyword(void)
+{
+    assert_keyword("Rust", "let x = 1;", 0);
+}
+static void test_java_keyword(void)
+{
+    assert_keyword("Java", "return 0;", 0);
+}
+static void test_ruby_keyword(void)
+{
+    assert_keyword("Ruby", "def hello", 0);
+}
+static void test_kotlin_keyword(void)
+{
+    assert_keyword("Kotlin", "fun main() {}", 0);
+}
+static void test_lua_keyword(void)
+{
+    assert_keyword("Lua", "local x = 1", 0);
+}
+static void test_swift_keyword(void)
+{
+    assert_keyword("Swift", "func test() {}", 0);
+}
+static void test_dart_keyword(void)
+{
+    assert_keyword("Dart", "void main() {}", 0);
+}
+static void test_cpp_keyword(void)
+{
+    assert_keyword("C++", "auto x = 1;", 0);
+}
+static void test_csharp_keyword(void)
+{
+    assert_keyword("C#", "using System;", 0);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -445,5 +511,18 @@ int main(void)
     /* Diff */
     RUN_TEST(test_diff_plus_minus);
     RUN_TEST(test_diff_short_lines);
+    /* Keyword classification for top-20 languages */
+    RUN_TEST(test_js_keyword);
+    RUN_TEST(test_ts_keyword);
+    RUN_TEST(test_go_keyword);
+    RUN_TEST(test_rust_keyword);
+    RUN_TEST(test_java_keyword);
+    RUN_TEST(test_ruby_keyword);
+    RUN_TEST(test_kotlin_keyword);
+    RUN_TEST(test_lua_keyword);
+    RUN_TEST(test_swift_keyword);
+    RUN_TEST(test_dart_keyword);
+    RUN_TEST(test_cpp_keyword);
+    RUN_TEST(test_csharp_keyword);
     return UNITY_END();
 }
