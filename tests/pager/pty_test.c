@@ -107,7 +107,13 @@ int main(int argc, char **argv)
     /* Hard backstop against a hung pager; healthy runs take only seconds. */
     alarm(45);
 
-    char tmpl[] = "/tmp/mat_pager_XXXXXX";
+    /* Honor $TMPDIR so the test runs in build sandboxes that point it elsewhere
+     * or restrict /tmp (the shell test runners already do this). */
+    const char *tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !*tmpdir)
+        tmpdir = "/tmp";
+    char tmpl[4096];
+    snprintf(tmpl, sizeof tmpl, "%s/mat_pager_XXXXXX", tmpdir);
     int fd = mkstemp(tmpl);
     if (fd < 0) {
         perror("mkstemp");

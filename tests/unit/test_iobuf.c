@@ -2,6 +2,7 @@
 #include "iobuf.h"
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -14,10 +15,21 @@ void tearDown(void)
 {
 }
 
+/* Build an mkstemp template under $TMPDIR (or /tmp), so the tests run in build
+ * sandboxes that point TMPDIR elsewhere or restrict /tmp. */
+static void tmpl_in_tmpdir(char *out, size_t cap, const char *stem)
+{
+    const char *d = getenv("TMPDIR");
+    if (!d || !*d)
+        d = "/tmp";
+    snprintf(out, cap, "%s/%s", d, stem);
+}
+
 /* full_write must deliver every byte to a regular file. */
 static void test_full_write_writes_all(void)
 {
-    char tmpl[] = "/tmp/mat_iobuf_XXXXXX";
+    char tmpl[4096];
+    tmpl_in_tmpdir(tmpl, sizeof tmpl, "mat_iobuf_XXXXXX");
     int fd = mkstemp(tmpl);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
 
@@ -54,7 +66,8 @@ static void test_iobuf_size_bounds(void)
     TEST_ASSERT_LESS_OR_EQUAL_UINT(1u << 20, (unsigned)s);
 
     /* A regular file should yield a healthy buffer, never below default. */
-    char tmpl[] = "/tmp/mat_iobuf_reg_XXXXXX";
+    char tmpl[4096];
+    tmpl_in_tmpdir(tmpl, sizeof tmpl, "mat_iobuf_reg_XXXXXX");
     int fd = mkstemp(tmpl);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
     struct stat fst;
@@ -82,7 +95,8 @@ static void test_pipe_write_roundtrip(void)
 
 static void test_pipe_write_to_file(void)
 {
-    char tmpl[] = "/tmp/mat_pw_XXXXXX";
+    char tmpl[4096];
+    tmpl_in_tmpdir(tmpl, sizeof tmpl, "mat_pw_XXXXXX");
     int fd = mkstemp(tmpl);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
     const char data[] = "file fallback";
