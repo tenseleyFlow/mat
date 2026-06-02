@@ -14,7 +14,7 @@ int mat_open_input(const char *name, bool *is_stdin)
     }
     *is_stdin = false;
 
-    int fd = open(name, O_RDONLY);
+    int fd = open(name, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         mat_warn(name);
         return -1;
