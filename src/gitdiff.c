@@ -7,13 +7,19 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define MAT_DIFF_MAX_LINES ((size_t)10000000)
+
 static void ensure_cap(struct mat_changes *ch, size_t need)
 {
     if (need < ch->cap)
         return;
+    if (need >= MAT_DIFF_MAX_LINES)
+        return;
     size_t nc = ch->cap ? ch->cap * 2 : 256;
     while (nc <= need)
         nc *= 2;
+    if (nc > MAT_DIFF_MAX_LINES)
+        nc = MAT_DIFF_MAX_LINES;
     enum mat_change *nb = realloc(ch->line, nc * sizeof *nb);
     if (nb == NULL)
         return;
@@ -104,6 +110,8 @@ bool mat_changes_load(struct mat_changes *ch, const char *path)
         cur_count = (size_t)(new_count > 0 ? new_count : 0);
         cur_old_count = (size_t)(old_count > 0 ? old_count : 0);
         cur_idx = 0;
+        if (cur_new >= MAT_DIFF_MAX_LINES || cur_count > MAT_DIFF_MAX_LINES)
+            continue;
 
         if (cur_count == 0 && cur_old_count > 0) {
             /* Pure deletion: mark the line after the deletion point. */
