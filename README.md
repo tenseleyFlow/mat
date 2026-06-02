@@ -165,7 +165,8 @@ mat --detect-syntax file.rs       # print the resolved syntax name
 
 All standard `cat` flags work: `-n`, `-b`, `-s`, `-e`, `-t`, `-v`, `-A`, `-E`,
 `-T`. When none of the decoration flags are active, output is byte-identical to
-GNU `cat` (verified by 74 parity test cases on every commit).
+GNU `cat` (verified by 74 parity test cases on Linux, 18 on macOS/FreeBSD
+where GNU cat is unavailable for the cooked-flag differential).
 
 ## Languages
 
@@ -232,8 +233,10 @@ for decorated output on a terminal. Navigation:
    multiple files, each is highlighted in a separate thread and the results are
    written in order.
 
-The fast path never loads highlighting assets, never calls `malloc`, and never
-touches the decorated code. The cooked path is byte-identical to GNU `cat`. The
+The fast path never loads highlighting assets and never touches the decorated
+code. For typical invocations (up to 16 files) it makes zero heap allocations;
+the read/write fallback allocates a single I/O buffer when zero-copy syscalls
+are unavailable. The cooked path is byte-identical to GNU `cat`. The
 decorated path only runs when explicitly requested or when output is to a
 terminal with `--style` set.
 
