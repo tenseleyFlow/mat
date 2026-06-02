@@ -1,15 +1,31 @@
 #include "linesrc.h"
 #include "encoding.h"
+#include "err.h"
 #include "scan.h"
 
 #include <errno.h>
 #include <limits.h>
+#include <setjmp.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
+#define MAT_SLURP_MAX ((size_t)(256 * 1024 * 1024))
+
+static sigjmp_buf sigbus_jmp;
+static volatile sig_atomic_t sigbus_armed;
+
+static void on_sigbus(int sig)
+{
+    (void)sig;
+    if (sigbus_armed)
+        siglongjmp(sigbus_jmp, 1);
+    _exit(128 + SIGBUS);
+}
 
 static void off_push(struct mat_linesrc *s, size_t v)
 {
@@ -98,13 +114,20 @@ static char *slurp_fd(int fd, size_t *out)
     char *buf = malloc(cap);
     for (;;) {
         if (len == cap) {
-            cap *= 2;
-            char *nb = realloc(buf, cap);
+            if (cap >= MAT_SLURP_MAX) {
+                mat_warnx("input exceeds 256 MiB limit; truncating");
+                break;
+            }
+            size_t nc = cap * 2;
+            if (nc > MAT_SLURP_MAX)
+                nc = MAT_SLURP_MAX;
+            char *nb = realloc(buf, nc);
             if (!nb) {
                 free(buf);
                 return NULL;
             }
             buf = nb;
+            cap = nc;
         }
         ssize_t r = read(fd, buf + len, cap - len);
         if (r < 0) {
@@ -219,11 +242,28 @@ bool mat_linesrc_open(struct mat_linesrc *s, int fd)
     if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
         void *m = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (m != MAP_FAILED) {
-            s->map = m;
-            s->map_size = (size_t)st.st_size;
-            set_content(s, m, (size_t)st.st_size);
-            off_push(s, 0);
-            return true;
+            struct sigaction sa, old_sa;
+            memset(&sa, 0, sizeof sa);
+            sa.sa_handler = on_sigbus;
+            sa.sa_flags = 0;
+            sigaction(SIGBUS, &sa, &old_sa);
+
+            sigbus_armed = 1;
+            if (sigsetjmp(sigbus_jmp, 1) != 0) {
+                sigbus_armed = 0;
+                sigaction(SIGBUS, &old_sa, NULL);
+                munmap(m, (size_t)st.st_size);
+                mat_warnx("file truncated during read");
+                /* fall through to slurp path */
+            } else {
+                s->map = m;
+                s->map_size = (size_t)st.st_size;
+                set_content(s, m, (size_t)st.st_size);
+                off_push(s, 0);
+                sigbus_armed = 0;
+                sigaction(SIGBUS, &old_sa, NULL);
+                return true;
+            }
         }
     }
     size_t len = 0;
