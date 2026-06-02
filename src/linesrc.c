@@ -16,8 +16,8 @@
 
 #define MAT_SLURP_MAX ((size_t)(256 * 1024 * 1024))
 
-static sigjmp_buf sigbus_jmp;
-static volatile sig_atomic_t sigbus_armed;
+static _Thread_local sigjmp_buf sigbus_jmp;
+static _Thread_local volatile sig_atomic_t sigbus_armed;
 
 static void on_sigbus(int sig)
 {
