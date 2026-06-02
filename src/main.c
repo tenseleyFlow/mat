@@ -37,8 +37,8 @@ static void crash_handler(int sig)
 {
     if (pager_active) {
         /* leave alt screen + show cursor */
-        const char *leave = "\x1b[?25h\x1b[?1049l";
-        (void)!write(STDOUT_FILENO, leave, 16);
+        static const char leave[] = "\x1b[?25h\x1b[?1049l";
+        (void)!write(STDOUT_FILENO, leave, sizeof leave - 1);
         tcsetattr(STDIN_FILENO, TCSANOW, &saved_termios);
     }
     /* re-raise with default disposition */
