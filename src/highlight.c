@@ -816,21 +816,27 @@ static int is_word(unsigned char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
+struct ws_key {
+    const char *s;
+    size_t len;
+};
+
 static int ws_cmp(const void *key, const void *elem)
 {
-    const char *k = (const char *)key;
+    const struct ws_key *k = (const struct ws_key *)key;
     const char *const *e = (const char *const *)elem;
-    return strcmp(k, *e);
+    int r = strncmp(k->s, *e, k->len);
+    if (r != 0)
+        return r;
+    return (*e)[k->len] == '\0' ? 0 : -1;
 }
 
 static int ws_has(const struct wordset *ws, const char *w, size_t wl)
 {
-    char buf[128];
-    if (wl >= sizeof buf)
+    if (ws->n == 0 || wl == 0)
         return 0;
-    memcpy(buf, w, wl);
-    buf[wl] = '\0';
-    return bsearch(buf, ws->words, (size_t)ws->n, sizeof ws->words[0],
+    struct ws_key key = {w, wl};
+    return bsearch(&key, ws->words, (size_t)ws->n, sizeof ws->words[0],
                    ws_cmp) != NULL;
 }
 
@@ -1172,20 +1178,30 @@ static int ci_match(const char *a, const char *b, size_t n)
     return 1;
 }
 
+static int ws_cmp_ci(const void *key, const void *elem)
+{
+    const struct ws_key *k = (const struct ws_key *)key;
+    const char *const *e = (const char *const *)elem;
+    for (size_t i = 0; i < k->len; i++) {
+        char a = k->s[i];
+        if (a >= 'A' && a <= 'Z')
+            a = (char)(a + 32);
+        char b = (*e)[i];
+        if (b == '\0')
+            return 1;
+        if (a != b)
+            return (unsigned char)a < (unsigned char)b ? -1 : 1;
+    }
+    return (*e)[k->len] == '\0' ? 0 : -1;
+}
+
 static int ws_has_ci(const struct wordset *ws, const char *w, size_t wl)
 {
-    char buf[128];
-    if (wl >= sizeof buf)
+    if (ws->n == 0 || wl == 0)
         return 0;
-    for (size_t i = 0; i < wl; i++) {
-        char c = w[i];
-        if (c >= 'A' && c <= 'Z')
-            c = (char)(c + 32);
-        buf[i] = c;
-    }
-    buf[wl] = '\0';
-    return bsearch(buf, ws->words, (size_t)ws->n, sizeof ws->words[0],
-                   ws_cmp) != NULL;
+    struct ws_key key = {w, wl};
+    return bsearch(&key, ws->words, (size_t)ws->n, sizeof ws->words[0],
+                   ws_cmp_ci) != NULL;
 }
 
 static int lex_fortran(struct mat_hl *h, const unsigned char *d, size_t len,
