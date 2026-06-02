@@ -39,13 +39,17 @@ int mat_render_content_width(const struct mat_render *r, int width)
 
 static void wbuf_append(struct mat_render *r, const char *d, size_t n)
 {
+    if (r->failed)
+        return;
     if (r->wbuf_len + n > r->wbuf_cap) {
         size_t cap = r->wbuf_cap ? r->wbuf_cap * 2 : 8192;
         while (cap < r->wbuf_len + n)
             cap *= 2;
         char *nb = realloc(r->wbuf, cap);
-        if (!nb)
+        if (!nb) {
+            r->failed = true;
             return;
+        }
         r->wbuf = nb;
         r->wbuf_cap = cap;
     }
@@ -55,13 +59,17 @@ static void wbuf_append(struct mat_render *r, const char *d, size_t n)
 
 static void seg_append(struct mat_render *r, const char *d, size_t n)
 {
+    if (r->failed)
+        return;
     if (r->seg_len + n > r->seg_cap) {
         size_t cap = r->seg_cap ? r->seg_cap * 2 : 256;
         while (cap < r->seg_len + n)
             cap *= 2;
         char *nb = realloc(r->seg, cap);
-        if (!nb)
+        if (!nb) {
+            r->failed = true;
             return;
+        }
         r->seg = nb;
         r->seg_cap = cap;
     }

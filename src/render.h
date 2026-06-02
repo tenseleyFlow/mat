@@ -43,6 +43,7 @@ struct mat_render {
     struct mat_hl *hl;
     const struct mat_changes *changes; /* git diff markers, or NULL */
     bool hl_on;
+    bool failed; /* set on OOM; callers should stop rendering */
     struct mat_span *spans;
     int spans_cap, nspans;
 };
