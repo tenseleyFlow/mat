@@ -7,7 +7,8 @@
 include config.mk
 
 CFLAGS = $(CONF_CFLAGS) $(FEATURE_CFLAGS) $(WARNFLAGS) -Isrc -Ilib/paige/include
-LDFLAGS = -lpthread
+# LTO codegen runs at link, so the link line repeats -flto (LTO_LDFLAGS).
+LDFLAGS = -lpthread $(LTO_LDFLAGS)
 
 HDRS = src/compat.h src/config.h src/config_generated.h src/err.h \
        src/iobuf.h src/input.h src/fastpath.h src/cli.h \
@@ -28,7 +29,7 @@ OBJS = build/main.o build/cli.o build/err.o build/iobuf.o \
 all: mat
 
 mat: $(OBJS)
-	$(CC) $(LDFLAGS) -o mat $(OBJS)
+	$(CC) $(CONF_CFLAGS) $(LDFLAGS) -o mat $(OBJS)
 
 build/main.o: src/main.c $(HDRS)
 	@mkdir -p build
