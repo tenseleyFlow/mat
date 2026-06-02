@@ -36,7 +36,7 @@ static void read_screen(int fd, char *buf, size_t cap, int idle_ms)
 {
     size_t len = 0;
     for (;;) {
-        struct pollfd p = { fd, POLLIN, 0 };
+        struct pollfd p = {fd, POLLIN, 0};
         if (poll(&p, 1, idle_ms) <= 0)
             break;
         ssize_t n = read(fd, buf + len, cap - len - 1);
@@ -49,7 +49,10 @@ static void read_screen(int fd, char *buf, size_t cap, int idle_ms)
     buf[len] = '\0';
 }
 
-static int has(const char *h, const char *n) { return strstr(h, n) != NULL; }
+static int has(const char *h, const char *n)
+{
+    return strstr(h, n) != NULL;
+}
 
 int main(int argc, char **argv)
 {
@@ -68,7 +71,8 @@ int main(int argc, char **argv)
     }
     for (int i = 1; i <= 200; i++) {
         char line[64];
-        int m = snprintf(line, sizeof line, "row %03d the quick brown fox\n", i);
+        int m =
+            snprintf(line, sizeof line, "row %03d the quick brown fox\n", i);
         (void)!write(fd, line, (size_t)m);
     }
     close(fd);
@@ -118,6 +122,34 @@ int main(int argc, char **argv)
         fails++;
     }
 
+    /* j scrolls down one line */
+    (void)!write(master, "j", 1);
+    (void)!write(master, "j", 1);
+    (void)!write(master, "j", 1);
+    read_screen(master, buf, sizeof buf, 400);
+    if (!has(buf, "row 004")) {
+        printf("FAIL: 'jjj' did not scroll to row 004\n");
+        fails++;
+    }
+
+    /* k scrolls back up */
+    (void)!write(master, "k", 1);
+    read_screen(master, buf, sizeof buf, 400);
+    if (!has(buf, "row 003")) {
+        printf("FAIL: 'k' did not scroll back to row 003\n");
+        fails++;
+    }
+
+    /* space pages down */
+    (void)!write(master, "g", 1); /* back to top first */
+    read_screen(master, buf, sizeof buf, 400);
+    (void)!write(master, " ", 1);
+    read_screen(master, buf, sizeof buf, 400);
+    if (has(buf, "row 001")) {
+        printf("FAIL: space did not page down\n");
+        fails++;
+    }
+
     (void)!write(master, "q", 1);
     read_screen(master, buf, sizeof buf, 300);
     int status;
@@ -132,7 +164,7 @@ int main(int argc, char **argv)
     unlink(tmpl);
 
     if (fails == 0) {
-        printf("mat pager: gutter + nav (G/g/q) OK\n");
+        printf("mat pager: gutter + nav (G/g/j/k/space/q) OK\n");
         return 0;
     }
     return 1;
