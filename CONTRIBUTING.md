@@ -1,41 +1,40 @@
 # Contributing to mat
 
-## Principles
-- **Senior-level C.** Clear ownership of memory and errors; one secret per
-  translation unit; the hot path stays allocation-free, stdio-free, locale-free.
-- **Tests are first class.** Every behavior change ships with a test. Parity
-  with `cat` is asserted, not assumed.
-- **Prove the speed.** Performance claims come with a before/after benchmark.
+Thanks for taking a look! mat is a from-scratch `cat`/`bat` written in C, and its
+whole reason to exist is being *fast*. Contributions are very welcome — especially
+anything that makes it quicker: shaving a syscall, tightening the hot path, a
+smarter buffer policy, a better SIMD kernel. If you can show mat beating its old
+self (or cat, or bat) on some workload, that's the best kind of PR you can send.
 
-## Workflow
+A few things that'll make your change easy to merge:
+
+**Keep the plain path fast.** A bare `mat file > out` or `… | mat` is allocation-free,
+stdio-free, and loads nothing it doesn't need — that's deliberate, and it's where mat
+earns its keep. New features are great, but they belong behind the branch the plain
+path never takes. If you touch anything on the hot path, bring a before/after number;
+"it feels faster" doesn't cut it here — we've been burned by measurement noise enough
+to insist on real numbers (and to never benchmark on `/dev/zero`).
+
+**All tests must pass.** Run `make test` before you push. That's the unit tests, the
+golden-output tests, and a byte-for-byte parity check against your system `cat` — mat
+aims to be a drop-in replacement, so parity isn't negotiable. If you change behavior,
+add or update a test that pins it. CI runs the same suite across Linux, macOS, and
+FreeBSD plus the sanitizers, and trunk stays green.
+
+Building and checking your work:
+
 ```sh
-./configure
-make            # GNU make or BSD make; no external deps
-make test       # unit + integration + parity — must be green before you commit
-make fmt        # clang-format (CI pins clang-format-19; match it)
-make asan       # ASan/UBSan build -> ./mat-asan
-make bench      # vs cat/bat (hyperfine optional)
+./configure        # no external deps; GNU make and BSD make both work
+make
+make test          # must be green before you commit
+make fmt           # clang-format — CI pins clang-format-19, so match it
+make asan          # optional: ASan/UBSan build for chasing memory bugs
+make bench         # optional: hyperfine vs cat/bat
 ```
 
-## Tests
-- **Unit** (`tests/unit/test_*.c`, Unity): pure functions — scanners, the line
-  counter, expansion tables, buffer policy.
-- **Integration** (`tests/integration/`): golden stdout/stderr/exit for output
-  with no `cat` analogue (help, version, errors). Regenerate with
-  `sh tests/integration/run.sh --update`.
-- **Parity** (`tests/diff/parity.sh`): byte-identical to the system `cat` across
-  the cat-compat matrix. Add cases as flags land.
+**Small commits, code that fits in.** Focused commits with terse, imperative subjects
+are far easier to review than one big drop. Match the surrounding style — mat keeps one
+concern per file and leans on clear memory and error ownership rather than cleverness.
 
-## Commits
-- Commit often, in small chunks. No `git add -A` dumps.
-- Terse, imperative subject lines (< ~50 chars); elaborate in the body only when
-  a decision needs it.
-- Keep trunk green: the `all-jobs` CI gate (lint, build matrix, FreeBSD VM,
-  sanitizers) must pass.
-
-## Layout
-- `src/` — implementation, one concern per `.c`/`.h`.
-- `tests/` — `unit/`, `integration/`, `diff/`, vendored `vendor/unity/`.
-- `bench/` — benchmark harness + recorded results.
-- `.docs/` — planning, sprint plan, reference audits (local only, untracked).
-  Start at `.docs/sprints/README.md`.
+That's the whole thing. If you'd like to talk an idea through first, open an issue — and
+don't be shy about it. A small PR that makes mat measurably faster is always worth sending.
