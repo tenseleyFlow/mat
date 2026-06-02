@@ -18,7 +18,6 @@
 
 static _Thread_local sigjmp_buf sigbus_jmp;
 static _Thread_local volatile sig_atomic_t sigbus_armed;
-static _Thread_local void *sigbus_leak; /* freed on SIGBUS recovery */
 
 static void on_sigbus(int sig)
 {
@@ -55,27 +54,33 @@ static void off_push(struct mat_linesrc *s, size_t v)
 /* Ensure line offsets are known through index `want` (or to EOF). */
 static void ensure(struct mat_linesrc *s, size_t want)
 {
+    if (s->map && sigsetjmp(sigbus_jmp, 1) != 0) {
+        s->eof_known = true;
+        s->total = s->noff > 0 ? s->noff - 1 : 0;
+        return;
+    }
     while (!s->eof_known && s->noff <= want) {
         size_t from = s->off[s->noff - 1];
         if (from >= s->size) {
             s->eof_known = true;
-            s->total = s->noff - 1; /* off[noff-1]==size: not a real line */
+            s->total = s->noff - 1;
             return;
         }
         const unsigned char *base = (const unsigned char *)s->data;
         const unsigned char *q = mat_scan_newline(base + from, base + s->size);
         if (q == base + s->size) {
             s->eof_known = true;
-            s->total =
-                s->noff; /* final line [from, size) with no trailing nl */
+            s->total = s->noff;
             return;
         }
         size_t nl = (size_t)(q - base);
         if (nl + 1 < s->size) {
+            sigbus_armed = 0;
             off_push(s, nl + 1);
+            sigbus_armed = 1;
         } else {
             s->eof_known = true;
-            s->total = s->noff; /* trailing newline: line `noff-1` ends here */
+            s->total = s->noff;
             return;
         }
     }
@@ -87,6 +92,11 @@ bool mat_linesrc_line(struct mat_linesrc *s, size_t L, const unsigned char **d,
     ensure(s, L + 1);
     if (s->eof_known && L >= s->total)
         return false;
+    if (s->map && sigsetjmp(sigbus_jmp, 1) != 0) {
+        s->eof_known = true;
+        s->total = L;
+        return false;
+    }
     size_t start = s->off[L];
     size_t end;
     if (L + 1 < s->noff) {
@@ -110,6 +120,7 @@ size_t mat_linesrc_total(struct mat_linesrc *s)
 
 void mat_linesrc_free(struct mat_linesrc *s)
 {
+    sigbus_armed = 0;
     if (s->map && s->map_size)
         munmap(s->map, s->map_size);
     free(s->owned);
@@ -162,7 +173,6 @@ static char *decode_utf16(const unsigned char *p, size_t n, bool le,
         return NULL;
     size_t cap = n + n / 2 + 16, len = 0;
     char *out = malloc(cap);
-    sigbus_leak = out;
     if (out == NULL)
         return NULL;
     size_t i = 0;
@@ -186,6 +196,10 @@ static char *decode_utf16(const unsigned char *p, size_t n, bool le,
             cp = u;
         }
         if (len + 4 > cap) {
+            if (cap > SIZE_MAX / 2 || cap * 2 > MAT_SLURP_MAX) {
+                free(out);
+                return NULL;
+            }
             cap *= 2;
             char *nb = realloc(out, cap);
             if (nb == NULL) {
@@ -252,25 +266,42 @@ bool mat_linesrc_open(struct mat_linesrc *s, int fd)
     if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
         void *m = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (m != MAP_FAILED) {
-            sigbus_leak = NULL;
             sigbus_armed = 1;
             if (sigsetjmp(sigbus_jmp, 1) != 0) {
                 sigbus_armed = 0;
-                free(sigbus_leak);
-                sigbus_leak = NULL;
                 s->map = NULL;
                 s->map_size = 0;
                 munmap(m, (size_t)st.st_size);
                 mat_warnx("file truncated during read");
                 /* fall through to slurp path */
             } else {
-                s->map = m;
-                s->map_size = (size_t)st.st_size;
-                set_content(s, m, (size_t)st.st_size);
-                off_push(s, 0);
-                sigbus_armed = 0;
-                sigbus_leak = NULL;
-                return true;
+                /* Sniff encoding while armed (only reads mmap, no heap). */
+                const unsigned char *raw = (const unsigned char *)m;
+                size_t rawlen = (size_t)st.st_size;
+                enum mat_encoding enc = mat_encoding_sniff(raw, rawlen);
+
+                if (enc == MAT_ENC_UTF16LE || enc == MAT_ENC_UTF16BE) {
+                    /* UTF-16: disarm and fall through to slurp path so
+                     * decode_utf16 (which mallocs) never runs under the
+                     * SIGBUS handler. */
+                    sigbus_armed = 0;
+                    munmap(m, rawlen);
+                } else {
+                    /* Non-UTF-16: set_content just sets a pointer (no
+                     * malloc). Keep armed for the mmap's full lifetime. */
+                    s->map = m;
+                    s->map_size = rawlen;
+                    size_t bom = mat_encoding_bom_len(enc, raw, rawlen);
+                    s->encoding = enc;
+                    s->data = (const char *)raw + bom;
+                    s->size = rawlen - bom;
+                    /* Disarm around off_push (realloc). */
+                    sigbus_armed = 0;
+                    off_push(s, 0);
+                    /* Re-arm: ensure() will read mmap'd data. */
+                    sigbus_armed = 1;
+                    return true;
+                }
             }
         }
     }
