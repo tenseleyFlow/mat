@@ -9,9 +9,17 @@ static void e_str(mat_sink_fn emit, void *ctx, const char *s)
 
 static void e_rep(mat_sink_fn emit, void *ctx, const char *s, int n)
 {
-    size_t len = strlen(s);
-    for (int i = 0; i < n; i++)
-        emit(ctx, s, len);
+    size_t slen = strlen(s);
+    size_t total = slen * (size_t)n;
+    char buf[1024];
+    if (total <= sizeof buf) {
+        for (int i = 0; i < n; i++)
+            memcpy(buf + (size_t)i * slen, s, slen);
+        emit(ctx, buf, total);
+    } else {
+        for (int i = 0; i < n; i++)
+            emit(ctx, s, slen);
+    }
 }
 
 void mat_frame_hrule(const struct mat_render *r, int term_width,
