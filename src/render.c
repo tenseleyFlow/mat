@@ -95,9 +95,12 @@ static void expand_tabs(struct mat_render *r, const unsigned char *d,
     size_t i = 0;
     while (i < len) {
         if (d[i] == '\t') {
+            static const char spaces[] = "                "
+                                         "                "
+                                         "                "
+                                         "                ";
             int sp = r->tab_width - (col % r->tab_width);
-            for (int k = 0; k < sp; k++)
-                wbuf_append(r, " ", 1);
+            wbuf_append(r, spaces, (size_t)sp);
             col += sp;
             i++;
         } else if (d[i] < 0x80) {
