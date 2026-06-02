@@ -282,5 +282,39 @@ else
     echo "FAIL - parallel_12_files"; fail=1
 fi
 
+# T3: SIGPIPE — mat exits cleanly when pipe reader closes early
+dd if=/dev/urandom bs=1M count=1 2>/dev/null > "$scratch/bigrand.bin"
+"$MAT" "$scratch/bigrand.bin" 2>/dev/null | head -1 > /dev/null
+rc=$?
+if [ "$rc" -eq 0 ] || [ "$rc" -eq 141 ]; then
+    echo "ok   - sigpipe_head"
+else
+    echo "FAIL - sigpipe_head (exit $rc)"; fail=1
+fi
+
+# T6: diff marker golden — controlled git repo
+if command -v git > /dev/null 2>&1; then
+    gd="$scratch/gitfix"
+    mkdir -p "$gd"
+    (
+        cd "$gd"
+        git init -q
+        git config user.email "test@test"
+        git config user.name "test"
+        git config commit.gpgsign false
+        printf 'line1\nline2\nline3\nline4\n' > f.txt
+        git add f.txt && git commit -q -m init
+        printf 'line1\nchanged\nline3\nline4\nnew\n' > f.txt
+    )
+    out=$(cd "$gd" && "$MAT" --pretty --diff --color=never --no-paging f.txt 2>/dev/null)
+    if echo "$out" | grep -q '~' && echo "$out" | grep -q '+'; then
+        echo "ok   - diff_marker_golden"
+    else
+        echo "FAIL - diff_marker_golden"; fail=1
+    fi
+else
+    echo "skip - diff_marker_golden (git not installed)"
+fi
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail

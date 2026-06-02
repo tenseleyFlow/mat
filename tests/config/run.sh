@@ -60,5 +60,33 @@ case "$(XDG_CONFIG_HOME="$tmp/cfg" "$MAT" --config-file)" in
     *) echo "FAIL: --config-file path wrong"; fail=1 ;;
 esac
 
+# MAT_OPTS sets decoration style (no config file)
+out=$(MAT_NO_CONFIG= XDG_CONFIG_HOME="$tmp/empty" MAT_OPTS="--style=numbers" \
+    "$MAT" --decorations=always --color=never --terminal-width=40 "$tmp/f" \
+    2>/dev/null | head -1)
+case "$out" in
+    *"   1 hello"*) ;;
+    *) echo "FAIL: MAT_OPTS --style=numbers not applied"; fail=1 ;;
+esac
+
+# BAT_OPTS fallback when MAT_OPTS is unset
+out=$(MAT_NO_CONFIG= XDG_CONFIG_HOME="$tmp/empty" BAT_OPTS="--style=numbers" \
+    "$MAT" --decorations=always --color=never --terminal-width=40 "$tmp/f" \
+    2>/dev/null | head -1)
+case "$out" in
+    *"   1 hello"*) ;;
+    *) echo "FAIL: BAT_OPTS fallback not applied"; fail=1 ;;
+esac
+
+# MAT_OPTS overrides BAT_OPTS
+out=$(MAT_NO_CONFIG= XDG_CONFIG_HOME="$tmp/empty" \
+    MAT_OPTS="--style=plain" BAT_OPTS="--style=numbers" \
+    "$MAT" --decorations=always --color=never --terminal-width=40 "$tmp/f" \
+    2>/dev/null | head -1)
+case "$out" in
+    "hello") ;;
+    *) echo "FAIL: MAT_OPTS did not override BAT_OPTS"; fail=1 ;;
+esac
+
 [ "$fail" -eq 0 ] && echo "config: precedence OK"
 exit $fail
