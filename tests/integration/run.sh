@@ -359,5 +359,27 @@ else
     echo "skip - permission_denied (running as root)"
 fi
 
+# T3: wrapping + highlighting combined
+printf 'int very_long_variable_name_that_exceeds_forty_columns = some_function(arg1, arg2, arg3);\n' \
+    > "$scratch/longline.c"
+wrapout=$("$MAT" --pretty --color=always --terminal-width=40 --wrap=character \
+    --no-paging "$scratch/longline.c" 2>/dev/null)
+wraplines=$(echo "$wrapout" | wc -l)
+if [ "$wraplines" -gt 3 ] && echo "$wrapout" | grep -q "$(printf '\033')" ; then
+    echo "ok   - wrap_plus_highlight"
+else
+    echo "FAIL - wrap_plus_highlight (lines=$wraplines)"; fail=1
+fi
+
+# T4: gutter >9999 lines
+seq 1 10001 > "$scratch/biglines.txt"
+lastgutter=$("$MAT" --pretty --color=never --no-paging "$scratch/biglines.txt" \
+    2>/dev/null | tail -2 | head -1)
+if echo "$lastgutter" | grep -q '10001'; then
+    echo "ok   - gutter_10001"
+else
+    echo "FAIL - gutter_10001 (got: $lastgutter)"; fail=1
+fi
+
 [ "$update" -eq 1 ] && echo "integration: goldens updated"
 exit $fail
