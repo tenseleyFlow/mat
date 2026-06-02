@@ -19,7 +19,7 @@ jobs:
       # release runners have a pty: a missing one is a regression, not a skip
       MAT_TEST_STRICT: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Configure
