@@ -1,4 +1,6 @@
 # mat(t)
+(noun) : who me?  
+
 
 A from-scratch C11/POSIX reimplementation of `cat` with syntax highlighting, a
 built-in pager, line numbers, git diff markers, and a decoration frame. Outputs
