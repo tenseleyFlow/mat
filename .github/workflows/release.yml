@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 10
     env:
       CC: ${{ matrix.cc }}
+      # release runners have a pty: a missing one is a regression, not a skip
+      MAT_TEST_STRICT: 1
     steps:
       - uses: actions/checkout@v4
         with:

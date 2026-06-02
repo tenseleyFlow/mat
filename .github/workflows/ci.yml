@@ -31,6 +31,9 @@ jobs:
     timeout-minutes: 8
     env:
       CC: ${{ matrix.cc }}
+      # CI runners have a pty, so a forkpty failure is a real regression, not an
+      # unsupported environment — make the pager test fatal instead of skipping.
+      MAT_TEST_STRICT: 1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,7 +59,7 @@ jobs:
           run: |
             ./configure
             make
-            make test
+            MAT_TEST_STRICT=1 make test
 
   sanitizers:
     runs-on: ubuntu-latest
