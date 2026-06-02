@@ -49,4 +49,7 @@ size_t mat_linesrc_total(struct mat_linesrc *s);
 
 void mat_linesrc_free(struct mat_linesrc *s);
 
+/* Install the SIGBUS handler once at program start. */
+void mat_linesrc_install_sigbus(void);
+
 #endif /* MAT_LINESRC_H */

@@ -17,6 +17,7 @@
 #include "highlight.h"
 #include "input.h"
 #include "interactive.h"
+#include "linesrc.h"
 #include "parallel.h"
 #include "matpager.h"
 #include "rangeprint.h"
@@ -55,6 +56,7 @@ static const char *basename_of(const char *path)
 int main(int argc, char **argv)
 {
     signal(SIGPIPE, SIG_IGN);
+    mat_linesrc_install_sigbus();
 
     if (argc > 0 && argv[0] && argv[0][0])
         mat_progname = basename_of(argv[0]);

@@ -18,6 +18,7 @@
 
 static _Thread_local sigjmp_buf sigbus_jmp;
 static _Thread_local volatile sig_atomic_t sigbus_armed;
+static _Thread_local void *sigbus_leak; /* freed on SIGBUS recovery */
 
 static void on_sigbus(int sig)
 {
@@ -25,6 +26,14 @@ static void on_sigbus(int sig)
     if (sigbus_armed)
         siglongjmp(sigbus_jmp, 1);
     _exit(128 + SIGBUS);
+}
+
+void mat_linesrc_install_sigbus(void)
+{
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = on_sigbus;
+    sigaction(SIGBUS, &sa, NULL);
 }
 
 static void off_push(struct mat_linesrc *s, size_t v)
@@ -153,6 +162,7 @@ static char *decode_utf16(const unsigned char *p, size_t n, bool le,
         return NULL;
     size_t cap = n + n / 2 + 16, len = 0;
     char *out = malloc(cap);
+    sigbus_leak = out;
     if (out == NULL)
         return NULL;
     size_t i = 0;
@@ -242,16 +252,14 @@ bool mat_linesrc_open(struct mat_linesrc *s, int fd)
     if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
         void *m = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (m != MAP_FAILED) {
-            struct sigaction sa, old_sa;
-            memset(&sa, 0, sizeof sa);
-            sa.sa_handler = on_sigbus;
-            sa.sa_flags = 0;
-            sigaction(SIGBUS, &sa, &old_sa);
-
+            sigbus_leak = NULL;
             sigbus_armed = 1;
             if (sigsetjmp(sigbus_jmp, 1) != 0) {
                 sigbus_armed = 0;
-                sigaction(SIGBUS, &old_sa, NULL);
+                free(sigbus_leak);
+                sigbus_leak = NULL;
+                s->map = NULL;
+                s->map_size = 0;
                 munmap(m, (size_t)st.st_size);
                 mat_warnx("file truncated during read");
                 /* fall through to slurp path */
@@ -261,7 +269,7 @@ bool mat_linesrc_open(struct mat_linesrc *s, int fd)
                 set_content(s, m, (size_t)st.st_size);
                 off_push(s, 0);
                 sigbus_armed = 0;
-                sigaction(SIGBUS, &old_sa, NULL);
+                sigbus_leak = NULL;
                 return true;
             }
         }
