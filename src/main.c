@@ -78,25 +78,30 @@ int main(int argc, char **argv)
     }
     mat_conf_apply(&cfg, no_config);
 
+    const char *files_stack[16];
+    bool files_heap = argc > 16;
     const char **files_out =
-        malloc(sizeof(*files_out) * (size_t)(argc > 0 ? argc : 1));
+        files_heap ? malloc(sizeof(*files_out) * (size_t)argc) : files_stack;
     if (files_out == NULL) {
         mat_warnx("out of memory");
         return 1;
     }
 
     if (mat_cli_parse(argc, argv, &cfg, files_out) != 0) {
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 1;
     }
     if (cfg.show_help) {
         mat_print_usage();
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
     if (cfg.show_version) {
         mat_print_version();
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
     if (cfg.show_config_file || cfg.show_config_dir) {
@@ -112,12 +117,14 @@ int main(int argc, char **argv)
         } else {
             printf("%s\n", path);
         }
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return mat_status();
     }
     if (cfg.gen_config) {
         mat_conf_print_template();
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
 
@@ -146,24 +153,28 @@ int main(int argc, char **argv)
 #endif
         printf("languages: %d\nthemes: %d\n", mat_hl_language_count(),
                mat_theme_count());
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
 
     if (cfg.list_themes) {
         mat_theme_list();
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
     if (cfg.list_languages) {
         mat_hl_list_languages();
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 0;
     }
     if (cfg.theme && mat_theme_set(cfg.theme) != 0) {
         fprintf(stderr, "%s: unknown theme '%s' (--list-themes for options)\n",
                 mat_progname, cfg.theme);
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return 1;
     }
 
@@ -192,7 +203,8 @@ int main(int argc, char **argv)
             printf("%s: %s\n", disp,
                    mat_syntax_detect(&cfg, detect_name, first, fn));
         }
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return mat_status();
     }
 
@@ -218,7 +230,8 @@ int main(int argc, char **argv)
     if (cfg.ranges.n > 0) {
         mat_scan_init();
         mat_rangeprint_run(&cfg, deco_on);
-        free(files_out);
+        if (files_heap)
+            free(files_out);
         return mat_status();
     }
 
@@ -245,7 +258,8 @@ int main(int argc, char **argv)
         sigaction(SIGTERM, &old_term, NULL);
         sigaction(SIGQUIT, &old_quit, NULL);
         if (pr == 0) {
-            free(files_out);
+            if (files_heap)
+                free(files_out);
             return mat_status();
         }
     }
@@ -261,6 +275,7 @@ int main(int argc, char **argv)
         mat_fastpath_run(&cfg);
     }
 
-    free(files_out);
+    if (files_heap)
+        free(files_out);
     return mat_status();
 }
