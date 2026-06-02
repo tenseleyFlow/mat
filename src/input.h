@@ -27,6 +27,7 @@ void mat_close_input(int fd, bool is_stdin, const char *name);
  * check (SEEK_END for an O_APPEND stdout). Returns true (and warns + records a
  * failure) when the file must be skipped. Shared by the fast and cooked paths.
  */
-bool mat_input_is_output(int in_fd, const struct stat *in_st, const char *name);
+bool mat_input_is_output(int in_fd, const struct stat *in_st, dev_t out_dev,
+                         ino_t out_ino, const char *name);
 
 #endif /* MAT_INPUT_H */

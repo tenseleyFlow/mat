@@ -30,15 +30,13 @@ void mat_close_input(int fd, bool is_stdin, const char *name)
         mat_warn(name ? name : "close");
 }
 
-bool mat_input_is_output(int in_fd, const struct stat *in_st, const char *name)
+bool mat_input_is_output(int in_fd, const struct stat *in_st, dev_t out_dev,
+                         ino_t out_ino, const char *name)
 {
     if (S_ISFIFO(in_st->st_mode) || S_ISSOCK(in_st->st_mode))
         return false;
 
-    struct stat ost;
-    if (fstat(STDOUT_FILENO, &ost) != 0)
-        return false;
-    if (in_st->st_dev != ost.st_dev || in_st->st_ino != ost.st_ino)
+    if (in_st->st_dev != out_dev || in_st->st_ino != out_ino)
         return false;
 
     off_t in_pos = lseek(in_fd, 0, SEEK_CUR);

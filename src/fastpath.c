@@ -78,6 +78,8 @@ struct copier {
     bool splice_ok; /* splice still worth trying this run */
     char *buf;      /* read/write fallback buffer, allocated on first use */
     size_t bufsz;
+    dev_t out_dev;
+    ino_t out_ino;
 };
 
 static void copier_init(struct copier *c)
@@ -101,9 +103,13 @@ static void copier_init(struct copier *c)
     if (fstat(c->out_fd, &st) == 0) {
         c->out_isreg = S_ISREG(st.st_mode) != 0;
         c->out_ispipe = S_ISFIFO(st.st_mode) != 0;
+        c->out_dev = st.st_dev;
+        c->out_ino = st.st_ino;
     } else {
         c->out_isreg = false;
         c->out_ispipe = false;
+        c->out_dev = 0;
+        c->out_ino = 0;
     }
 }
 
@@ -249,7 +255,7 @@ void mat_fastpath_run(const struct config *cfg)
             continue;
         }
 
-        if (mat_input_is_output(fd, &in_st, label)) {
+        if (mat_input_is_output(fd, &in_st, c.out_dev, c.out_ino, label)) {
             mat_close_input(fd, is_stdin, files[i]);
             continue;
         }

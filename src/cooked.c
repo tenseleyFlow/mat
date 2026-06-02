@@ -254,8 +254,12 @@ void mat_cooked_run(const struct config *cfg)
             continue;
 
         const char *label = is_stdin ? "stdin" : files[i];
-        struct stat in_st;
-        if (fstat(fd, &in_st) == 0 && mat_input_is_output(fd, &in_st, label)) {
+        struct stat in_st, out_st;
+        if (fstat(STDOUT_FILENO, &out_st) != 0)
+            memset(&out_st, 0, sizeof out_st);
+        if (fstat(fd, &in_st) == 0 &&
+            mat_input_is_output(fd, &in_st, out_st.st_dev, out_st.st_ino,
+                                label)) {
             mat_close_input(fd, is_stdin, files[i]);
             continue;
         }
