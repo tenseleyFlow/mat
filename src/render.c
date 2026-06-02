@@ -219,12 +219,7 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
                     const unsigned char *d, size_t len, int width,
                     mat_sink_fn sink, void *ctx)
 {
-    expand_tabs(r, d, len);
-    const unsigned char *w = (const unsigned char *)r->wbuf;
-    size_t wl = r->wbuf_len;
-    int content_width = mat_render_content_width(r, width);
-
-    /* Tokenize the (tab-expanded) line once when highlighting is active. */
+    /* Tokenize the *original* line so lexers see literal tabs. */
     r->hl_on = false;
     if (r->hl != NULL && r->color) {
         if (r->spans == NULL) {
@@ -232,10 +227,54 @@ int mat_render_line(struct mat_render *r, unsigned long lineno,
             r->spans = malloc((size_t)r->spans_cap * sizeof *r->spans);
         }
         if (r->spans != NULL) {
-            r->nspans = mat_hl_line(r->hl, w, wl, r->spans, r->spans_cap);
+            r->nspans = mat_hl_line(r->hl, d, len, r->spans, r->spans_cap);
             r->hl_on = true;
         }
     }
+
+    expand_tabs(r, d, len);
+
+    /* Remap span offsets from original-byte to expanded-byte positions. */
+    if (r->hl_on && r->tab_width > 0 && memchr(d, '\t', len) != NULL) {
+        size_t col = 0, orig = 0, exp = 0;
+        int si = 0;
+        while (si < r->nspans && orig <= len) {
+            struct mat_span *sp = &r->spans[si];
+            /* Advance to sp->start */
+            while (orig < (size_t)sp->start && orig < len) {
+                if (d[orig] == '\t') {
+                    int tw = r->tab_width - (int)(col % (unsigned)r->tab_width);
+                    col += (unsigned)tw;
+                    exp += (size_t)tw;
+                } else {
+                    col++;
+                    exp++;
+                }
+                orig++;
+            }
+            unsigned new_start = (unsigned)exp;
+            /* Advance through sp->len bytes */
+            size_t sp_end = (size_t)sp->start + sp->len;
+            while (orig < sp_end && orig < len) {
+                if (d[orig] == '\t') {
+                    int tw = r->tab_width - (int)(col % (unsigned)r->tab_width);
+                    col += (unsigned)tw;
+                    exp += (size_t)tw;
+                } else {
+                    col++;
+                    exp++;
+                }
+                orig++;
+            }
+            sp->start = new_start;
+            sp->len = (unsigned)(exp - new_start);
+            si++;
+        }
+    }
+
+    const unsigned char *w = (const unsigned char *)r->wbuf;
+    size_t wl = r->wbuf_len;
+    int content_width = mat_render_content_width(r, width);
 
     if (r->wrap == MAT_WRAP_NEVER) {
         emit_seg(r, lineno, false, r->wbuf, wl, 0, sink, ctx);
