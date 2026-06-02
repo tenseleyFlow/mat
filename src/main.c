@@ -27,7 +27,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
+
+static struct termios saved_termios;
+static volatile sig_atomic_t pager_active;
+
+static void crash_handler(int sig)
+{
+    if (pager_active) {
+        /* leave alt screen + show cursor */
+        const char *leave = "\x1b[?25h\x1b[?1049l";
+        (void)!write(STDOUT_FILENO, leave, 16);
+        tcsetattr(STDIN_FILENO, TCSANOW, &saved_termios);
+    }
+    /* re-raise with default disposition */
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
 
 static const char *basename_of(const char *path)
 {
@@ -212,7 +229,20 @@ int main(int argc, char **argv)
                      (deco_on || cfg.paging == MAT_WHEN_ALWAYS);
     if (want_page) {
         mat_scan_init();
-        if (mat_page(&cfg, deco_on) == 0) {
+        tcgetattr(STDIN_FILENO, &saved_termios);
+        struct sigaction sa, old_int, old_term, old_quit;
+        memset(&sa, 0, sizeof sa);
+        sa.sa_handler = crash_handler;
+        sigaction(SIGINT, &sa, &old_int);
+        sigaction(SIGTERM, &sa, &old_term);
+        sigaction(SIGQUIT, &sa, &old_quit);
+        pager_active = 1;
+        int pr = mat_page(&cfg, deco_on);
+        pager_active = 0;
+        sigaction(SIGINT, &old_int, NULL);
+        sigaction(SIGTERM, &old_term, NULL);
+        sigaction(SIGQUIT, &old_quit, NULL);
+        if (pr == 0) {
             free(files_out);
             return mat_status();
         }
