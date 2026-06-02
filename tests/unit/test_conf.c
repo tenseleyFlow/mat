@@ -59,6 +59,24 @@ static void test_empty(void)
     mat_tokens_free(t, n);
 }
 
+static void test_empty_double_quote(void)
+{
+    const char *w[] = {"", "x"};
+    check("\"\" x", false, w, 2);
+}
+
+static void test_empty_single_quote(void)
+{
+    const char *w[] = {"", "y"};
+    check("'' y", false, w, 2);
+}
+
+static void test_empty_quote_at_end(void)
+{
+    const char *w[] = {""};
+    check("\"\"", false, w, 1);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -67,5 +85,8 @@ int main(void)
     RUN_TEST(test_quotes);
     RUN_TEST(test_comments);
     RUN_TEST(test_empty);
+    RUN_TEST(test_empty_double_quote);
+    RUN_TEST(test_empty_single_quote);
+    RUN_TEST(test_empty_quote_at_end);
     return UNITY_END();
 }

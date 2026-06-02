@@ -75,6 +75,12 @@ int mat_tokenize(const char *s, bool comments, char ***out)
         }
         if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
             if (in_tok) {
+                if (t == NULL) {
+                    t = malloc(1);
+                    if (!t)
+                        break;
+                    tcap = 1;
+                }
                 t[tlen] = '\0';
                 arr_push(&arr, &n, &cap, strdup(t));
                 tlen = 0;
@@ -94,6 +100,14 @@ int mat_tokenize(const char *s, bool comments, char ***out)
         in_tok = true;
     }
     if (in_tok) {
+        if (t == NULL) {
+            t = malloc(1);
+            if (!t) {
+                *out = arr;
+                return n;
+            }
+            tcap = 1;
+        }
         t[tlen] = '\0';
         arr_push(&arr, &n, &cap, strdup(t));
     }
