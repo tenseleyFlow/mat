@@ -73,6 +73,25 @@ static void test_no_tabs(void)
     TEST_ASSERT_NOT_NULL(strstr(out_buf, "int"));
 }
 
+static void test_tab_inside_span(void)
+{
+    /* Makefile: "\techo\thello" — the whole line is MT_STRING because it
+     * starts with a tab. The span covers bytes containing tabs, so the
+     * remap must expand tabs inside the span without corrupting offsets. */
+    render("Makefile", "\techo\thello", 4);
+    TEST_ASSERT_GREATER_THAN_UINT(0, out_len);
+    TEST_ASSERT_NOT_NULL(strstr(out_buf, "echo"));
+    TEST_ASSERT_NOT_NULL(strstr(out_buf, "hello"));
+}
+
+static void test_c_string_with_tab(void)
+{
+    /* C string literal containing a tab: "he\tllo" — the lexer emits
+     * MT_STRING spanning the full literal including the tab. */
+    render("C", "char *s = \"he\tllo\";", 4);
+    TEST_ASSERT_GREATER_THAN_UINT(0, out_len);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -81,5 +100,7 @@ int main(void)
     RUN_TEST(test_multi_tab);
     RUN_TEST(test_tab_at_pos_zero);
     RUN_TEST(test_no_tabs);
+    RUN_TEST(test_tab_inside_span);
+    RUN_TEST(test_c_string_with_tab);
     return UNITY_END();
 }
