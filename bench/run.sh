@@ -69,14 +69,42 @@ if have hyperfine; then
 
     # Cooked path: line numbering, the SIMD-accelerated transform (mat vs cat;
     # bat's -n output differs, so it is excluded from this comparison).
-    yes "the quick brown fox jumps over the lazy dog 0123456789" \
-        | head -c 134217728 > "$scratch/text" 2>/dev/null
-    echo "## 128 MiB text -> /dev/null, cat-compat -n (cooked + SIMD)" >> "$OUT"
+    # Use REAL source text, not `yes`: a repeated single line is perfectly
+    # branch-predictable and flatters the cooked loop. The project's own
+    # sources have an honest mix of line lengths and byte values.
+    : > "$scratch/text"
+    while [ "$(wc -c < "$scratch/text")" -lt 134217728 ]; do
+        cat "$ROOT"/src/*.c >> "$scratch/text"
+    done
+    echo "## 128 MiB real source -> /dev/null, cat-compat -n (cooked + SIMD)" >> "$OUT"
     hyperfine -N --warmup 3 --export-markdown "$scratch/h.md" \
         "$MAT -n $scratch/text" "cat -n $scratch/text" >/dev/null 2>&1 || true
     cat "$scratch/h.md" >> "$OUT" 2>/dev/null
     echo >> "$OUT"
-    echo "_Data is random (never /dev/zero). \`-N\` runs without a shell where possible._" >> "$OUT"
+
+    # Decorated path: the render + highlight pipeline (gutter, grid, syntax
+    # coloring). This is the path that competes with bat and the one LTO and
+    # the render/highlight optimizations move — previously UNMEASURED, so
+    # regressions here were invisible to the perf gate. --decorations=always
+    # forces the frame even though stdout is a pipe under hyperfine.
+    code="$scratch/code.c"
+    : > "$code"
+    i=0; while [ "$i" -lt 16 ]; do cat "$ROOT"/src/*.c >> "$code"; i=$((i+1)); done
+    DECO="--decorations=always --style=full --color=always --paging=never"
+    echo "## decorated source -> /dev/null (render + highlight)" >> "$OUT"
+    if [ -n "$BAT" ]; then
+        hyperfine -N --warmup 3 --export-markdown "$scratch/h.md" \
+            "$MAT $DECO $code" \
+            "bat --style=full --color=always --paging=never $code" \
+            >/dev/null 2>&1 || true
+    else
+        hyperfine -N --warmup 3 --export-markdown "$scratch/h.md" \
+            "$MAT $DECO $code" >/dev/null 2>&1 || true
+    fi
+    cat "$scratch/h.md" >> "$OUT" 2>/dev/null
+    echo >> "$OUT"
+    echo "_Data is random (never /dev/zero) for raw paths; real source for the" >> "$OUT"
+    echo "cooked and decorated paths. \`-N\` runs without a shell where possible._" >> "$OUT"
 else
     echo "hyperfine not found — recording a coarse timed loop instead." >> "$OUT"
     echo '```' >> "$OUT"
