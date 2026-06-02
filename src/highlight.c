@@ -703,100 +703,77 @@ static const char *const theme_modus_operandi[MT_NTOKENS] = {
 
 static const char *const *active_theme = theme_dark;
 
+struct theme_entry {
+    const char *name;
+    const char *const *table;
+};
+
+static const struct theme_entry theme_tbl[] = {
+    {"ayu-dark", theme_ayu_dark},
+    {"ayu-light", theme_ayu_light},
+    {"ayu-mirage", theme_ayu_mirage},
+    {"carbonfox", theme_carbonfox},
+    {"catppuccin", theme_catppuccin},
+    {"catppuccin-frappe", theme_catppuccin_frappe},
+    {"catppuccin-latte", theme_catppuccin_latte},
+    {"catppuccin-macchiato", theme_catppuccin_macchiato},
+    {"dark", theme_dark},
+    {"dawnfox", theme_dawnfox},
+    {"dayfox", theme_dayfox},
+    {"dracula", theme_dracula},
+    {"everforest-dark", theme_everforest_dark},
+    {"everforest-light", theme_everforest_light},
+    {"github-dark", theme_github_dark},
+    {"github-light", theme_github_light},
+    {"gruvbox", theme_gruvbox},
+    {"gruvbox-light", theme_gruvbox_light},
+    {"iceberg", theme_iceberg},
+    {"kanagawa", theme_kanagawa},
+    {"light", theme_light},
+    {"material", theme_material},
+    {"modus-operandi", theme_modus_operandi},
+    {"modus-vivendi", theme_modus_vivendi},
+    {"monokai", theme_monokai},
+    {"moonfly", theme_moonfly},
+    {"nightfly", theme_nightfly},
+    {"nightfox", theme_nightfox},
+    {"nightowl", theme_nightowl},
+    {"nord", theme_nord},
+    {"onedark", theme_onedark},
+    {"onelight", theme_onelight},
+    {"oxocarbon", theme_oxocarbon},
+    {"palenight", theme_palenight},
+    {"poimandres", theme_poimandres},
+    {"rosepine", theme_rosepine},
+    {"rosepine-dawn", theme_rosepine_dawn},
+    {"rosepine-moon", theme_rosepine_moon},
+    {"solarized-dark", theme_solarized_dark},
+    {"solarized-light", theme_solarized_light},
+    {"synthwave", theme_synthwave},
+    {"tokyonight", theme_tokyonight},
+    {"tomorrow", theme_tomorrow},
+    {"tomorrow-night", theme_tomorrow_night},
+    {"zenburn", theme_zenburn},
+};
+
+#define THEME_TBL_N (sizeof theme_tbl / sizeof theme_tbl[0])
+
+static int theme_cmp(const void *a, const void *b)
+{
+    return strcmp((const char *)a, ((const struct theme_entry *)b)->name);
+}
+
 int mat_theme_set(const char *name)
 {
-    if (name == NULL || strcmp(name, "dark") == 0)
+    if (name == NULL) {
         active_theme = theme_dark;
-    else if (strcmp(name, "light") == 0)
-        active_theme = theme_light;
-    else if (strcmp(name, "monokai") == 0)
-        active_theme = theme_monokai;
-    else if (strcmp(name, "dracula") == 0)
-        active_theme = theme_dracula;
-    else if (strcmp(name, "solarized-dark") == 0)
-        active_theme = theme_solarized_dark;
-    else if (strcmp(name, "solarized-light") == 0)
-        active_theme = theme_solarized_light;
-    else if (strcmp(name, "nord") == 0)
-        active_theme = theme_nord;
-    else if (strcmp(name, "gruvbox") == 0)
-        active_theme = theme_gruvbox;
-    else if (strcmp(name, "onedark") == 0)
-        active_theme = theme_onedark;
-    else if (strcmp(name, "catppuccin") == 0)
-        active_theme = theme_catppuccin;
-    else if (strcmp(name, "github-dark") == 0)
-        active_theme = theme_github_dark;
-    else if (strcmp(name, "github-light") == 0)
-        active_theme = theme_github_light;
-    else if (strcmp(name, "tokyonight") == 0)
-        active_theme = theme_tokyonight;
-    else if (strcmp(name, "zenburn") == 0)
-        active_theme = theme_zenburn;
-    else if (strcmp(name, "tomorrow-night") == 0)
-        active_theme = theme_tomorrow_night;
-    else if (strcmp(name, "tomorrow") == 0)
-        active_theme = theme_tomorrow;
-    else if (strcmp(name, "material") == 0)
-        active_theme = theme_material;
-    else if (strcmp(name, "palenight") == 0)
-        active_theme = theme_palenight;
-    else if (strcmp(name, "synthwave") == 0)
-        active_theme = theme_synthwave;
-    else if (strcmp(name, "kanagawa") == 0)
-        active_theme = theme_kanagawa;
-    else if (strcmp(name, "rosepine") == 0)
-        active_theme = theme_rosepine;
-    else if (strcmp(name, "rosepine-moon") == 0)
-        active_theme = theme_rosepine_moon;
-    else if (strcmp(name, "rosepine-dawn") == 0)
-        active_theme = theme_rosepine_dawn;
-    else if (strcmp(name, "everforest-dark") == 0)
-        active_theme = theme_everforest_dark;
-    else if (strcmp(name, "everforest-light") == 0)
-        active_theme = theme_everforest_light;
-    else if (strcmp(name, "ayu-dark") == 0)
-        active_theme = theme_ayu_dark;
-    else if (strcmp(name, "ayu-mirage") == 0)
-        active_theme = theme_ayu_mirage;
-    else if (strcmp(name, "ayu-light") == 0)
-        active_theme = theme_ayu_light;
-    else if (strcmp(name, "catppuccin-latte") == 0)
-        active_theme = theme_catppuccin_latte;
-    else if (strcmp(name, "catppuccin-frappe") == 0)
-        active_theme = theme_catppuccin_frappe;
-    else if (strcmp(name, "catppuccin-macchiato") == 0)
-        active_theme = theme_catppuccin_macchiato;
-    else if (strcmp(name, "gruvbox-light") == 0)
-        active_theme = theme_gruvbox_light;
-    else if (strcmp(name, "onelight") == 0)
-        active_theme = theme_onelight;
-    else if (strcmp(name, "nightowl") == 0)
-        active_theme = theme_nightowl;
-    else if (strcmp(name, "nightfox") == 0)
-        active_theme = theme_nightfox;
-    else if (strcmp(name, "dayfox") == 0)
-        active_theme = theme_dayfox;
-    else if (strcmp(name, "dawnfox") == 0)
-        active_theme = theme_dawnfox;
-    else if (strcmp(name, "carbonfox") == 0)
-        active_theme = theme_carbonfox;
-    else if (strcmp(name, "oxocarbon") == 0)
-        active_theme = theme_oxocarbon;
-    else if (strcmp(name, "poimandres") == 0)
-        active_theme = theme_poimandres;
-    else if (strcmp(name, "moonfly") == 0)
-        active_theme = theme_moonfly;
-    else if (strcmp(name, "nightfly") == 0)
-        active_theme = theme_nightfly;
-    else if (strcmp(name, "iceberg") == 0)
-        active_theme = theme_iceberg;
-    else if (strcmp(name, "modus-vivendi") == 0)
-        active_theme = theme_modus_vivendi;
-    else if (strcmp(name, "modus-operandi") == 0)
-        active_theme = theme_modus_operandi;
-    else
+        return 0;
+    }
+    const struct theme_entry *e =
+        bsearch(name, theme_tbl, THEME_TBL_N, sizeof theme_tbl[0], theme_cmp);
+    if (e == NULL)
         return -1;
+    active_theme = e->table;
     return 0;
 }
 
@@ -4053,470 +4030,213 @@ static int lex_lhaskell(struct mat_hl *h, const unsigned char *d, size_t len,
 
 /* ---- dispatch ---- */
 
+struct lang_entry {
+    const char *name;
+    lex_fn lex;
+    struct wordset kw, ty;
+};
+
+static const struct lang_entry lang_tbl[] = {
+    {"ARM Assembly", lex_asm, {NULL, 0}, {NULL, 0}},
+    {"ASP", lex_html, {NULL, 0}, {NULL, 0}},
+    {"AWK", lex_shell, WS(awk_kw), {NULL, 0}},
+    {"ActionScript", lex_cfamily, WS(actionscript_kw), WS(actionscript_ty)},
+    {"Ada", lex_haskell, WS(ada_kw), WS(ada_ty)},
+    {"Apache Conf", lex_python, WS(nginx_kw), {NULL, 0}},
+    {"AppleScript", lex_haskell, WS(applescript_kw), {NULL, 0}},
+    {"AsciiDoc", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"AsciiDoc (Asciidoctor)", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"Assembly", lex_asm, {NULL, 0}, {NULL, 0}},
+    {"Assembly (x86_64)", lex_asm, {NULL, 0}, {NULL, 0}},
+    {"Authorized Keys", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Bash", lex_shell, WS(sh_kw), {NULL, 0}},
+    {"Batch File", lex_batch, WS(batch_kw), {NULL, 0}},
+    {"BibTeX", lex_bibtex, {NULL, 0}, {NULL, 0}},
+    {"Bourne Again Shell (bash)", lex_shell, WS(sh_kw), {NULL, 0}},
+    {"C", lex_cfamily, WS(c_kw), WS(c_ty)},
+    {"C#", lex_cfamily, WS(cs_kw), WS(cs_ty)},
+    {"C++", lex_cfamily, WS(c_kw), WS(c_ty)},
+    {"CFML", lex_html, {NULL, 0}, {NULL, 0}},
+    {"CMake", lex_python, WS(cmake_kw), {NULL, 0}},
+    {"CMake C Header", lex_python, WS(cmake_kw), {NULL, 0}},
+    {"CMake C++ Header", lex_python, WS(cmake_kw), {NULL, 0}},
+    {"CMakeCache", lex_python, WS(cmake_kw), {NULL, 0}},
+    {"CSS", lex_css, {NULL, 0}, {NULL, 0}},
+    {"CSV", lex_colonfile, {NULL, 0}, {NULL, 0}},
+    {"Cabal", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Clojure", lex_clojure, WS(clojure_kw), WS(clojure_ty)},
+    {"CoffeeScript", lex_python, WS(coffee_kw), WS(coffee_ty)},
+    {"Comma Separated Values", lex_colonfile, {NULL, 0}, {NULL, 0}},
+    {"CpuInfo", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Crontab", lex_crontab, {NULL, 0}, {NULL, 0}},
+    {"Crystal", lex_ruby, WS(crystal_kw), WS(crystal_ty)},
+    {"D", lex_cfamily, WS(d_kw), WS(d_ty)},
+    {"Dart", lex_cfamily, WS(dart_kw), WS(dart_ty)},
+    {"Diff", lex_diff, {NULL, 0}, {NULL, 0}},
+    {"Dockerfile", lex_dockerfile, WS(dockerfile_kw), {NULL, 0}},
+    {"DotENV", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"Elixir", lex_python, WS(elixir_kw), WS(elixir_ty)},
+    {"Elm", lex_haskell, WS(elm_kw), WS(elm_ty)},
+    {"Email", lex_http, {NULL, 0}, {NULL, 0}},
+    {"Erlang", lex_python, WS(erlang_kw), WS(erlang_ty)},
+    {"F#", lex_haskell, WS(fsharp_kw), WS(fsharp_ty)},
+    {"Fish", lex_shell, WS(fish_kw), {NULL, 0}},
+    {"Fortran", lex_fortran, WS(fortran_kw), WS(fortran_ty)},
+    {"GLSL", lex_cfamily, WS(glsl_kw), WS(glsl_ty)},
+    {"Git Attributes", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Commit", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Config", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"Git Ignore", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Link", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Log", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Mailmap", lex_gitcommit, {NULL, 0}, {NULL, 0}},
+    {"Git Rebase Todo", lex_gitrebase, WS(git_rebase_kw), {NULL, 0}},
+    {"Go", lex_cfamily, WS(go_kw), WS(go_ty)},
+    {"GraphQL", lex_python, WS(graphql_kw), WS(graphql_ty)},
+    {"Graphviz", lex_cfamily, {NULL, 0}, {NULL, 0}},
+    {"Graphviz (DOT)", lex_cfamily, {NULL, 0}, {NULL, 0}},
+    {"Groff", lex_groff, {NULL, 0}, {NULL, 0}},
+    {"Groff/troff", lex_groff, {NULL, 0}, {NULL, 0}},
+    {"Groovy", lex_cfamily, WS(groovy_kw), WS(groovy_ty)},
+    {"HTML", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (ASP)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (EEx)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (Erlang)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (Jinja2)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (Rails)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (Tcl)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTML (Twig)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTTP Request and Response", lex_http, {NULL, 0}, {NULL, 0}},
+    {"Haskell", lex_haskell, WS(haskell_kw), WS(haskell_ty)},
+    {"INI", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"JQ", lex_jq, {NULL, 0}, {NULL, 0}},
+    {"JSON", lex_json, {NULL, 0}, {NULL, 0}},
+    {"JSX", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"Java", lex_cfamily, WS(c_kw), WS(c_ty)},
+    {"Java Properties", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"Java Server Page (JSP)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"JavaScript", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"JavaScript (Babel)", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"JavaScript (Rails)", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"Jinja2", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Julia", lex_python, WS(julia_kw), WS(julia_ty)},
+    {"Known Hosts", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Kotlin", lex_cfamily, WS(kt_kw), WS(kt_ty)},
+    {"LLVM", lex_asm, {NULL, 0}, {NULL, 0}},
+    {"LaTeX", lex_latex, {NULL, 0}, {NULL, 0}},
+    {"Lean", lex_haskell, WS(lean_kw), WS(lean_ty)},
+    {"Less", lex_css, {NULL, 0}, {NULL, 0}},
+    {"Lisp", lex_clojure, WS(lisp_kw), WS(lisp_ty)},
+    {"Literate Haskell", lex_lhaskell, WS(haskell_kw), WS(haskell_ty)},
+    {"LiveScript", lex_python, WS(coffee_kw), WS(coffee_ty)},
+    {"Lua", lex_lua, WS(lua_kw), WS(lua_ty)},
+    {"MATLAB", lex_matlab, WS(matlab_kw), WS(matlab_ty)},
+    {"Makefile", lex_makefile, {NULL, 0}, {NULL, 0}},
+    {"Manpage", lex_groff, {NULL, 0}, {NULL, 0}},
+    {"Markdown", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"MediaWiki", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"MemInfo", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"NAnt Build File", lex_html, {NULL, 0}, {NULL, 0}},
+    {"NSIS", lex_perish, WS(nsis_kw), {NULL, 0}},
+    {"Nim", lex_cfamily, WS(nim_kw), WS(nim_ty)},
+    {"Ninja", lex_python, WS(ninja_kw), {NULL, 0}},
+    {"Nix", lex_python, WS(nix_kw), WS(nix_ty)},
+    {"OCaml", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
+    {"OCamllex", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
+    {"OCamlyacc", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
+    {"Objective-C", lex_cfamily, WS(c_kw), WS(c_ty)},
+    {"Objective-C++", lex_cfamily, WS(c_kw), WS(c_ty)},
+    {"PHP", lex_perish, WS(php_kw), WS(php_ty)},
+    {"Pascal", lex_pascal, WS(pascal_kw), WS(pascal_ty)},
+    {"Perl", lex_perish, WS(perl_kw), {NULL, 0}},
+    {"PowerShell", lex_shell, WS(powershell_kw), {NULL, 0}},
+    {"Protobuf", lex_cfamily, WS(protobuf_kw), WS(protobuf_ty)},
+    {"Protocol Buffer (TEXT)", lex_cfamily, WS(protobuf_kw), WS(protobuf_ty)},
+    {"Puppet", lex_python, WS(puppet_kw), {NULL, 0}},
+    {"PureScript", lex_haskell, WS(haskell_kw), WS(haskell_ty)},
+    {"Python", lex_python, WS(py_kw), WS(py_ty)},
+    {"QML", lex_cfamily, WS(qml_kw), WS(qml_ty)},
+    {"R", lex_r, WS(r_kw), WS(r_ty)},
+    {"Racket", lex_clojure, WS(lisp_kw), WS(lisp_ty)},
+    {"Rd (R Documentation)", lex_latex, {NULL, 0}, {NULL, 0}},
+    {"Rego", lex_python, WS(rego_kw), {NULL, 0}},
+    {"Regular Expression", lex_cfamily, {NULL, 0}, {NULL, 0}},
+    {"Requirements.txt", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"Robot Framework", lex_python, {NULL, 0}, {NULL, 0}},
+    {"Ruby", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
+    {"Ruby Haml", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
+    {"Ruby Slim", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
+    {"Ruby on Rails", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
+    {"Rust", lex_cfamily, WS(rs_kw), WS(rs_ty)},
+    {"SCSS", lex_css, {NULL, 0}, {NULL, 0}},
+    {"SML", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
+    {"SQL", lex_sql, WS(sql_kw), WS(sql_ty)},
+    {"SQL (Rails)", lex_sql, WS(sql_kw), WS(sql_ty)},
+    {"SSH Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"SSHD Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Salt State (SLS)", lex_yaml, {NULL, 0}, {NULL, 0}},
+    {"Sass", lex_css, {NULL, 0}, {NULL, 0}},
+    {"Scala", lex_cfamily, WS(scala_kw), WS(scala_ty)},
+    {"Solidity", lex_cfamily, WS(solidity_kw), WS(solidity_ty)},
+    {"Strace", lex_strace, {NULL, 0}, {NULL, 0}},
+    {"Stylus", lex_css, {NULL, 0}, {NULL, 0}},
+    {"Svelte", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Swift", lex_cfamily, WS(swift_kw), WS(swift_ty)},
+    {"SystemVerilog", lex_cfamily, WS(sv_kw), WS(sv_ty)},
+    {"TOML", lex_toml, {NULL, 0}, {NULL, 0}},
+    {"Tcl", lex_shell, WS(tcl_kw), {NULL, 0}},
+    {"TeX", lex_latex, {NULL, 0}, {NULL, 0}},
+    {"Terraform", lex_cfamily, WS(terraform_kw), WS(terraform_ty)},
+    {"Textile", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"Todo.txt", lex_todotxt, {NULL, 0}, {NULL, 0}},
+    {"TypeScript", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"TypeScriptReact", lex_cfamily, WS(js_kw), WS(js_ty)},
+    {"Verilog", lex_cfamily, WS(verilog_kw), WS(verilog_ty)},
+    {"VimHelp", lex_vimhelp, {NULL, 0}, {NULL, 0}},
+    {"VimL", lex_viml, WS(viml_kw), {NULL, 0}},
+    {"Vue", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Vue Component", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Vyper", lex_python, WS(rego_kw), {NULL, 0}},
+    {"WGSL", lex_cfamily, WS(wgsl_kw), WS(wgsl_ty)},
+    {"XML", lex_html, {NULL, 0}, {NULL, 0}},
+    {"YAML", lex_yaml, {NULL, 0}, {NULL, 0}},
+    {"Zig", lex_cfamily, WS(zig_kw), WS(zig_ty)},
+    {"Zsh", lex_shell, WS(sh_kw), {NULL, 0}},
+    {"fstab", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"gnuplot", lex_python, {NULL, 0}, {NULL, 0}},
+    {"group", lex_colonfile, {NULL, 0}, {NULL, 0}},
+    {"hosts", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"jsonnet", lex_cfamily, WS(jsonnet_kw), {NULL, 0}},
+    {"log", lex_log, {NULL, 0}, {NULL, 0}},
+    {"nginx", lex_python, WS(nginx_kw), {NULL, 0}},
+    {"orgmode", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"passwd", lex_colonfile, {NULL, 0}, {NULL, 0}},
+    {"reStructuredText", lex_markdown, {NULL, 0}, {NULL, 0}},
+    {"resolv", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"syslog", lex_log, {NULL, 0}, {NULL, 0}},
+    {"varlink", lex_cfamily, {NULL, 0}, {NULL, 0}},
+};
+
+#define LANG_TBL_N (sizeof lang_tbl / sizeof lang_tbl[0])
+
+static int lang_cmp(const void *a, const void *b)
+{
+    return strcmp((const char *)a, ((const struct lang_entry *)b)->name);
+}
+
 struct mat_hl *mat_hl_open(const char *syntax)
 {
     if (syntax == NULL)
         return NULL;
-    lex_fn lex = NULL;
-    struct wordset kw = {NULL, 0}, ty = {NULL, 0};
-    if (strcmp(syntax, "JSON") == 0) {
-        lex = lex_json;
-    } else if (strcmp(syntax, "C") == 0) {
-        lex = lex_cfamily;
-        kw = WS(c_kw);
-        ty = WS(c_ty);
-    } else if (strcmp(syntax, "C++") == 0) {
-        lex = lex_cfamily;
-        kw = WS(c_kw);
-        ty = WS(c_ty);
-    } else if (strcmp(syntax, "Java") == 0) {
-        lex = lex_cfamily;
-        kw = WS(c_kw);
-        ty = WS(c_ty);
-    } else if (strcmp(syntax, "JavaScript") == 0 ||
-               strcmp(syntax, "TypeScript") == 0) {
-        lex = lex_cfamily;
-        kw = WS(js_kw);
-        ty = WS(js_ty);
-    } else if (strcmp(syntax, "Go") == 0) {
-        lex = lex_cfamily;
-        kw = WS(go_kw);
-        ty = WS(go_ty);
-    } else if (strcmp(syntax, "Rust") == 0) {
-        lex = lex_cfamily;
-        kw = WS(rs_kw);
-        ty = WS(rs_ty);
-    } else if (strcmp(syntax, "Python") == 0) {
-        lex = lex_python;
-        kw = WS(py_kw);
-        ty = WS(py_ty);
-    } else if (strcmp(syntax, "Bash") == 0 || strcmp(syntax, "Zsh") == 0) {
-        lex = lex_shell;
-        kw = WS(sh_kw);
-    } else if (strcmp(syntax, "Fortran") == 0) {
-        lex = lex_fortran;
-        kw = WS(fortran_kw);
-        ty = WS(fortran_ty);
-    } else if (strcmp(syntax, "Markdown") == 0) {
-        lex = lex_markdown;
-    } else if (strcmp(syntax, "YAML") == 0) {
-        lex = lex_yaml;
-    } else if (strcmp(syntax, "TOML") == 0) {
-        lex = lex_toml;
-    } else if (strcmp(syntax, "HTML") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "CSS") == 0 || strcmp(syntax, "SCSS") == 0) {
-        lex = lex_css;
-    } else if (strcmp(syntax, "SQL") == 0) {
-        lex = lex_sql;
-        kw = WS(sql_kw);
-        ty = WS(sql_ty);
-    } else if (strcmp(syntax, "Ruby") == 0) {
-        lex = lex_ruby;
-        kw = WS(ruby_kw);
-        ty = WS(ruby_ty);
-    } else if (strcmp(syntax, "Lua") == 0) {
-        lex = lex_lua;
-        kw = WS(lua_kw);
-        ty = WS(lua_ty);
-    } else if (strcmp(syntax, "Makefile") == 0) {
-        lex = lex_makefile;
-    } else if (strcmp(syntax, "Diff") == 0) {
-        lex = lex_diff;
-    } else if (strcmp(syntax, "C#") == 0) {
-        lex = lex_cfamily;
-        kw = WS(cs_kw);
-        ty = WS(cs_ty);
-    } else if (strcmp(syntax, "Kotlin") == 0) {
-        lex = lex_cfamily;
-        kw = WS(kt_kw);
-        ty = WS(kt_ty);
-    } else if (strcmp(syntax, "Scala") == 0) {
-        lex = lex_cfamily;
-        kw = WS(scala_kw);
-        ty = WS(scala_ty);
-    } else if (strcmp(syntax, "Swift") == 0) {
-        lex = lex_cfamily;
-        kw = WS(swift_kw);
-        ty = WS(swift_ty);
-    } else if (strcmp(syntax, "Dart") == 0) {
-        lex = lex_cfamily;
-        kw = WS(dart_kw);
-        ty = WS(dart_ty);
-    } else if (strcmp(syntax, "Zig") == 0) {
-        lex = lex_cfamily;
-        kw = WS(zig_kw);
-        ty = WS(zig_ty);
-    } else if (strcmp(syntax, "Nim") == 0) {
-        lex = lex_cfamily;
-        kw = WS(nim_kw);
-        ty = WS(nim_ty);
-    } else if (strcmp(syntax, "Groovy") == 0) {
-        lex = lex_cfamily;
-        kw = WS(groovy_kw);
-        ty = WS(groovy_ty);
-    } else if (strcmp(syntax, "Perl") == 0) {
-        lex = lex_perish;
-        kw = WS(perl_kw);
-    } else if (strcmp(syntax, "PHP") == 0) {
-        lex = lex_perish;
-        kw = WS(php_kw);
-        ty = WS(php_ty);
-    } else if (strcmp(syntax, "Haskell") == 0) {
-        lex = lex_haskell;
-        kw = WS(haskell_kw);
-        ty = WS(haskell_ty);
-    } else if (strcmp(syntax, "OCaml") == 0) {
-        lex = lex_haskell;
-        kw = WS(ocaml_kw);
-        ty = WS(ocaml_ty);
-    } else if (strcmp(syntax, "Elixir") == 0) {
-        lex = lex_python;
-        kw = WS(elixir_kw);
-        ty = WS(elixir_ty);
-    } else if (strcmp(syntax, "Erlang") == 0) {
-        lex = lex_python;
-        kw = WS(erlang_kw);
-        ty = WS(erlang_ty);
-    } else if (strcmp(syntax, "R") == 0) {
-        lex = lex_r;
-        kw = WS(r_kw);
-        ty = WS(r_ty);
-    } else if (strcmp(syntax, "Clojure") == 0) {
-        lex = lex_clojure;
-        kw = WS(clojure_kw);
-        ty = WS(clojure_ty);
-    } else if (strcmp(syntax, "Julia") == 0) {
-        lex = lex_python;
-        kw = WS(julia_kw);
-        ty = WS(julia_ty);
-    } else if (strcmp(syntax, "Dockerfile") == 0) {
-        lex = lex_dockerfile;
-        kw = WS(dockerfile_kw);
-    } else if (strcmp(syntax, "INI") == 0) {
-        lex = lex_ini;
-    } else if (strcmp(syntax, "LaTeX") == 0) {
-        lex = lex_latex;
-    } else if (strcmp(syntax, "PowerShell") == 0) {
-        lex = lex_shell;
-        kw = WS(powershell_kw);
-    } else if (strcmp(syntax, "AWK") == 0) {
-        lex = lex_shell;
-        kw = WS(awk_kw);
-    } else if (strcmp(syntax, "Fish") == 0) {
-        lex = lex_shell;
-        kw = WS(fish_kw);
-    } else if (strcmp(syntax, "Objective-C") == 0 ||
-               strcmp(syntax, "Objective-C++") == 0) {
-        lex = lex_cfamily;
-        kw = WS(c_kw);
-        ty = WS(c_ty);
-    } else if (strcmp(syntax, "D") == 0) {
-        lex = lex_cfamily;
-        kw = WS(d_kw);
-        ty = WS(d_ty);
-    } else if (strcmp(syntax, "F#") == 0) {
-        lex = lex_haskell;
-        kw = WS(fsharp_kw);
-        ty = WS(fsharp_ty);
-    } else if (strcmp(syntax, "GLSL") == 0) {
-        lex = lex_cfamily;
-        kw = WS(glsl_kw);
-        ty = WS(glsl_ty);
-    } else if (strcmp(syntax, "CoffeeScript") == 0) {
-        lex = lex_python;
-        kw = WS(coffee_kw);
-        ty = WS(coffee_ty);
-    } else if (strcmp(syntax, "Crystal") == 0) {
-        lex = lex_ruby;
-        kw = WS(crystal_kw);
-        ty = WS(crystal_ty);
-    } else if (strcmp(syntax, "Elm") == 0) {
-        lex = lex_haskell;
-        kw = WS(elm_kw);
-        ty = WS(elm_ty);
-    } else if (strcmp(syntax, "Solidity") == 0) {
-        lex = lex_cfamily;
-        kw = WS(solidity_kw);
-        ty = WS(solidity_ty);
-    } else if (strcmp(syntax, "Ada") == 0) {
-        lex = lex_haskell;
-        kw = WS(ada_kw);
-        ty = WS(ada_ty);
-    } else if (strcmp(syntax, "Pascal") == 0) {
-        lex = lex_pascal;
-        kw = WS(pascal_kw);
-        ty = WS(pascal_ty);
-    } else if (strcmp(syntax, "MATLAB") == 0) {
-        lex = lex_matlab;
-        kw = WS(matlab_kw);
-        ty = WS(matlab_ty);
-    } else if (strcmp(syntax, "Protobuf") == 0) {
-        lex = lex_cfamily;
-        kw = WS(protobuf_kw);
-        ty = WS(protobuf_ty);
-    } else if (strcmp(syntax, "Terraform") == 0) {
-        lex = lex_cfamily;
-        kw = WS(terraform_kw);
-        ty = WS(terraform_ty);
-    } else if (strcmp(syntax, "Nix") == 0) {
-        lex = lex_python;
-        kw = WS(nix_kw);
-        ty = WS(nix_ty);
-    } else if (strcmp(syntax, "Tcl") == 0) {
-        lex = lex_shell;
-        kw = WS(tcl_kw);
-    } else if (strcmp(syntax, "Lisp") == 0 || strcmp(syntax, "Racket") == 0) {
-        lex = lex_clojure;
-        kw = WS(lisp_kw);
-        ty = WS(lisp_ty);
-    } else if (strcmp(syntax, "Assembly") == 0) {
-        lex = lex_asm;
-    } else if (strcmp(syntax, "Batch File") == 0) {
-        lex = lex_batch;
-        kw = WS(batch_kw);
-    } else if (strcmp(syntax, "XML") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "Graphviz") == 0) {
-        lex = lex_cfamily;
-    } else if (strcmp(syntax, "PureScript") == 0) {
-        lex = lex_haskell;
-        kw = WS(haskell_kw);
-        ty = WS(haskell_ty);
-    } else if (strcmp(syntax, "SML") == 0) {
-        lex = lex_haskell;
-        kw = WS(ocaml_kw);
-        ty = WS(ocaml_ty);
-    } else if (strcmp(syntax, "GraphQL") == 0) {
-        lex = lex_python;
-        kw = WS(graphql_kw);
-        ty = WS(graphql_ty);
-    } else if (strcmp(syntax, "CMake") == 0) {
-        lex = lex_python;
-        kw = WS(cmake_kw);
-    } else if (strcmp(syntax, "nginx") == 0 ||
-               strcmp(syntax, "Apache Conf") == 0) {
-        lex = lex_python;
-        kw = WS(nginx_kw);
-    } else if (strcmp(syntax, "VimL") == 0) {
-        lex = lex_viml;
-        kw = WS(viml_kw);
-    } else if (strcmp(syntax, "Sass") == 0 || strcmp(syntax, "Less") == 0 ||
-               strcmp(syntax, "Stylus") == 0) {
-        lex = lex_css;
-    } else if (strcmp(syntax, "jsonnet") == 0) {
-        lex = lex_cfamily;
-        kw = WS(jsonnet_kw);
-    } else if (strcmp(syntax, "Puppet") == 0) {
-        lex = lex_python;
-        kw = WS(puppet_kw);
-    } else if (strcmp(syntax, "QML") == 0) {
-        lex = lex_cfamily;
-        kw = WS(qml_kw);
-        ty = WS(qml_ty);
-    } else if (strcmp(syntax, "LLVM") == 0) {
-        lex = lex_asm;
-    } else if (strcmp(syntax, "gnuplot") == 0) {
-        lex = lex_python;
-    } else if (strcmp(syntax, "ActionScript") == 0) {
-        lex = lex_cfamily;
-        kw = WS(actionscript_kw);
-        ty = WS(actionscript_ty);
-    } else if (strcmp(syntax, "AppleScript") == 0) {
-        lex = lex_haskell;
-        kw = WS(applescript_kw);
-    } else if (strcmp(syntax, "WGSL") == 0) {
-        lex = lex_cfamily;
-        kw = WS(wgsl_kw);
-        ty = WS(wgsl_ty);
-    } else if (strcmp(syntax, "Rego") == 0) {
-        lex = lex_python;
-        kw = WS(rego_kw);
-    } else if (strcmp(syntax, "Vyper") == 0) {
-        lex = lex_python;
-        kw = WS(rego_kw);
-    } else if (strcmp(syntax, "Java Properties") == 0 ||
-               strcmp(syntax, "DotENV") == 0 ||
-               strcmp(syntax, "Requirements.txt") == 0) {
-        lex = lex_ini;
-    } else if (strcmp(syntax, "TypeScriptReact") == 0 ||
-               strcmp(syntax, "JSX") == 0) {
-        lex = lex_cfamily;
-        kw = WS(js_kw);
-        ty = WS(js_ty);
-    } else if (strcmp(syntax, "Lean") == 0) {
-        lex = lex_haskell;
-        kw = WS(lean_kw);
-        ty = WS(lean_ty);
-    } else if (strcmp(syntax, "Groff") == 0 || strcmp(syntax, "Manpage") == 0) {
-        lex = lex_groff;
-    } else if (strcmp(syntax, "BibTeX") == 0) {
-        lex = lex_bibtex;
-    } else if (strcmp(syntax, "Svelte") == 0 || strcmp(syntax, "Vue") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "Jinja2") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "AsciiDoc") == 0 ||
-               strcmp(syntax, "reStructuredText") == 0 ||
-               strcmp(syntax, "MediaWiki") == 0 ||
-               strcmp(syntax, "orgmode") == 0) {
-        lex = lex_markdown;
-    }
-    /* Group 1: aliases of languages we already handle. */
-    else if (strcmp(syntax, "Assembly (x86_64)") == 0 ||
-             strcmp(syntax, "ARM Assembly") == 0) {
-        lex = lex_asm;
-    } else if (strcmp(syntax, "Bourne Again Shell (bash)") == 0) {
-        lex = lex_shell;
-        kw = WS(sh_kw);
-    } else if (strcmp(syntax, "AsciiDoc (Asciidoctor)") == 0) {
-        lex = lex_markdown;
-    } else if (strcmp(syntax, "Graphviz (DOT)") == 0) {
-        lex = lex_cfamily;
-    } else if (strcmp(syntax, "Groff/troff") == 0) {
-        lex = lex_groff;
-    } else if (strcmp(syntax, "Vue Component") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "Protocol Buffer (TEXT)") == 0) {
-        lex = lex_cfamily;
-        kw = WS(protobuf_kw);
-        ty = WS(protobuf_ty);
-    } else if (strcmp(syntax, "JavaScript (Babel)") == 0 ||
-               strcmp(syntax, "JavaScript (Rails)") == 0) {
-        lex = lex_cfamily;
-        kw = WS(js_kw);
-        ty = WS(js_ty);
-    } else if (strcmp(syntax, "Ruby on Rails") == 0 ||
-               strcmp(syntax, "Ruby Haml") == 0 ||
-               strcmp(syntax, "Ruby Slim") == 0) {
-        lex = lex_ruby;
-        kw = WS(ruby_kw);
-        ty = WS(ruby_ty);
-    } else if (strcmp(syntax, "SQL (Rails)") == 0) {
-        lex = lex_sql;
-        kw = WS(sql_kw);
-        ty = WS(sql_ty);
-    } else if (strcmp(syntax, "TeX") == 0) {
-        lex = lex_latex;
-    }
-    /* Group 3: Git-related files. */
-    else if (strcmp(syntax, "Git Commit") == 0 ||
-             strcmp(syntax, "Git Attributes") == 0 ||
-             strcmp(syntax, "Git Ignore") == 0 ||
-             strcmp(syntax, "Git Mailmap") == 0 ||
-             strcmp(syntax, "Git Link") == 0 ||
-             strcmp(syntax, "Git Log") == 0) {
-        lex = lex_gitcommit;
-    } else if (strcmp(syntax, "Git Config") == 0) {
-        lex = lex_ini;
-    } else if (strcmp(syntax, "Git Rebase Todo") == 0) {
-        lex = lex_gitrebase;
-        kw = WS(git_rebase_kw);
-    }
-    /* Group 4: System config files. */
-    else if (strcmp(syntax, "SSH Config") == 0 ||
-             strcmp(syntax, "SSHD Config") == 0 ||
-             strcmp(syntax, "Authorized Keys") == 0 ||
-             strcmp(syntax, "Known Hosts") == 0 ||
-             strcmp(syntax, "hosts") == 0 || strcmp(syntax, "resolv") == 0) {
-        lex = lex_sshconfig;
-    } else if (strcmp(syntax, "fstab") == 0) {
-        lex = lex_sshconfig;
-    } else if (strcmp(syntax, "passwd") == 0 || strcmp(syntax, "group") == 0) {
-        lex = lex_colonfile;
-    } else if (strcmp(syntax, "Crontab") == 0) {
-        lex = lex_crontab;
-    } else if (strcmp(syntax, "CpuInfo") == 0 ||
-               strcmp(syntax, "MemInfo") == 0) {
-        lex = lex_sshconfig;
-    }
-    /* Group 5: Niche languages/formats. */
-    else if (strcmp(syntax, "Verilog") == 0) {
-        lex = lex_cfamily;
-        kw = WS(verilog_kw);
-        ty = WS(verilog_ty);
-    } else if (strcmp(syntax, "SystemVerilog") == 0) {
-        lex = lex_cfamily;
-        kw = WS(sv_kw);
-        ty = WS(sv_ty);
-    } else if (strcmp(syntax, "Strace") == 0) {
-        lex = lex_strace;
-    } else if (strcmp(syntax, "log") == 0 || strcmp(syntax, "syslog") == 0) {
-        lex = lex_log;
-    } else if (strcmp(syntax, "Todo.txt") == 0) {
-        lex = lex_todotxt;
-    } else if (strcmp(syntax, "VimHelp") == 0) {
-        lex = lex_vimhelp;
-    } else if (strcmp(syntax, "HTTP Request and Response") == 0) {
-        lex = lex_http;
-    } else if (strcmp(syntax, "Ninja") == 0) {
-        lex = lex_python;
-        kw = WS(ninja_kw);
-    } else if (strcmp(syntax, "NSIS") == 0) {
-        lex = lex_perish;
-        kw = WS(nsis_kw);
-    } else if (strcmp(syntax, "JQ") == 0) {
-        lex = lex_jq;
-    } else if (strcmp(syntax, "Literate Haskell") == 0) {
-        lex = lex_lhaskell;
-        kw = WS(haskell_kw);
-        ty = WS(haskell_ty);
-    } else if (strcmp(syntax, "LiveScript") == 0) {
-        lex = lex_python;
-        kw = WS(coffee_kw);
-        ty = WS(coffee_ty);
-    } else if (strcmp(syntax, "Cabal") == 0) {
-        lex = lex_sshconfig;
-    } else if (strcmp(syntax, "CMakeCache") == 0 ||
-               strcmp(syntax, "CMake C Header") == 0 ||
-               strcmp(syntax, "CMake C++ Header") == 0) {
-        lex = lex_python;
-        kw = WS(cmake_kw);
-    } else if (strcmp(syntax, "CFML") == 0) {
-        lex = lex_html;
-    } else if (strcmp(syntax, "OCamllex") == 0 ||
-               strcmp(syntax, "OCamlyacc") == 0) {
-        lex = lex_haskell;
-        kw = WS(ocaml_kw);
-        ty = WS(ocaml_ty);
-    } else if (strcmp(syntax, "Rd (R Documentation)") == 0) {
-        lex = lex_latex;
-    } else if (strcmp(syntax, "Robot Framework") == 0) {
-        lex = lex_python;
-    } else if (strcmp(syntax, "Salt State (SLS)") == 0) {
-        lex = lex_yaml;
-    } else if (strcmp(syntax, "Textile") == 0) {
-        lex = lex_markdown;
-    } else if (strcmp(syntax, "Email") == 0) {
-        lex = lex_http;
-    } else if (strcmp(syntax, "Comma Separated Values") == 0 ||
-               strcmp(syntax, "CSV") == 0) {
-        lex = lex_colonfile;
-    } else if (strcmp(syntax, "varlink") == 0) {
-        lex = lex_cfamily;
-    } else if (strcmp(syntax, "Regular Expression") == 0) {
-        lex = lex_cfamily;
-    }
-    /* Group 2: HTML template variants. */
-    else if (strcmp(syntax, "HTML (ASP)") == 0 ||
-             strcmp(syntax, "HTML (EEx)") == 0 ||
-             strcmp(syntax, "HTML (Erlang)") == 0 ||
-             strcmp(syntax, "HTML (Jinja2)") == 0 ||
-             strcmp(syntax, "HTML (Rails)") == 0 ||
-             strcmp(syntax, "HTML (Tcl)") == 0 ||
-             strcmp(syntax, "HTML (Twig)") == 0 ||
-             strcmp(syntax, "Java Server Page (JSP)") == 0 ||
-             strcmp(syntax, "ASP") == 0 ||
-             strcmp(syntax, "NAnt Build File") == 0) {
-        lex = lex_html;
-    }
-    if (lex == NULL)
+    const struct lang_entry *e =
+        bsearch(syntax, lang_tbl, LANG_TBL_N, sizeof lang_tbl[0], lang_cmp);
+    if (e == NULL)
         return NULL;
     struct mat_hl *h = calloc(1, sizeof *h);
     if (h != NULL) {
-        h->lex = lex;
-        h->keywords = kw;
-        h->types = ty;
+        h->lex = e->lex;
+        h->keywords = e->kw;
+        h->types = e->ty;
     }
     return h;
 }
