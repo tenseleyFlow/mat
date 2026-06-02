@@ -8,14 +8,16 @@
 #define MAT_IOBUF_H
 
 #include <stddef.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 /*
- * Choose an I/O buffer size for moving bytes from in_fd to out_fd.
- * Regular files get a memory-aware size (capped); pipes/devices follow
- * st_blksize floored at the page size. Returns a byte count > 0.
+ * Choose an I/O buffer size from the input's already-known stat. Regular files
+ * get a memory-aware size (capped); pipes/devices follow st_blksize floored at
+ * the page size. The caller passes the stat it already has, so this stays a
+ * pure function (no syscall). Returns a byte count > 0.
  */
-size_t mat_iobuf_size(int in_fd, int out_fd);
+size_t mat_iobuf_size(const struct stat *in_st, int out_fd);
 
 /*
  * Write exactly n bytes, retrying short writes and EINTR. EAGAIN is treated as

@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 void setUp(void)
@@ -45,7 +46,10 @@ static void test_full_write_zero(void)
 /* Buffer sizing stays within the documented bounds for any fd. */
 static void test_iobuf_size_bounds(void)
 {
-    size_t s = mat_iobuf_size(STDIN_FILENO, STDOUT_FILENO);
+    struct stat sst;
+    size_t s = (fstat(STDIN_FILENO, &sst) == 0)
+                   ? mat_iobuf_size(&sst, STDOUT_FILENO)
+                   : mat_iobuf_size(NULL, STDOUT_FILENO);
     TEST_ASSERT_GREATER_OR_EQUAL_UINT(4096u, (unsigned)s);
     TEST_ASSERT_LESS_OR_EQUAL_UINT(1u << 20, (unsigned)s);
 
@@ -53,7 +57,9 @@ static void test_iobuf_size_bounds(void)
     char tmpl[] = "/tmp/mat_iobuf_reg_XXXXXX";
     int fd = mkstemp(tmpl);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
-    size_t rs = mat_iobuf_size(fd, STDOUT_FILENO);
+    struct stat fst;
+    TEST_ASSERT_EQUAL_INT(0, fstat(fd, &fst));
+    size_t rs = mat_iobuf_size(&fst, STDOUT_FILENO);
     TEST_ASSERT_GREATER_OR_EQUAL_UINT(128u << 10, (unsigned)rs);
     TEST_ASSERT_LESS_OR_EQUAL_UINT(1u << 20, (unsigned)rs);
     close(fd);

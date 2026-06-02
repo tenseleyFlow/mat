@@ -38,17 +38,16 @@ static size_t clamp(size_t v, size_t lo, size_t hi)
     return v;
 }
 
-size_t mat_iobuf_size(int in_fd, int out_fd)
+size_t mat_iobuf_size(const struct stat *in_st, int out_fd)
 {
-    struct stat st;
     size_t pg = page_size();
     size_t blk = MAT_BUF_DEF;
     int is_reg = 0;
 
-    if (fstat(in_fd, &st) == 0) {
-        if (st.st_blksize > 0)
-            blk = (size_t)st.st_blksize;
-        is_reg = S_ISREG(st.st_mode);
+    if (in_st != NULL) {
+        if (in_st->st_blksize > 0)
+            blk = (size_t)in_st->st_blksize;
+        is_reg = S_ISREG(in_st->st_mode);
     }
 
     /*

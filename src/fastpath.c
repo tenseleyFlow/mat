@@ -173,10 +173,11 @@ static int do_splice(struct copier *c, int in_fd, const char *name)
 #endif
 
 /* read()/write() fallback with a reused, adaptively sized buffer. */
-static int do_read_write(struct copier *c, int in_fd, const char *name)
+static int do_read_write(struct copier *c, int in_fd, const struct stat *in_st,
+                         const char *name)
 {
     if (c->buf == NULL) {
-        c->bufsz = mat_iobuf_size(in_fd, c->out_fd);
+        c->bufsz = mat_iobuf_size(in_st, c->out_fd);
         c->buf = malloc(c->bufsz);
         if (c->buf == NULL) {
             mat_warnx("out of memory");
@@ -229,7 +230,7 @@ static int copy_one(struct copier *c, int in_fd, const struct stat *in_st,
     }
 #endif
 
-    return do_read_write(c, in_fd, name);
+    return do_read_write(c, in_fd, in_st, name);
 }
 
 void mat_fastpath_run(const struct config *cfg)
