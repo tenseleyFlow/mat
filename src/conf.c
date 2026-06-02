@@ -99,7 +99,7 @@ int mat_tokenize(const char *s, bool comments, char ***out)
         t[tlen++] = c;
         in_tok = true;
     }
-    if (in_tok) {
+    if (in_tok && quote == 0) {
         if (t == NULL) {
             t = malloc(1);
             if (!t) {
@@ -110,6 +110,8 @@ int mat_tokenize(const char *s, bool comments, char ***out)
         }
         t[tlen] = '\0';
         arr_push(&arr, &n, &cap, strdup(t));
+    } else if (quote != 0) {
+        /* Unterminated quote: discard the partial token. */
     }
     free(t);
     *out = arr;
