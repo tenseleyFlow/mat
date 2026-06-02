@@ -786,24 +786,13 @@ const char *mat_theme_sgr(enum mat_tok tok)
 
 void mat_theme_list(void)
 {
-    printf("ayu-dark\nayu-light\nayu-mirage\n"
-           "carbonfox\ncatppuccin\ncatppuccin-frappe\n"
-           "catppuccin-latte\ncatppuccin-macchiato\n"
-           "dark\ndawnfox\ndayfox\ndracula\n"
-           "everforest-dark\neverforest-light\n"
-           "github-dark\ngithub-light\ngruvbox\ngruvbox-light\n"
-           "iceberg\nkanagawa\nlight\nmaterial\n"
-           "modus-operandi\nmodus-vivendi\nmoonfly\nmonokai\n"
-           "nightfly\nnightfox\nnightowl\nnord\n"
-           "onedark\nonelight\noxocarbon\npalenight\n"
-           "poimandres\nrosepine\nrosepine-dawn\nrosepine-moon\n"
-           "solarized-dark\nsolarized-light\nsynthwave\n"
-           "tokyonight\ntomorrow\ntomorrow-night\nzenburn\n");
+    for (size_t i = 0; i < THEME_TBL_N; i++)
+        printf("%s\n", theme_tbl[i].name);
 }
 
 int mat_theme_count(void)
 {
-    return 45;
+    return (int)THEME_TBL_N;
 }
 
 static int emit(struct mat_span *out, int cap, int n, size_t start, size_t len,
@@ -4106,6 +4095,7 @@ static const struct lang_entry lang_tbl[] = {
     {"HTML (Rails)", lex_html, {NULL, 0}, {NULL, 0}},
     {"HTML (Tcl)", lex_html, {NULL, 0}, {NULL, 0}},
     {"HTML (Twig)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"HTTP", lex_http, {NULL, 0}, {NULL, 0}},
     {"HTTP Request and Response", lex_http, {NULL, 0}, {NULL, 0}},
     {"Haskell", lex_haskell, WS(haskell_kw), WS(haskell_ty)},
     {"INI", lex_ini, {NULL, 0}, {NULL, 0}},
@@ -4158,6 +4148,7 @@ static const struct lang_entry lang_tbl[] = {
     {"QML", lex_cfamily, WS(qml_kw), WS(qml_ty)},
     {"R", lex_r, WS(r_kw), WS(r_ty)},
     {"Racket", lex_clojure, WS(lisp_kw), WS(lisp_ty)},
+    {"Rd", lex_latex, {NULL, 0}, {NULL, 0}},
     {"Rd (R Documentation)", lex_latex, {NULL, 0}, {NULL, 0}},
     {"Rego", lex_python, WS(rego_kw), {NULL, 0}},
     {"Regular Expression", lex_cfamily, {NULL, 0}, {NULL, 0}},
@@ -4174,6 +4165,7 @@ static const struct lang_entry lang_tbl[] = {
     {"SQL (Rails)", lex_sql, WS(sql_kw), WS(sql_ty)},
     {"SSH Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
     {"SSHD Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Salt State", lex_yaml, {NULL, 0}, {NULL, 0}},
     {"Salt State (SLS)", lex_yaml, {NULL, 0}, {NULL, 0}},
     {"Sass", lex_css, {NULL, 0}, {NULL, 0}},
     {"Scala", lex_cfamily, WS(scala_kw), WS(scala_ty)},
