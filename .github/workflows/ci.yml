@@ -17,7 +17,7 @@ jobs:
       - name: Install clang-format (pinned for reproducible formatting)
         run: pipx install clang-format==19.1.7
       - name: Check formatting
-        run: clang-format --dry-run -Werror src/*.c src/*.h tests/unit/*.c
+        run: clang-format --dry-run -Werror src/*.c src/*.h tests/unit/*.c tests/pager/*.c
 
   build:
     strategy:
