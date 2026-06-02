@@ -77,6 +77,14 @@ static void test_empty_quote_at_end(void)
     check("\"\"", false, w, 1);
 }
 
+static void test_unterminated_quote(void)
+{
+    char **t;
+    int n = mat_tokenize("--theme=\"dark", false, &t);
+    TEST_ASSERT_EQUAL_INT(0, n);
+    mat_tokens_free(t, n);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -88,5 +96,6 @@ int main(void)
     RUN_TEST(test_empty_double_quote);
     RUN_TEST(test_empty_single_quote);
     RUN_TEST(test_empty_quote_at_end);
+    RUN_TEST(test_unterminated_quote);
     return UNITY_END();
 }
