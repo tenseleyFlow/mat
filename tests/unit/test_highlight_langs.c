@@ -472,6 +472,64 @@ static void test_csharp_keyword(void)
     assert_keyword("C#", "using System;", 0);
 }
 
+/* ws_has edge cases: test bsearch comparator via the C lexer.
+ * C keywords include "for" and "if". */
+static void test_ws_has_exact_match(void)
+{
+    /* "for" is a C keyword — must be MT_KEYWORD */
+    struct mat_hl *h = mat_hl_open("C");
+    struct mat_span sp[MAXSPANS];
+    const char *line = "for (;;) {}";
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    TEST_ASSERT_EQUAL_INT(MT_KEYWORD, tok_at(sp, n, 0));
+    mat_hl_close(h);
+}
+static void test_ws_has_keyword_is_prefix(void)
+{
+    /* "fork" is NOT a keyword — "for" is a prefix of "fork" */
+    struct mat_hl *h = mat_hl_open("C");
+    struct mat_span sp[MAXSPANS];
+    const char *line = "fork();";
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    TEST_ASSERT_NOT_EQUAL(MT_KEYWORD, tok_at(sp, n, 0));
+    mat_hl_close(h);
+}
+static void test_ws_has_ident_is_prefix(void)
+{
+    /* "fo" is NOT a keyword — identifier is prefix of "for" */
+    struct mat_hl *h = mat_hl_open("C");
+    struct mat_span sp[MAXSPANS];
+    const char *line = "fo = 1;";
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    TEST_ASSERT_NOT_EQUAL(MT_KEYWORD, tok_at(sp, n, 0));
+    mat_hl_close(h);
+}
+static void test_ws_has_short_ident(void)
+{
+    /* "i" is NOT a keyword — "if" exists but "i" is shorter */
+    struct mat_hl *h = mat_hl_open("C");
+    struct mat_span sp[MAXSPANS];
+    const char *line = "i = 1;";
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    TEST_ASSERT_NOT_EQUAL(MT_KEYWORD, tok_at(sp, n, 0));
+    mat_hl_close(h);
+}
+static void test_ws_has_if_exact(void)
+{
+    /* "if" is a C keyword — exact match */
+    struct mat_hl *h = mat_hl_open("C");
+    struct mat_span sp[MAXSPANS];
+    const char *line = "if (x) {}";
+    int n =
+        mat_hl_line(h, (const unsigned char *)line, strlen(line), sp, MAXSPANS);
+    TEST_ASSERT_EQUAL_INT(MT_KEYWORD, tok_at(sp, n, 0));
+    mat_hl_close(h);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -524,5 +582,11 @@ int main(void)
     RUN_TEST(test_dart_keyword);
     RUN_TEST(test_cpp_keyword);
     RUN_TEST(test_csharp_keyword);
+    /* ws_has bsearch comparator edge cases */
+    RUN_TEST(test_ws_has_exact_match);
+    RUN_TEST(test_ws_has_keyword_is_prefix);
+    RUN_TEST(test_ws_has_ident_is_prefix);
+    RUN_TEST(test_ws_has_short_ident);
+    RUN_TEST(test_ws_has_if_exact);
     return UNITY_END();
 }
