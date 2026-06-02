@@ -4403,3 +4403,30 @@ int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,
     }
     return h->lex(h, d, len, out, cap);
 }
+
+static const char *ws_sorted(const struct wordset *w)
+{
+    for (int i = 1; i < w->n; i++)
+        if (strcmp(w->words[i - 1], w->words[i]) >= 0)
+            return w->words[i];
+    return NULL;
+}
+
+const char *mat_hl_validate_tables(void)
+{
+    for (size_t i = 1; i < LANG_TBL_N; i++)
+        if (strcmp(lang_tbl[i - 1].name, lang_tbl[i].name) >= 0)
+            return lang_tbl[i].name;
+    for (size_t i = 1; i < THEME_TBL_N; i++)
+        if (strcmp(theme_tbl[i - 1].name, theme_tbl[i].name) >= 0)
+            return theme_tbl[i].name;
+    for (size_t i = 0; i < LANG_TBL_N; i++) {
+        const char *bad = ws_sorted(&lang_tbl[i].kw);
+        if (bad)
+            return bad;
+        bad = ws_sorted(&lang_tbl[i].ty);
+        if (bad)
+            return bad;
+    }
+    return NULL;
+}

@@ -65,4 +65,8 @@ void mat_hl_list_languages(void);
 int mat_hl_language_count(void);
 int mat_theme_count(void);
 
+/* Returns NULL if all dispatch and keyword tables are correctly sorted.
+ * On failure, returns the first mis-sorted entry name. */
+const char *mat_hl_validate_tables(void);
+
 #endif /* MAT_HIGHLIGHT_H */
