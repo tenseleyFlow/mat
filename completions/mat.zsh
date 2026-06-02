@@ -42,7 +42,6 @@ _mat() {
         '--file-name[display name for stdin]:name:' \
         '--fallback-syntax[when detection fails]:syntax:' \
         '--detect-syntax[print detected syntax]' \
-        '--diff[show git change markers]' \
         '--diagnostic[print build info]' \
         '--no-config[ignore config files]' \
         '--config-file[print config path]' \
