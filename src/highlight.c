@@ -11,6 +11,12 @@ typedef int (*lex_fn)(struct mat_hl *h, const unsigned char *d, size_t len,
 struct wordset {
     const char *const *words;
     int n;
+    /* O(1) reject filter, built once per highlighter open (zero in the static
+     * WS() initializers, populated by ws_build_filter). An identifier that
+     * doesn't start with a word's first byte or falls outside the word-length
+     * range can't be in the set, so the binary search is skipped entirely. */
+    unsigned char fb[32]; /* bit c set if some word starts with byte c */
+    short minlen, maxlen; /* word length range; maxlen == 0 means not built */
 };
 
 struct mat_hl {
@@ -816,28 +822,67 @@ static int is_word(unsigned char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-struct ws_key {
-    const char *s;
-    size_t len;
-};
-
-static int ws_cmp(const void *key, const void *elem)
+/* Build the first-byte/length reject filter for a wordset. Idempotent; called
+ * once per highlighter open on the per-highlighter wordset copies. */
+static void ws_build_filter(struct wordset *ws)
 {
-    const struct ws_key *k = (const struct ws_key *)key;
-    const char *const *e = (const char *const *)elem;
-    int r = strncmp(k->s, *e, k->len);
-    if (r != 0)
-        return r;
-    return (*e)[k->len] == '\0' ? 0 : -1;
+    memset(ws->fb, 0, sizeof ws->fb);
+    if (ws->n <= 0) {
+        ws->minlen = ws->maxlen = 0;
+        return;
+    }
+    short mn = 32767, mx = 0;
+    for (int i = 0; i < ws->n; i++) {
+        const char *word = ws->words[i];
+        unsigned char c0 = (unsigned char)word[0];
+        ws->fb[c0 >> 3] |= (unsigned char)(1u << (c0 & 7));
+        int l = (int)strlen(word);
+        if (l < mn)
+            mn = (short)l;
+        if (l > mx)
+            mx = (short)l;
+    }
+    ws->minlen = mn;
+    ws->maxlen = mx; /* nonzero => filter is built */
 }
 
+/* Hand-rolled binary search with an inlined comparison: avoids the libc
+ * bsearch call, the comparator indirection, and the non-inlinable libc
+ * strncmp (~12 of which ran per identifier on the decorated hot path). The
+ * array is sorted by strcmp; the comparison semantics mirror that exactly. */
 static int ws_has(const struct wordset *ws, const char *w, size_t wl)
 {
     if (ws->n == 0 || wl == 0)
         return 0;
-    struct ws_key key = {w, wl};
-    return bsearch(&key, ws->words, (size_t)ws->n, sizeof ws->words[0],
-                   ws_cmp) != NULL;
+    if (ws->maxlen) { /* filter built: O(1) reject */
+        if (wl < (size_t)ws->minlen || wl > (size_t)ws->maxlen)
+            return 0;
+        unsigned char c0 = (unsigned char)w[0];
+        if (!(ws->fb[c0 >> 3] & (1u << (c0 & 7))))
+            return 0;
+    }
+    int lo = 0, hi = ws->n - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) >> 1;
+        const char *e = ws->words[mid];
+        int c = 0;
+        for (size_t i = 0; i < wl; i++) {
+            unsigned char a = (unsigned char)w[i], b = (unsigned char)e[i];
+            if (a != b) { /* covers e[i]=='\0' (e shorter => w > e) */
+                c = a < b ? -1 : 1;
+                break;
+            }
+        }
+        if (c == 0)
+            c = (e[wl] == '\0') ? 0 : -1; /* w is a proper prefix of e => w<e */
+        if (c == 0)
+            return 1;
+        if (c < 0)
+            hi = mid - 1;
+        else
+            lo = mid + 1;
+    }
+    return 0;
 }
 
 static int is_alnum(unsigned char c)
@@ -1178,30 +1223,48 @@ static int ci_match(const char *a, const char *b, size_t n)
     return 1;
 }
 
-static int ws_cmp_ci(const void *key, const void *elem)
-{
-    const struct ws_key *k = (const struct ws_key *)key;
-    const char *const *e = (const char *const *)elem;
-    for (size_t i = 0; i < k->len; i++) {
-        char a = k->s[i];
-        if (a >= 'A' && a <= 'Z')
-            a = (char)(a + 32);
-        char b = (*e)[i];
-        if (b == '\0')
-            return 1;
-        if (a != b)
-            return (unsigned char)a < (unsigned char)b ? -1 : 1;
-    }
-    return (*e)[k->len] == '\0' ? 0 : -1;
-}
+/* Case-insensitive variant: the ci wordsets store their words lowercase (so
+ * ws_build_filter's first-byte bitset and length range apply unchanged), and
+ * each input byte is lowercased during the compare. */
 
 static int ws_has_ci(const struct wordset *ws, const char *w, size_t wl)
 {
     if (ws->n == 0 || wl == 0)
         return 0;
-    struct ws_key key = {w, wl};
-    return bsearch(&key, ws->words, (size_t)ws->n, sizeof ws->words[0],
-                   ws_cmp_ci) != NULL;
+    if (ws->maxlen) {
+        if (wl < (size_t)ws->minlen || wl > (size_t)ws->maxlen)
+            return 0;
+        unsigned char c0 = (unsigned char)w[0];
+        if (c0 >= 'A' && c0 <= 'Z')
+            c0 = (unsigned char)(c0 + 32);
+        if (!(ws->fb[c0 >> 3] & (1u << (c0 & 7))))
+            return 0;
+    }
+    int lo = 0, hi = ws->n - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) >> 1;
+        const char *e = ws->words[mid];
+        int c = 0;
+        for (size_t i = 0; i < wl; i++) {
+            unsigned char a = (unsigned char)w[i];
+            if (a >= 'A' && a <= 'Z')
+                a = (unsigned char)(a + 32);
+            unsigned char b = (unsigned char)e[i];
+            if (a != b) {
+                c = a < b ? -1 : 1;
+                break;
+            }
+        }
+        if (c == 0)
+            c = (e[wl] == '\0') ? 0 : -1;
+        if (c == 0)
+            return 1;
+        if (c < 0)
+            hi = mid - 1;
+        else
+            lo = mid + 1;
+    }
+    return 0;
 }
 
 static int lex_fortran(struct mat_hl *h, const unsigned char *d, size_t len,
@@ -2768,7 +2831,7 @@ static const char *const jsonnet_kw[] = {
 #define WS(arr)                                                                \
     (struct wordset)                                                           \
     {                                                                          \
-        arr, (int)(sizeof(arr) / sizeof(arr[0]))                               \
+        .words = arr, .n = (int)(sizeof(arr) / sizeof(arr[0]))                 \
     }
 
 /* ---- Perl / PHP (# or // comments, $vars, strings) ---- */
@@ -4042,110 +4105,110 @@ struct lang_entry {
 };
 
 static const struct lang_entry lang_tbl[] = {
-    {"ARM Assembly", lex_asm, {NULL, 0}, {NULL, 0}},
-    {"ASP", lex_html, {NULL, 0}, {NULL, 0}},
-    {"AWK", lex_shell, WS(awk_kw), {NULL, 0}},
+    {"ARM Assembly", lex_asm, {0}, {0}},
+    {"ASP", lex_html, {0}, {0}},
+    {"AWK", lex_shell, WS(awk_kw), {0}},
     {"ActionScript", lex_cfamily, WS(actionscript_kw), WS(actionscript_ty)},
     {"Ada", lex_haskell, WS(ada_kw), WS(ada_ty)},
-    {"Apache Conf", lex_python, WS(nginx_kw), {NULL, 0}},
-    {"AppleScript", lex_haskell, WS(applescript_kw), {NULL, 0}},
-    {"AsciiDoc", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"AsciiDoc (Asciidoctor)", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"Assembly", lex_asm, {NULL, 0}, {NULL, 0}},
-    {"Assembly (x86_64)", lex_asm, {NULL, 0}, {NULL, 0}},
-    {"Authorized Keys", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"Bash", lex_shell, WS(sh_kw), {NULL, 0}},
-    {"Batch File", lex_batch, WS(batch_kw), {NULL, 0}},
-    {"BibTeX", lex_bibtex, {NULL, 0}, {NULL, 0}},
-    {"Bourne Again Shell (bash)", lex_shell, WS(sh_kw), {NULL, 0}},
+    {"Apache Conf", lex_python, WS(nginx_kw), {0}},
+    {"AppleScript", lex_haskell, WS(applescript_kw), {0}},
+    {"AsciiDoc", lex_markdown, {0}, {0}},
+    {"AsciiDoc (Asciidoctor)", lex_markdown, {0}, {0}},
+    {"Assembly", lex_asm, {0}, {0}},
+    {"Assembly (x86_64)", lex_asm, {0}, {0}},
+    {"Authorized Keys", lex_sshconfig, {0}, {0}},
+    {"Bash", lex_shell, WS(sh_kw), {0}},
+    {"Batch File", lex_batch, WS(batch_kw), {0}},
+    {"BibTeX", lex_bibtex, {0}, {0}},
+    {"Bourne Again Shell (bash)", lex_shell, WS(sh_kw), {0}},
     {"C", lex_cfamily, WS(c_kw), WS(c_ty)},
     {"C#", lex_cfamily, WS(cs_kw), WS(cs_ty)},
     {"C++", lex_cfamily, WS(c_kw), WS(c_ty)},
-    {"CFML", lex_html, {NULL, 0}, {NULL, 0}},
-    {"CMake", lex_python, WS(cmake_kw), {NULL, 0}},
-    {"CMake C Header", lex_python, WS(cmake_kw), {NULL, 0}},
-    {"CMake C++ Header", lex_python, WS(cmake_kw), {NULL, 0}},
-    {"CMakeCache", lex_python, WS(cmake_kw), {NULL, 0}},
-    {"CSS", lex_css, {NULL, 0}, {NULL, 0}},
-    {"CSV", lex_colonfile, {NULL, 0}, {NULL, 0}},
-    {"Cabal", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"CFML", lex_html, {0}, {0}},
+    {"CMake", lex_python, WS(cmake_kw), {0}},
+    {"CMake C Header", lex_python, WS(cmake_kw), {0}},
+    {"CMake C++ Header", lex_python, WS(cmake_kw), {0}},
+    {"CMakeCache", lex_python, WS(cmake_kw), {0}},
+    {"CSS", lex_css, {0}, {0}},
+    {"CSV", lex_colonfile, {0}, {0}},
+    {"Cabal", lex_sshconfig, {0}, {0}},
     {"Clojure", lex_clojure, WS(clojure_kw), WS(clojure_ty)},
     {"CoffeeScript", lex_python, WS(coffee_kw), WS(coffee_ty)},
-    {"Comma Separated Values", lex_colonfile, {NULL, 0}, {NULL, 0}},
-    {"CpuInfo", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"Crontab", lex_crontab, {NULL, 0}, {NULL, 0}},
+    {"Comma Separated Values", lex_colonfile, {0}, {0}},
+    {"CpuInfo", lex_sshconfig, {0}, {0}},
+    {"Crontab", lex_crontab, {0}, {0}},
     {"Crystal", lex_ruby, WS(crystal_kw), WS(crystal_ty)},
     {"D", lex_cfamily, WS(d_kw), WS(d_ty)},
     {"Dart", lex_cfamily, WS(dart_kw), WS(dart_ty)},
-    {"Diff", lex_diff, {NULL, 0}, {NULL, 0}},
-    {"Dockerfile", lex_dockerfile, WS(dockerfile_kw), {NULL, 0}},
-    {"DotENV", lex_ini, {NULL, 0}, {NULL, 0}},
+    {"Diff", lex_diff, {0}, {0}},
+    {"Dockerfile", lex_dockerfile, WS(dockerfile_kw), {0}},
+    {"DotENV", lex_ini, {0}, {0}},
     {"Elixir", lex_python, WS(elixir_kw), WS(elixir_ty)},
     {"Elm", lex_haskell, WS(elm_kw), WS(elm_ty)},
-    {"Email", lex_http, {NULL, 0}, {NULL, 0}},
+    {"Email", lex_http, {0}, {0}},
     {"Erlang", lex_python, WS(erlang_kw), WS(erlang_ty)},
     {"F#", lex_haskell, WS(fsharp_kw), WS(fsharp_ty)},
-    {"Fish", lex_shell, WS(fish_kw), {NULL, 0}},
+    {"Fish", lex_shell, WS(fish_kw), {0}},
     {"Fortran", lex_fortran, WS(fortran_kw), WS(fortran_ty)},
     {"GLSL", lex_cfamily, WS(glsl_kw), WS(glsl_ty)},
-    {"Git Attributes", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Commit", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Config", lex_ini, {NULL, 0}, {NULL, 0}},
-    {"Git Ignore", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Link", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Log", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Mailmap", lex_gitcommit, {NULL, 0}, {NULL, 0}},
-    {"Git Rebase Todo", lex_gitrebase, WS(git_rebase_kw), {NULL, 0}},
+    {"Git Attributes", lex_gitcommit, {0}, {0}},
+    {"Git Commit", lex_gitcommit, {0}, {0}},
+    {"Git Config", lex_ini, {0}, {0}},
+    {"Git Ignore", lex_gitcommit, {0}, {0}},
+    {"Git Link", lex_gitcommit, {0}, {0}},
+    {"Git Log", lex_gitcommit, {0}, {0}},
+    {"Git Mailmap", lex_gitcommit, {0}, {0}},
+    {"Git Rebase Todo", lex_gitrebase, WS(git_rebase_kw), {0}},
     {"Go", lex_cfamily, WS(go_kw), WS(go_ty)},
     {"GraphQL", lex_python, WS(graphql_kw), WS(graphql_ty)},
-    {"Graphviz", lex_cfamily, {NULL, 0}, {NULL, 0}},
-    {"Graphviz (DOT)", lex_cfamily, {NULL, 0}, {NULL, 0}},
-    {"Groff", lex_groff, {NULL, 0}, {NULL, 0}},
-    {"Groff/troff", lex_groff, {NULL, 0}, {NULL, 0}},
+    {"Graphviz", lex_cfamily, {0}, {0}},
+    {"Graphviz (DOT)", lex_cfamily, {0}, {0}},
+    {"Groff", lex_groff, {0}, {0}},
+    {"Groff/troff", lex_groff, {0}, {0}},
     {"Groovy", lex_cfamily, WS(groovy_kw), WS(groovy_ty)},
-    {"HTML", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (ASP)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (EEx)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (Erlang)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (Jinja2)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (Rails)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (Tcl)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTML (Twig)", lex_html, {NULL, 0}, {NULL, 0}},
-    {"HTTP", lex_http, {NULL, 0}, {NULL, 0}},
-    {"HTTP Request and Response", lex_http, {NULL, 0}, {NULL, 0}},
+    {"HTML", lex_html, {0}, {0}},
+    {"HTML (ASP)", lex_html, {0}, {0}},
+    {"HTML (EEx)", lex_html, {0}, {0}},
+    {"HTML (Erlang)", lex_html, {0}, {0}},
+    {"HTML (Jinja2)", lex_html, {0}, {0}},
+    {"HTML (Rails)", lex_html, {0}, {0}},
+    {"HTML (Tcl)", lex_html, {0}, {0}},
+    {"HTML (Twig)", lex_html, {0}, {0}},
+    {"HTTP", lex_http, {0}, {0}},
+    {"HTTP Request and Response", lex_http, {0}, {0}},
     {"Haskell", lex_haskell, WS(haskell_kw), WS(haskell_ty)},
-    {"INI", lex_ini, {NULL, 0}, {NULL, 0}},
-    {"JQ", lex_jq, {NULL, 0}, {NULL, 0}},
-    {"JSON", lex_json, {NULL, 0}, {NULL, 0}},
+    {"INI", lex_ini, {0}, {0}},
+    {"JQ", lex_jq, {0}, {0}},
+    {"JSON", lex_json, {0}, {0}},
     {"JSX", lex_cfamily, WS(js_kw), WS(js_ty)},
     {"Java", lex_cfamily, WS(c_kw), WS(c_ty)},
-    {"Java Properties", lex_ini, {NULL, 0}, {NULL, 0}},
-    {"Java Server Page (JSP)", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Java Properties", lex_ini, {0}, {0}},
+    {"Java Server Page (JSP)", lex_html, {0}, {0}},
     {"JavaScript", lex_cfamily, WS(js_kw), WS(js_ty)},
     {"JavaScript (Babel)", lex_cfamily, WS(js_kw), WS(js_ty)},
     {"JavaScript (Rails)", lex_cfamily, WS(js_kw), WS(js_ty)},
-    {"Jinja2", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Jinja2", lex_html, {0}, {0}},
     {"Julia", lex_python, WS(julia_kw), WS(julia_ty)},
-    {"Known Hosts", lex_sshconfig, {NULL, 0}, {NULL, 0}},
+    {"Known Hosts", lex_sshconfig, {0}, {0}},
     {"Kotlin", lex_cfamily, WS(kt_kw), WS(kt_ty)},
-    {"LLVM", lex_asm, {NULL, 0}, {NULL, 0}},
-    {"LaTeX", lex_latex, {NULL, 0}, {NULL, 0}},
+    {"LLVM", lex_asm, {0}, {0}},
+    {"LaTeX", lex_latex, {0}, {0}},
     {"Lean", lex_haskell, WS(lean_kw), WS(lean_ty)},
-    {"Less", lex_css, {NULL, 0}, {NULL, 0}},
+    {"Less", lex_css, {0}, {0}},
     {"Lisp", lex_clojure, WS(lisp_kw), WS(lisp_ty)},
     {"Literate Haskell", lex_lhaskell, WS(haskell_kw), WS(haskell_ty)},
     {"LiveScript", lex_python, WS(coffee_kw), WS(coffee_ty)},
     {"Lua", lex_lua, WS(lua_kw), WS(lua_ty)},
     {"MATLAB", lex_matlab, WS(matlab_kw), WS(matlab_ty)},
-    {"Makefile", lex_makefile, {NULL, 0}, {NULL, 0}},
-    {"Manpage", lex_groff, {NULL, 0}, {NULL, 0}},
-    {"Markdown", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"MediaWiki", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"MemInfo", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"NAnt Build File", lex_html, {NULL, 0}, {NULL, 0}},
-    {"NSIS", lex_perish, WS(nsis_kw), {NULL, 0}},
+    {"Makefile", lex_makefile, {0}, {0}},
+    {"Manpage", lex_groff, {0}, {0}},
+    {"Markdown", lex_markdown, {0}, {0}},
+    {"MediaWiki", lex_markdown, {0}, {0}},
+    {"MemInfo", lex_sshconfig, {0}, {0}},
+    {"NAnt Build File", lex_html, {0}, {0}},
+    {"NSIS", lex_perish, WS(nsis_kw), {0}},
     {"Nim", lex_cfamily, WS(nim_kw), WS(nim_ty)},
-    {"Ninja", lex_python, WS(ninja_kw), {NULL, 0}},
+    {"Ninja", lex_python, WS(ninja_kw), {0}},
     {"Nix", lex_python, WS(nix_kw), WS(nix_ty)},
     {"OCaml", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
     {"OCamllex", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
@@ -4154,75 +4217,75 @@ static const struct lang_entry lang_tbl[] = {
     {"Objective-C++", lex_cfamily, WS(c_kw), WS(c_ty)},
     {"PHP", lex_perish, WS(php_kw), WS(php_ty)},
     {"Pascal", lex_pascal, WS(pascal_kw), WS(pascal_ty)},
-    {"Perl", lex_perish, WS(perl_kw), {NULL, 0}},
-    {"PowerShell", lex_shell, WS(powershell_kw), {NULL, 0}},
+    {"Perl", lex_perish, WS(perl_kw), {0}},
+    {"PowerShell", lex_shell, WS(powershell_kw), {0}},
     {"Protobuf", lex_cfamily, WS(protobuf_kw), WS(protobuf_ty)},
     {"Protocol Buffer (TEXT)", lex_cfamily, WS(protobuf_kw), WS(protobuf_ty)},
-    {"Puppet", lex_python, WS(puppet_kw), {NULL, 0}},
+    {"Puppet", lex_python, WS(puppet_kw), {0}},
     {"PureScript", lex_haskell, WS(haskell_kw), WS(haskell_ty)},
     {"Python", lex_python, WS(py_kw), WS(py_ty)},
     {"QML", lex_cfamily, WS(qml_kw), WS(qml_ty)},
     {"R", lex_r, WS(r_kw), WS(r_ty)},
     {"Racket", lex_clojure, WS(lisp_kw), WS(lisp_ty)},
-    {"Rd", lex_latex, {NULL, 0}, {NULL, 0}},
-    {"Rd (R Documentation)", lex_latex, {NULL, 0}, {NULL, 0}},
-    {"Rego", lex_python, WS(rego_kw), {NULL, 0}},
-    {"Regular Expression", lex_cfamily, {NULL, 0}, {NULL, 0}},
-    {"Requirements.txt", lex_ini, {NULL, 0}, {NULL, 0}},
-    {"Robot Framework", lex_python, {NULL, 0}, {NULL, 0}},
+    {"Rd", lex_latex, {0}, {0}},
+    {"Rd (R Documentation)", lex_latex, {0}, {0}},
+    {"Rego", lex_python, WS(rego_kw), {0}},
+    {"Regular Expression", lex_cfamily, {0}, {0}},
+    {"Requirements.txt", lex_ini, {0}, {0}},
+    {"Robot Framework", lex_python, {0}, {0}},
     {"Ruby", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
     {"Ruby Haml", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
     {"Ruby Slim", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
     {"Ruby on Rails", lex_ruby, WS(ruby_kw), WS(ruby_ty)},
     {"Rust", lex_cfamily, WS(rs_kw), WS(rs_ty)},
-    {"SCSS", lex_css, {NULL, 0}, {NULL, 0}},
+    {"SCSS", lex_css, {0}, {0}},
     {"SML", lex_haskell, WS(ocaml_kw), WS(ocaml_ty)},
     {"SQL", lex_sql, WS(sql_kw), WS(sql_ty)},
     {"SQL (Rails)", lex_sql, WS(sql_kw), WS(sql_ty)},
-    {"SSH Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"SSHD Config", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"Salt State", lex_yaml, {NULL, 0}, {NULL, 0}},
-    {"Salt State (SLS)", lex_yaml, {NULL, 0}, {NULL, 0}},
-    {"Sass", lex_css, {NULL, 0}, {NULL, 0}},
+    {"SSH Config", lex_sshconfig, {0}, {0}},
+    {"SSHD Config", lex_sshconfig, {0}, {0}},
+    {"Salt State", lex_yaml, {0}, {0}},
+    {"Salt State (SLS)", lex_yaml, {0}, {0}},
+    {"Sass", lex_css, {0}, {0}},
     {"Scala", lex_cfamily, WS(scala_kw), WS(scala_ty)},
     {"Solidity", lex_cfamily, WS(solidity_kw), WS(solidity_ty)},
-    {"Strace", lex_strace, {NULL, 0}, {NULL, 0}},
-    {"Stylus", lex_css, {NULL, 0}, {NULL, 0}},
-    {"Svelte", lex_html, {NULL, 0}, {NULL, 0}},
+    {"Strace", lex_strace, {0}, {0}},
+    {"Stylus", lex_css, {0}, {0}},
+    {"Svelte", lex_html, {0}, {0}},
     {"Swift", lex_cfamily, WS(swift_kw), WS(swift_ty)},
     {"SystemVerilog", lex_cfamily, WS(sv_kw), WS(sv_ty)},
-    {"TOML", lex_toml, {NULL, 0}, {NULL, 0}},
-    {"Tcl", lex_shell, WS(tcl_kw), {NULL, 0}},
-    {"TeX", lex_latex, {NULL, 0}, {NULL, 0}},
+    {"TOML", lex_toml, {0}, {0}},
+    {"Tcl", lex_shell, WS(tcl_kw), {0}},
+    {"TeX", lex_latex, {0}, {0}},
     {"Terraform", lex_cfamily, WS(terraform_kw), WS(terraform_ty)},
-    {"Textile", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"Todo.txt", lex_todotxt, {NULL, 0}, {NULL, 0}},
+    {"Textile", lex_markdown, {0}, {0}},
+    {"Todo.txt", lex_todotxt, {0}, {0}},
     {"TypeScript", lex_cfamily, WS(js_kw), WS(js_ty)},
     {"TypeScriptReact", lex_cfamily, WS(js_kw), WS(js_ty)},
     {"Verilog", lex_cfamily, WS(verilog_kw), WS(verilog_ty)},
-    {"VimHelp", lex_vimhelp, {NULL, 0}, {NULL, 0}},
-    {"VimL", lex_viml, WS(viml_kw), {NULL, 0}},
-    {"Vue", lex_html, {NULL, 0}, {NULL, 0}},
-    {"Vue Component", lex_html, {NULL, 0}, {NULL, 0}},
-    {"Vyper", lex_python, WS(rego_kw), {NULL, 0}},
+    {"VimHelp", lex_vimhelp, {0}, {0}},
+    {"VimL", lex_viml, WS(viml_kw), {0}},
+    {"Vue", lex_html, {0}, {0}},
+    {"Vue Component", lex_html, {0}, {0}},
+    {"Vyper", lex_python, WS(rego_kw), {0}},
     {"WGSL", lex_cfamily, WS(wgsl_kw), WS(wgsl_ty)},
-    {"XML", lex_html, {NULL, 0}, {NULL, 0}},
-    {"YAML", lex_yaml, {NULL, 0}, {NULL, 0}},
+    {"XML", lex_html, {0}, {0}},
+    {"YAML", lex_yaml, {0}, {0}},
     {"Zig", lex_cfamily, WS(zig_kw), WS(zig_ty)},
-    {"Zsh", lex_shell, WS(sh_kw), {NULL, 0}},
-    {"fstab", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"gnuplot", lex_python, {NULL, 0}, {NULL, 0}},
-    {"group", lex_colonfile, {NULL, 0}, {NULL, 0}},
-    {"hosts", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"jsonnet", lex_cfamily, WS(jsonnet_kw), {NULL, 0}},
-    {"log", lex_log, {NULL, 0}, {NULL, 0}},
-    {"nginx", lex_python, WS(nginx_kw), {NULL, 0}},
-    {"orgmode", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"passwd", lex_colonfile, {NULL, 0}, {NULL, 0}},
-    {"reStructuredText", lex_markdown, {NULL, 0}, {NULL, 0}},
-    {"resolv", lex_sshconfig, {NULL, 0}, {NULL, 0}},
-    {"syslog", lex_log, {NULL, 0}, {NULL, 0}},
-    {"varlink", lex_cfamily, {NULL, 0}, {NULL, 0}},
+    {"Zsh", lex_shell, WS(sh_kw), {0}},
+    {"fstab", lex_sshconfig, {0}, {0}},
+    {"gnuplot", lex_python, {0}, {0}},
+    {"group", lex_colonfile, {0}, {0}},
+    {"hosts", lex_sshconfig, {0}, {0}},
+    {"jsonnet", lex_cfamily, WS(jsonnet_kw), {0}},
+    {"log", lex_log, {0}, {0}},
+    {"nginx", lex_python, WS(nginx_kw), {0}},
+    {"orgmode", lex_markdown, {0}, {0}},
+    {"passwd", lex_colonfile, {0}, {0}},
+    {"reStructuredText", lex_markdown, {0}, {0}},
+    {"resolv", lex_sshconfig, {0}, {0}},
+    {"syslog", lex_log, {0}, {0}},
+    {"varlink", lex_cfamily, {0}, {0}},
 };
 
 #define LANG_TBL_N (sizeof lang_tbl / sizeof lang_tbl[0])
@@ -4245,6 +4308,8 @@ struct mat_hl *mat_hl_open(const char *syntax)
         h->lex = e->lex;
         h->keywords = e->kw;
         h->types = e->ty;
+        ws_build_filter(&h->keywords);
+        ws_build_filter(&h->types);
     }
     return h;
 }
