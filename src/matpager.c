@@ -77,6 +77,20 @@ static int render_cb(void *vc, size_t L, int width, paige_sink *sink)
                            to_paige, sink);
 }
 
+/* Name the last line so jump-to-bottom is O(screen). We deliberately do not
+ * provide line_count (it would force a full scan to answer %, paid up front);
+ * seek_end lets paige reach EOF lazily — it indexes to the end only when the
+ * reader actually presses G, without rendering every line on the way. */
+static int seek_end_cb(void *vc, size_t *out)
+{
+    struct ctx *c = vc;
+    size_t total = mat_linesrc_total(&c->src);
+    if (total == 0)
+        return 0;
+    *out = total - 1;
+    return 1;
+}
+
 int mat_page(const struct config *cfg, bool decorated)
 {
     const char *name = cfg->nfiles ? cfg->files[0] : "-";
@@ -149,7 +163,10 @@ int mat_page(const struct config *cfg, bool decorated)
         snprintf(title, sizeof title, "File: %s", is_stdin ? "STDIN" : name);
         /* Designated init so added paige_doc fields stay zeroed (and quiet
          * under -Wmissing-field-initializers as the paige API grows). */
-        paige_doc doc = {.ctx = &c, .render_line = render_cb, .title = title};
+        paige_doc doc = {.ctx = &c,
+                         .render_line = render_cb,
+                         .seek_end = seek_end_cb,
+                         .title = title};
         paige_opts opts = {0}; /* we already handled the fits case */
         int r = paige_run(&doc, &opts);
         if (r < 0)
