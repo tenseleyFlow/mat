@@ -50,6 +50,17 @@ void mat_hl_close(struct mat_hl *h);
 int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,
                 struct mat_span *spans, int cap);
 
+/*
+ * Multi-line lexer state (``` fences, block comments, Python triple-strings).
+ * It is 0 at the start of a document and threaded line to line by mat_hl_line.
+ * A host that lexes lines out of order or repeatedly (e.g. a pager rendering an
+ * arbitrary scroll window) MUST restore the correct entry state before each
+ * line: read it after the previous line, set it before the next. The value is
+ * opaque — cache and replay it, do not interpret it.
+ */
+int mat_hl_get_state(const struct mat_hl *h);
+void mat_hl_set_state(struct mat_hl *h, int state);
+
 /* Select a named theme ("dark", "light", or NULL for the default). Returns 0
  * on success, -1 if the name is unknown. */
 int mat_theme_set(const char *name);

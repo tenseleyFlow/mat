@@ -8,6 +8,7 @@
 #include "term.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -19,7 +20,55 @@ struct ctx {
     struct mat_render rc;
     const struct config *cfg;
     struct mat_changes chg;
+    /* Cached lexer entry-state per line, so syntax highlighting is correct
+     * regardless of the pager's render order. hl_entry[i] is the multi-line
+     * lexer state entering line i; hl_entry[0] is 0 (document start). */
+    int *hl_entry;
+    size_t hl_entry_n;
+    size_t hl_entry_cap;
 };
+
+/* Make hl_entry[L] valid by lexing forward from the furthest line already
+ * cached, threading state. Multi-line constructs (``` fences, block comments)
+ * mean a line's coloring depends on every line above it; the pager renders
+ * lines out of order and repeatedly, so we restore each line's true entry state
+ * here instead of trusting whatever the previous render call left behind. */
+static void ensure_entry(struct ctx *c, size_t L)
+{
+    if (c->rc.hl == NULL)
+        return;
+    if (c->hl_entry_n == 0) {
+        if (c->hl_entry_cap == 0) {
+            c->hl_entry_cap = 1024;
+            c->hl_entry = malloc(c->hl_entry_cap * sizeof *c->hl_entry);
+            if (c->hl_entry == NULL) {
+                c->hl_entry_cap = 0;
+                return;
+            }
+        }
+        c->hl_entry[0] = 0; /* HL_NORMAL at the document start */
+        c->hl_entry_n = 1;
+    }
+    while (c->hl_entry_n <= L) {
+        size_t i = c->hl_entry_n - 1; /* lex line i to learn line i+1's entry */
+        const unsigned char *d;
+        size_t len;
+        if (!mat_linesrc_line(&c->src, i, &d, &len))
+            break;                   /* EOF: nothing more to cache */
+        struct mat_span scratch[64]; /* span output discarded; we want state */
+        mat_hl_set_state(c->rc.hl, c->hl_entry[i]);
+        mat_hl_line(c->rc.hl, d, len, scratch, 64);
+        if (c->hl_entry_n == c->hl_entry_cap) {
+            size_t nc = c->hl_entry_cap * 2;
+            int *nb = realloc(c->hl_entry, nc * sizeof *nb);
+            if (nb == NULL)
+                break;
+            c->hl_entry = nb;
+            c->hl_entry_cap = nc;
+        }
+        c->hl_entry[c->hl_entry_n++] = mat_hl_get_state(c->rc.hl);
+    }
+}
 
 static void to_paige(void *p, const char *bytes, size_t len)
 {
@@ -70,6 +119,14 @@ static int render_cb(void *vc, size_t L, int width, paige_sink *sink)
     size_t len;
     if (!mat_linesrc_line(&c->src, L, &d, &len))
         return 0;
+    /* Restore the correct multi-line lexer state for THIS line before rendering
+     * (the render path lexes the line internally), so highlighting is identical
+     * no matter what the pager rendered before this call. */
+    if (c->rc.hl != NULL) {
+        ensure_entry(c, L);
+        if (L < c->hl_entry_n)
+            mat_hl_set_state(c->rc.hl, c->hl_entry[L]);
+    }
     long line1 = (long)(L + 1);
     const struct mat_rangeset *hl = c->cfg ? &c->cfg->highlights : NULL;
     c->rc.highlight = hl && hl->n > 0 && mat_rangeset_contains(hl, line1, 0);
@@ -100,6 +157,7 @@ int mat_page(const struct config *cfg, bool decorated)
         return 0; /* error already reported; nothing to fall back to */
 
     struct ctx c;
+    memset(&c, 0, sizeof c); /* zero hl_entry cache + the rest before init */
     if (!mat_linesrc_open(&c.src, fd)) {
         mat_warn(is_stdin ? "stdin" : name);
         mat_close_input(fd, is_stdin, name);
@@ -178,6 +236,7 @@ int mat_page(const struct config *cfg, bool decorated)
     mat_hl_close(c.rc.hl);
     mat_render_free(&c.rc);
     mat_linesrc_free(&c.src);
+    free(c.hl_entry);
     mat_close_input(fd, is_stdin, name);
     return ret;
 }

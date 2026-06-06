@@ -4483,6 +4483,16 @@ int mat_hl_line(struct mat_hl *h, const unsigned char *d, size_t len,
     return h->lex(h, d, len, out, cap);
 }
 
+int mat_hl_get_state(const struct mat_hl *h)
+{
+    return h->state;
+}
+
+void mat_hl_set_state(struct mat_hl *h, int state)
+{
+    h->state = state;
+}
+
 static const char *ws_sorted(const struct wordset *w)
 {
     for (int i = 1; i < w->n; i++)
